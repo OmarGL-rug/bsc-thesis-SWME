@@ -10,10 +10,10 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       158,          7]
-NotebookDataLength[    245391,       5393]
-NotebookOptionsPosition[    239052,       5266]
-NotebookOutlinePosition[    239531,       5284]
-CellTagsIndexPosition[    239488,       5281]
+NotebookDataLength[    257365,       5662]
+NotebookOptionsPosition[    250146,       5518]
+NotebookOutlinePosition[    250625,       5536]
+CellTagsIndexPosition[    250582,       5533]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
@@ -330,6 +330,324 @@ Cell[BoxData[
 
 Cell[CellGroupData[{
 
+Cell["\<\
+Construction of model at the interface between the two subdomains\
+\>", "Subsection",
+ CellChangeTimes->{{3.903436918942368*^9, 
+  3.9034369406005497`*^9}},ExpressionUUID->"06f47a7d-a6ad-4504-9762-\
+f998dc0fd460"],
+
+Cell[CellGroupData[{
+
+Cell["Using the bigger model", "Subsubsection",
+ CellChangeTimes->{{3.903437085609008*^9, 
+  3.9034371040450153`*^9}},ExpressionUUID->"c9ded7bb-8c8a-4263-9686-\
+420485f50a01"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"BiggerModelAtInterface", "[", "]"}], ":=", 
+  RowBox[{"(", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"RoeBiggerModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", "ARight"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"RoeBiggerModel", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"nxL", "+", "2"}], ",", 
+         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
+      RowBox[{"[", 
+       RowBox[{"All", ",", 
+        RowBox[{
+         RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
+         RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"RoeBiggerModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
+     RowBox[{"ConstantArray", "[", 
+      RowBox[{"0", ",", 
+       RowBox[{"{", 
+        RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"RoeBiggerModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
+     RowBox[{"-", "ARight"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"ViscosityBiggerModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", 
+     RowBox[{"ConstantArray", "[", 
+      RowBox[{"0", ",", 
+       RowBox[{"{", 
+        RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"ViscosityBiggerModel", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"nxL", "+", "2"}], ",", 
+         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
+      RowBox[{"[", 
+       RowBox[{"All", ",", 
+        RowBox[{
+         RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
+         RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"ViscosityBiggerModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
+     RowBox[{"ConstantArray", "[", 
+      RowBox[{"0", ",", 
+       RowBox[{"{", 
+        RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"ViscosityBiggerModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
+     RowBox[{"ConstantArray", "[", 
+      RowBox[{"0", ",", 
+       RowBox[{"{", 
+        RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
+    ";"}], "\[IndentingNewLine]", ")"}]}]], "Input",
+ InitializationCell->True,
+ CellChangeTimes->{{3.9034372664654865`*^9, 3.9034372913474274`*^9}, {
+  3.9034373947555065`*^9, 3.9034374351699505`*^9}, {3.903437587724994*^9, 
+  3.9034375953639264`*^9}, {3.9034399748959885`*^9, 3.9034399913136864`*^9}, {
+  3.9035085681400843`*^9, 3.903508607597818*^9}, {3.9035931854093113`*^9, 
+  3.903593202168083*^9}, {3.9035937377322135`*^9, 3.903593759914888*^9}, {
+  3.903593970582264*^9, 3.903593975006222*^9}, {3.903598950818987*^9, 
+  3.9035989667074137`*^9}},
+ CellLabel->"In[2]:=",ExpressionUUID->"315ac463-77b8-4db0-8a98-76f1e0dbc246"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell["Using the extended model", "Subsubsection",
+ CellChangeTimes->{{3.9034371145258856`*^9, 
+  3.903437128087574*^9}},ExpressionUUID->"4bf12691-2a52-46c7-aad7-\
+1443e1bce45b"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"ExtendedModelAtInterface", "[", "]"}], ":=", 
+  RowBox[{"(", "\[IndentingNewLine]", 
+   RowBox[{"(*", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"BigAMatrix", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"nxL", "+", "2"}], ",", 
+         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", " ", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox["1", 
+         RowBox[{"2", "*", "dx"}]]}], "*", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"ArrayPad", "[", 
+          RowBox[{"ALeft", ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
+            "}"}]}], "]"}], "-", 
+         RowBox[{"ArrayPad", "[", 
+          RowBox[{"QLeft", ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
+            "}"}]}], "]"}]}], ")"}]}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"BigAMatrix", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"nxL", "+", "2"}], ",", 
+         RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", " ", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox["1", 
+         RowBox[{"2", "*", "dx"}]]}], "*", 
+       RowBox[{"(", 
+        RowBox[{"2", "*", 
+         RowBox[{"ArrayPad", "[", 
+          RowBox[{"QLeft", ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
+            "}"}]}], "]"}]}], ")"}]}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"BigAMatrix", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"nxL", "+", "2"}], ",", 
+         RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", " ", 
+      RowBox[{
+       RowBox[{"-", 
+        FractionBox["1", 
+         RowBox[{"2", "*", "dx"}]]}], "*", 
+       RowBox[{"(", 
+        RowBox[{
+         RowBox[{"-", 
+          RowBox[{"ArrayPad", "[", 
+           RowBox[{"ALeft", ",", 
+            RowBox[{"{", 
+             RowBox[{
+              RowBox[{"{", 
+               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
+              RowBox[{"{", 
+               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
+             "}"}]}], "]"}]}], "-", 
+         RowBox[{"ArrayPad", "[", 
+          RowBox[{"QLeft", ",", 
+           RowBox[{"{", 
+            RowBox[{
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
+             RowBox[{"{", 
+              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
+            "}"}]}], "]"}]}], ")"}]}]}], ";", "\[IndentingNewLine]", 
+     RowBox[{"BigAMatrixFlatten", "=", 
+      RowBox[{"ArrayFlatten", "[", "BigAMatrix", "]"}]}], ";"}], "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"RoeExtendedModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", "ATilde"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"RoeExtendedModel", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"nxL", "+", "2"}], ",", 
+         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
+      RowBox[{"[", 
+       RowBox[{"All", ",", 
+        RowBox[{
+         RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
+         RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"RoeExtendedModel", "[", 
+        RowBox[{"[", 
+         RowBox[{
+          RowBox[{"nxL", "+", "2"}], ",", 
+          RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
+       RowBox[{"ATilde", "-", "ARight"}]}], ";"}], "*)"}], 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"RoeExtendedModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
+     RowBox[{"ConstantArray", "[", 
+      RowBox[{"0", ",", 
+       RowBox[{"{", 
+        RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"RoeExtendedModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
+     RowBox[{"-", "ATilde"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"ViscosityExtendedModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", 
+     RowBox[{"-", "QTilde"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{
+      RowBox[{"ViscosityExtendedModel", "[", 
+       RowBox[{"[", 
+        RowBox[{
+         RowBox[{"nxL", "+", "2"}], ",", 
+         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
+      RowBox[{"[", 
+       RowBox[{"All", ",", 
+        RowBox[{
+         RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
+         RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
+    "\[IndentingNewLine]", 
+    RowBox[{"(*", 
+     RowBox[{
+      RowBox[{
+       RowBox[{"ViscosityExtendedModel", "[", 
+        RowBox[{"[", 
+         RowBox[{
+          RowBox[{"nxL", "+", "2"}], ",", 
+          RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
+       RowBox[{"QTilde", "+", "QRight"}]}], ";"}], "*)"}], 
+    "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"ViscosityExtendedModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
+     RowBox[{"2", "*", "QTilde"}]}], ";", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"ViscosityExtendedModel", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"nxL", "+", "2"}], ",", 
+        RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
+     RowBox[{"-", "QTilde"}]}], ";"}], "\[IndentingNewLine]", 
+   ")"}]}]], "Input",
+ InitializationCell->True,
+ CellChangeTimes->{{3.9034375589528913`*^9, 3.9034375759996233`*^9}, {
+  3.903438660359704*^9, 3.9034386713026295`*^9}, {3.9034397327788672`*^9, 
+  3.9034397419073486`*^9}, {3.903439997021203*^9, 3.903440014867893*^9}, {
+  3.9035119912134676`*^9, 3.9035120407682133`*^9}, {3.9035121238318043`*^9, 
+  3.9035121386643085`*^9}, {3.9035126456703677`*^9, 3.9035126567288303`*^9}},
+ CellLabel->"In[3]:=",ExpressionUUID->"fbbadd2f-b333-49d1-9283-036cade33f3c"]
+}, Open  ]]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
 Cell["Construction matrix", "Subsection",
  CellChangeTimes->{{3.9026451230223975`*^9, 3.9026451260517178`*^9}, {
   3.9026461859736085`*^9, 3.9026461873968463`*^9}, {3.902646240556018*^9, 
@@ -423,7 +741,7 @@ Cell[BoxData[
            RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
            RowBox[{"-", "1"}]}], ",", "All"}], "]"}], "]"}], "=", "0"}], ";", 
       "\[IndentingNewLine]", "\[IndentingNewLine]", 
-      RowBox[{"Roe", " ", "=", " ", 
+      RowBox[{"RoeWeightedSum", " ", "=", " ", 
        RowBox[{"ConstantArray", "[", 
         RowBox[{"0", ",", 
          RowBox[{"{", 
@@ -431,7 +749,39 @@ Cell[BoxData[
            RowBox[{"n", "+", "2"}], ",", 
            RowBox[{"n", "+", "2"}]}], "}"}]}], "]"}]}], ";", 
       "\[IndentingNewLine]", 
-      RowBox[{"Viscosity", "=", 
+      RowBox[{"ViscosityWeightedSum", "=", 
+       RowBox[{"ConstantArray", "[", 
+        RowBox[{"0", ",", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"n", "+", "2"}], ",", 
+           RowBox[{"n", "+", "2"}]}], "}"}]}], "]"}]}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"RoeBiggerModel", " ", "=", " ", 
+       RowBox[{"ConstantArray", "[", 
+        RowBox[{"0", ",", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"n", "+", "2"}], ",", 
+           RowBox[{"n", "+", "2"}]}], "}"}]}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ViscosityBiggerModel", "=", 
+       RowBox[{"ConstantArray", "[", 
+        RowBox[{"0", ",", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"n", "+", "2"}], ",", 
+           RowBox[{"n", "+", "2"}]}], "}"}]}], "]"}]}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"RoeExtendedModel", " ", "=", " ", 
+       RowBox[{"ConstantArray", "[", 
+        RowBox[{"0", ",", 
+         RowBox[{"{", 
+          RowBox[{
+           RowBox[{"n", "+", "2"}], ",", 
+           RowBox[{"n", "+", "2"}]}], "}"}]}], "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ViscosityExtendedModel", "=", 
        RowBox[{"ConstantArray", "[", 
         RowBox[{"0", ",", 
          RowBox[{"{", 
@@ -455,7 +805,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"1", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -464,7 +814,7 @@ Cell[BoxData[
              RowBox[{"momentsLeft", ",", "momentsLeft"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"1", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -482,7 +832,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"1", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -491,7 +841,7 @@ Cell[BoxData[
              RowBox[{"momentsLeft", ",", "momentsRight"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"1", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -512,13 +862,13 @@ Cell[BoxData[
         RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "-", "1"}]}], "]"}], "]"}], "=", "ALeft"}], ";", 
          "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", "i"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -527,24 +877,24 @@ Cell[BoxData[
              RowBox[{"momentsLeft", ",", "momentsLeft"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "+", "1"}]}], "]"}], "]"}], "=", 
           RowBox[{"-", "ALeft"}]}], ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "-", "1"}]}], "]"}], "]"}], "=", 
           RowBox[{"-", "QLeft"}]}], ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", "i"}], "]"}], "]"}], "=", 
           RowBox[{"2", "*", "QLeft"}]}], ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "+", "1"}]}], "]"}], "]"}], "=", 
@@ -558,7 +908,7 @@ Cell[BoxData[
            RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{
-             RowBox[{"Roe", "[", 
+             RowBox[{"RoeWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -567,7 +917,7 @@ Cell[BoxData[
                 RowBox[{"momentsLeft", ",", "momentsLeft"}], "}"}]}], "]"}]}],
              ";", "\[IndentingNewLine]", 
             RowBox[{
-             RowBox[{"Viscosity", "[", 
+             RowBox[{"ViscosityWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -584,7 +934,7 @@ Cell[BoxData[
            RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{
-             RowBox[{"Roe", "[", 
+             RowBox[{"RoeWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -593,7 +943,7 @@ Cell[BoxData[
                 RowBox[{"momentsLeft", ",", "momentsLeft"}], "}"}]}], "]"}]}],
              ";", "\[IndentingNewLine]", 
             RowBox[{
-             RowBox[{"Viscosity", "[", 
+             RowBox[{"ViscosityWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -611,7 +961,7 @@ Cell[BoxData[
            RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{
-             RowBox[{"Roe", "[", 
+             RowBox[{"RoeWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -620,7 +970,7 @@ Cell[BoxData[
                 RowBox[{"momentsLeft", ",", "momentsRight"}], "}"}]}], 
               "]"}]}], ";", "\[IndentingNewLine]", 
             RowBox[{
-             RowBox[{"Viscosity", "[", 
+             RowBox[{"ViscosityWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -640,13 +990,13 @@ Cell[BoxData[
            "ghost", " ", "rows"}]}], " "}]}], "*)"}], " ", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{"nxL", ",", 
           RowBox[{"nxL", "-", "1"}]}], "]"}], "]"}], "=", "ALeft"}], ";", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{"nxL", ",", "nxL"}], "]"}], "]"}], "=", 
        RowBox[{"ConstantArray", "[", 
@@ -655,7 +1005,7 @@ Cell[BoxData[
           RowBox[{"momentsLeft", ",", "momentsLeft"}], "}"}]}], "]"}]}], ";", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{"nxL", ",", 
           RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", 
@@ -670,18 +1020,18 @@ Cell[BoxData[
              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
            "}"}]}], "]"}]}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{"nxL", ",", 
           RowBox[{"nxL", "-", "1"}]}], "]"}], "]"}], "=", 
        RowBox[{"-", "QLeft"}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{"nxL", ",", "nxL"}], "]"}], "]"}], "=", 
        RowBox[{"2", "*", "QLeft"}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{"nxL", ",", 
           RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", 
@@ -704,7 +1054,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"nxL", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -713,7 +1063,7 @@ Cell[BoxData[
              RowBox[{"momentsLeft", ",", "momentsLeft"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"nxL", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -731,7 +1081,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"nxL", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -740,7 +1090,7 @@ Cell[BoxData[
              RowBox[{"momentsLeft", ",", "momentsRight"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"nxL", ",", "j"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -759,7 +1109,7 @@ Cell[BoxData[
            " ", "of", " ", "the", " ", "introduced", "  ", "ghost", " ", 
            "rows"}], " "}]}]}], "*)"}], "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "1"}], ",", "nxL"}], "]"}], "]"}], "=", 
@@ -773,7 +1123,7 @@ Cell[BoxData[
             RowBox[{"0", ",", "0"}], "}"}]}], "}"}]}], "]"}]}], ";", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "1"}], ",", 
@@ -784,14 +1134,14 @@ Cell[BoxData[
           RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
       ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "1"}], ",", 
           RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
        RowBox[{"-", "ATilde"}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "1"}], ",", "nxL"}], "]"}], "]"}], "=", 
@@ -806,7 +1156,7 @@ Cell[BoxData[
              RowBox[{"0", ",", "0"}], "}"}]}], "}"}]}], "]"}]}]}], ";", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "1"}], ",", 
@@ -822,7 +1172,7 @@ Cell[BoxData[
              RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
            "}"}]}], "]"}]}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "1"}], ",", 
@@ -836,7 +1186,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "1"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -846,7 +1196,7 @@ Cell[BoxData[
              RowBox[{"momentsRight", ",", "momentsLeft"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "1"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -865,7 +1215,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "1"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -875,7 +1225,7 @@ Cell[BoxData[
              RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "1"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -903,7 +1253,7 @@ Cell[BoxData[
          "matrix"}]}], " ", "*)"}], "\[IndentingNewLine]", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "2"}], ",", 
@@ -911,7 +1261,7 @@ Cell[BoxData[
       "\[IndentingNewLine]", 
       RowBox[{
        RowBox[{
-        RowBox[{"Roe", "[", 
+        RowBox[{"RoeWeightedSum", "[", 
          RowBox[{"[", 
           RowBox[{
            RowBox[{"nxL", "+", "2"}], ",", 
@@ -923,7 +1273,7 @@ Cell[BoxData[
            RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "2"}], ",", 
@@ -934,14 +1284,14 @@ Cell[BoxData[
           RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
       ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Roe", "[", 
+       RowBox[{"RoeWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "2"}], ",", 
           RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
        RowBox[{"-", "ARight"}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "2"}], ",", 
@@ -949,7 +1299,7 @@ Cell[BoxData[
        RowBox[{"-", "QRight"}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
        RowBox[{
-        RowBox[{"Viscosity", "[", 
+        RowBox[{"ViscosityWeightedSum", "[", 
          RowBox[{"[", 
           RowBox[{
            RowBox[{"nxL", "+", "2"}], ",", 
@@ -961,14 +1311,14 @@ Cell[BoxData[
            RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
       "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "2"}], ",", 
           RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
        RowBox[{"2", "*", "QRight"}]}], ";", "\[IndentingNewLine]", 
       RowBox[{
-       RowBox[{"Viscosity", "[", 
+       RowBox[{"ViscosityWeightedSum", "[", 
         RowBox[{"[", 
          RowBox[{
           RowBox[{"nxL", "+", "2"}], ",", 
@@ -982,7 +1332,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -992,7 +1342,7 @@ Cell[BoxData[
              RowBox[{"momentsRight", ",", "momentsLeft"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -1011,7 +1361,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -1021,7 +1371,7 @@ Cell[BoxData[
              RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"nxL", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -1047,13 +1397,13 @@ Cell[BoxData[
         RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "-", "1"}]}], "]"}], "]"}], "=", "ARight"}], ";", 
          "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", "i"}], "]"}], "]"}], "=", 
           RowBox[{"ConstantArray", "[", 
@@ -1062,25 +1412,25 @@ Cell[BoxData[
              RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "+", "1"}]}], "]"}], "]"}], "=", 
           RowBox[{"-", "ARight"}]}], ";", "\[IndentingNewLine]", 
          "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "-", "1"}]}], "]"}], "]"}], "=", 
           RowBox[{"-", "QRight"}]}], ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", "i"}], "]"}], "]"}], "=", 
           RowBox[{"2", "*", "QRight"}]}], ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{"i", ",", 
              RowBox[{"i", "+", "1"}]}], "]"}], "]"}], "=", 
@@ -1093,7 +1443,7 @@ Cell[BoxData[
            RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{
-             RowBox[{"Roe", "[", 
+             RowBox[{"RoeWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -1102,7 +1452,7 @@ Cell[BoxData[
                 RowBox[{"momentsRight", ",", "momentsLeft"}], "}"}]}], 
               "]"}]}], ";", "\[IndentingNewLine]", 
             RowBox[{
-             RowBox[{"Viscosity", "[", 
+             RowBox[{"ViscosityWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -1120,7 +1470,7 @@ Cell[BoxData[
            RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{
-             RowBox[{"Roe", "[", 
+             RowBox[{"RoeWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -1129,7 +1479,7 @@ Cell[BoxData[
                 RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], 
               "]"}]}], ";", "\[IndentingNewLine]", 
             RowBox[{
-             RowBox[{"Viscosity", "[", 
+             RowBox[{"ViscosityWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -1147,7 +1497,7 @@ Cell[BoxData[
            RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
            RowBox[{
             RowBox[{
-             RowBox[{"Roe", "[", 
+             RowBox[{"RoeWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -1156,7 +1506,7 @@ Cell[BoxData[
                 RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], 
               "]"}]}], ";", "\[IndentingNewLine]", 
             RowBox[{
-             RowBox[{"Viscosity", "[", 
+             RowBox[{"ViscosityWeightedSum", "[", 
               RowBox[{"[", 
                RowBox[{"i", ",", "j"}], "]"}], "]"}], "=", 
              RowBox[{"ConstantArray", "[", 
@@ -1176,7 +1526,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"n", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -1186,7 +1536,7 @@ Cell[BoxData[
              RowBox[{"momentsRight", ",", "momentsLeft"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"n", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -1205,7 +1555,7 @@ Cell[BoxData[
         RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
         RowBox[{
          RowBox[{
-          RowBox[{"Roe", "[", 
+          RowBox[{"RoeWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"n", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -1215,7 +1565,7 @@ Cell[BoxData[
              RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
          ";", "\[IndentingNewLine]", 
          RowBox[{
-          RowBox[{"Viscosity", "[", 
+          RowBox[{"ViscosityWeightedSum", "[", 
            RowBox[{"[", 
             RowBox[{
              RowBox[{"n", "+", "2"}], ",", "j"}], "]"}], "]"}], "=", 
@@ -1224,12 +1574,36 @@ Cell[BoxData[
             RowBox[{"{", 
              RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], 
          ";"}]}], "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
-      "\[IndentingNewLine]", "\[IndentingNewLine]", 
-      RowBox[{"RoeFlatten", " ", "=", " ", 
-       RowBox[{"ArrayFlatten", "[", "Roe", "]"}]}], ";", 
       "\[IndentingNewLine]", 
-      RowBox[{"ViscosityFlatten", " ", "=", " ", 
-       RowBox[{"ArrayFlatten", "[", "Viscosity", "]"}]}], ";", 
+      RowBox[{"RoeBiggerModel", "=", "RoeWeightedSum"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ViscosityBiggerModel", "=", "ViscosityWeightedSum"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"BiggerModelAtInterface", "[", "]"}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"RoeExtendedModel", "=", "RoeWeightedSum"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ViscosityExtendedModel", "=", "ViscosityWeightedSum"}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ExtendedModelAtInterface", "[", "]"}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"RoeWeightedSumFlatten", " ", "=", " ", 
+       RowBox[{"ArrayFlatten", "[", "RoeWeightedSum", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ViscosityWeightedSumFlatten", " ", "=", " ", 
+       RowBox[{"ArrayFlatten", "[", "ViscosityWeightedSum", "]"}]}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"RoeBiggerModelFlatten", " ", "=", " ", 
+       RowBox[{"ArrayFlatten", "[", "RoeBiggerModel", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ViscosityBiggerModelFlatten", " ", "=", " ", 
+       RowBox[{"ArrayFlatten", "[", "ViscosityBiggerModel", "]"}]}], ";", 
+      "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"RoeExtendedModelFlatten", " ", "=", " ", 
+       RowBox[{"ArrayFlatten", "[", "RoeExtendedModel", "]"}]}], ";", 
+      "\[IndentingNewLine]", 
+      RowBox[{"ViscosityExtendedModelFlatten", " ", "=", " ", 
+       RowBox[{"ArrayFlatten", "[", "ViscosityExtendedModel", "]"}]}], ";", 
       "\[IndentingNewLine]", "\[IndentingNewLine]", 
       RowBox[{"(*", " ", 
        RowBox[{
@@ -1253,24 +1627,58 @@ Cell[BoxData[
         " ", "discretization", " ", "matrix", " ", "from", " ", "Roe", " ", 
         "block", " ", "matrix", " ", "and", " ", "viscosity", " ", "block", 
         " ", "matrix"}], " ", "*)"}], "\[IndentingNewLine]", 
-      RowBox[{"BigAMatrix", "=", 
+      RowBox[{"BigAMatrixWeightedSum", "=", 
        RowBox[{
         RowBox[{"-", 
          FractionBox["1.0", 
           RowBox[{"2", "*", "dx"}]]}], "*", 
         RowBox[{"(", 
-         RowBox[{"Roe", "+", "Viscosity"}], ")"}]}]}], ";", 
-      "\[IndentingNewLine]", 
-      RowBox[{"BigAMatrixFlatten", " ", "=", " ", 
+         RowBox[{"RoeWeightedSum", "+", "ViscosityWeightedSum"}], ")"}]}]}], 
+      ";", "\[IndentingNewLine]", 
+      RowBox[{"BigAMatrixWeightedSumFlatten", " ", "=", " ", 
        RowBox[{
         RowBox[{"-", 
          FractionBox["1.0", 
           RowBox[{"2", "*", "dx"}]]}], "*", 
         RowBox[{"(", 
-         RowBox[{"RoeFlatten", "+", "ViscosityFlatten"}], ")"}]}]}], ";", 
-      "\[IndentingNewLine]", "\[IndentingNewLine]", 
-      RowBox[{"M", "=", "BigAMatrixFlatten"}], ";"}]}], "\[IndentingNewLine]",
-     "]"}]}], ";"}]], "Input",
+         RowBox[{
+         "RoeWeightedSumFlatten", "+", "ViscosityWeightedSumFlatten"}], 
+         ")"}]}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"BigAMatrixBiggerModel", "=", 
+       RowBox[{
+        RowBox[{"-", 
+         FractionBox["1.0", 
+          RowBox[{"2", "*", "dx"}]]}], "*", 
+        RowBox[{"(", 
+         RowBox[{"RoeBiggerModel", "+", "ViscosityBiggerModel"}], ")"}]}]}], 
+      ";", "\[IndentingNewLine]", 
+      RowBox[{"BigAMatrixBiggerModelFlatten", " ", "=", " ", 
+       RowBox[{
+        RowBox[{"-", 
+         FractionBox["1.0", 
+          RowBox[{"2", "*", "dx"}]]}], "*", 
+        RowBox[{"(", 
+         RowBox[{
+         "RoeBiggerModelFlatten", "+", "ViscosityBiggerModelFlatten"}], 
+         ")"}]}]}], ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+      RowBox[{"BigAMatrixExtendedModel", "=", 
+       RowBox[{
+        RowBox[{"-", 
+         FractionBox["1.0", 
+          RowBox[{"2", "*", "dx"}]]}], "*", 
+        RowBox[{"(", 
+         RowBox[{"RoeExtendedModel", "+", "ViscosityExtendedModel"}], 
+         ")"}]}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"BigAMatrixExtendedModelFlatten", " ", "=", " ", 
+       RowBox[{
+        RowBox[{"-", 
+         FractionBox["1.0", 
+          RowBox[{"2", "*", "dx"}]]}], "*", 
+        RowBox[{"(", 
+         RowBox[{
+         "RoeExtendedModelFlatten", "+", "ViscosityExtendedModelFlatten"}], 
+         ")"}]}]}], ";"}]}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
+    "]"}]}], ";"}]], "Input",
  InitializationCell->True,
  CellChangeTimes->{{3.8982467729576225`*^9, 3.8982467766131043`*^9}, 
    3.8982472526155653`*^9, {3.8982481945437765`*^9, 3.898248237597604*^9}, {
@@ -1362,10 +1770,16 @@ Cell[BoxData[
    3.902651395054048*^9, 3.9026514077767553`*^9}, {3.9026520178802643`*^9, 
    3.902652022044366*^9}, {3.9028135345430307`*^9, 3.9028135353899302`*^9}, {
    3.9028142892359376`*^9, 3.9028142926425824`*^9}, {3.902824681687475*^9, 
-   3.902824682001195*^9}, 3.9029827384250374`*^9, 3.9029852502883453`*^9},
- CellLabel->"In[2]:=",ExpressionUUID->"330aa39e-6b0b-4bde-bf77-06c527d8f159"]
-}, Closed]]
-}, Closed]],
+   3.902824682001195*^9}, 3.9029827384250374`*^9, 3.9029852502883453`*^9, {
+   3.903434729793865*^9, 3.903434753130119*^9}, {3.903434804393356*^9, 
+   3.903434837920292*^9}, {3.9034349355053816`*^9, 3.9034350188421574`*^9}, {
+   3.9034352641424303`*^9, 3.903435398646865*^9}, {3.903436588529691*^9, 
+   3.9034366527492094`*^9}, {3.903436866898899*^9, 3.903436895391568*^9}, {
+   3.9034400623736525`*^9, 3.9034401630107875`*^9}, {3.9034402165990195`*^9, 
+   3.903440291762426*^9}},
+ CellLabel->"In[4]:=",ExpressionUUID->"330aa39e-6b0b-4bde-bf77-06c527d8f159"]
+}, Open  ]]
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -1523,7 +1937,7 @@ Cell[BoxData[
    3.9028241624392776`*^9, 3.902824162576342*^9}, {3.902824657908075*^9, 
    3.902824658206683*^9}, {3.902825120821701*^9, 3.9028251599924726`*^9}, {
    3.9028251932100515`*^9, 3.9028251958718696`*^9}},
- CellLabel->"In[3]:=",ExpressionUUID->"93135c3e-4451-4bb0-a652-cb56a46ff222"]
+ CellLabel->"In[5]:=",ExpressionUUID->"93135c3e-4451-4bb0-a652-cb56a46ff222"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -1801,7 +2215,7 @@ Cell[BoxData[
    3.9028244699613876`*^9}, {3.9028246680439234`*^9, 
    3.9028246686480913`*^9}, {3.902982781183258*^9, 3.902982794914631*^9}, 
    3.9029852376339707`*^9},
- CellLabel->"In[4]:=",ExpressionUUID->"0162c71f-f3a0-4c86-a49c-26037ecb63f9"]
+ CellLabel->"In[6]:=",ExpressionUUID->"0162c71f-f3a0-4c86-a49c-26037ecb63f9"]
 }, Closed]]
 }, Closed]],
 
@@ -1980,7 +2394,7 @@ Cell[BoxData[
   3.9028190403448834`*^9}, {3.9028193261680527`*^9, 3.9028193429019475`*^9}, {
   3.9028194851937017`*^9, 3.902819487074148*^9}, {3.902822212566493*^9, 
   3.9028223153846817`*^9}},
- CellLabel->"In[5]:=",ExpressionUUID->"22a9f75c-fdd8-4863-8743-9adca7c5b672"]
+ CellLabel->"In[7]:=",ExpressionUUID->"22a9f75c-fdd8-4863-8743-9adca7c5b672"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -2212,9 +2626,9 @@ Cell[BoxData[
    3.9028190752496357`*^9, 3.9028190844685526`*^9}, 3.9028191367489367`*^9, {
    3.902819348979025*^9, 3.9028193501629925`*^9}, {3.9028246977300262`*^9, 
    3.90282471224302*^9}},
- CellLabel->"In[6]:=",ExpressionUUID->"08a3d49b-bfa7-4f30-9ee0-8a2c7fa8d226"]
+ CellLabel->"In[8]:=",ExpressionUUID->"08a3d49b-bfa7-4f30-9ee0-8a2c7fa8d226"]
 }, Closed]]
-}, Closed]],
+}, Open  ]],
 
 Cell[CellGroupData[{
 
@@ -2235,7 +2649,7 @@ b6748dbec98d"],
 Cell[BoxData[
  RowBox[{
   RowBox[{
-   RowBox[{"FiniteVolumeScheme", "[", "tend_", "]"}], ":=", 
+   RowBox[{"FiniteVolumeSchemeWeightedSum", "[", "tend_", "]"}], ":=", 
    RowBox[{"Block", "[", 
     RowBox[{
      RowBox[{"{", 
@@ -2314,9 +2728,11 @@ Cell[BoxData[
                RowBox[{
                 RowBox[{"Sqrt", "[", "norm", "]"}], "+", 
                 RowBox[{"Sqrt", "[", "normRemainder", "]"}]}]]}]}], "]"}], 
-           ";", "\[IndentingNewLine]", "\[IndentingNewLine]", " ", 
-           RowBox[{"s0", "=", "1.0"}], ";", " ", "\[IndentingNewLine]", 
-           "\[IndentingNewLine]", 
+           ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
+           RowBox[{"(*", " ", 
+            RowBox[{
+             RowBox[{"s0", "=", "1.0"}], ";"}], " ", "*)"}], 
+           "\[IndentingNewLine]", "\[IndentingNewLine]", 
            RowBox[{"(*", " ", 
             RowBox[{
             "THE", " ", "SYSTEM", " ", "MATRIX", " ", "HERE", " ", "IS", " ", 
@@ -2421,7 +2837,7 @@ Cell[BoxData[
                  RowBox[{"-", "ARight"}], "-", "QRight"}], ")"}]}]}], ";"}], 
             "*)"}], "\[IndentingNewLine]", 
            RowBox[{
-            RowBox[{"BigAMatrix", "[", 
+            RowBox[{"BigAMatrixWeightedSum", "[", 
              RowBox[{"[", 
               RowBox[{
                RowBox[{"nxL", "+", "2"}], ",", 
@@ -2434,7 +2850,7 @@ Cell[BoxData[
               RowBox[{"WeightedSumRoe", "-", "WeightedSumViscosity"}], 
               ")"}]}]}], ";", "\[IndentingNewLine]", 
            RowBox[{
-            RowBox[{"BigAMatrix", "[", 
+            RowBox[{"BigAMatrixWeightedSum", "[", 
              RowBox[{"[", 
               RowBox[{
                RowBox[{"nxL", "+", "2"}], ",", 
@@ -2447,7 +2863,7 @@ Cell[BoxData[
               RowBox[{"2", "*", "QRight"}], ")"}]}]}], ";", 
            "\[IndentingNewLine]", 
            RowBox[{
-            RowBox[{"BigAMatrix", "[", 
+            RowBox[{"BigAMatrixWeightedSum", "[", 
              RowBox[{"[", 
               RowBox[{
                RowBox[{"nxL", "+", "2"}], ",", 
@@ -2553,16 +2969,16 @@ Cell[BoxData[
                     RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
                     "}"}]}], "]"}]}], ")"}]}]}], ";"}], "\[IndentingNewLine]",
              "*)"}], "\[IndentingNewLine]", "\[IndentingNewLine]", 
-           RowBox[{"BigAMatrixFlatten", "=", 
-            RowBox[{"ArrayFlatten", "[", "BigAMatrix", "]"}]}], ";", 
-           "\[IndentingNewLine]", "\[IndentingNewLine]", 
+           RowBox[{"BigAMatrixWeightedSumFlatten", "=", 
+            RowBox[{"ArrayFlatten", "[", "BigAMatrixWeightedSum", "]"}]}], 
+           ";", "\[IndentingNewLine]", "\[IndentingNewLine]", 
            RowBox[{"(*", " ", 
             RowBox[{"Transport", " ", "step"}], " ", "*)"}], 
            "\[IndentingNewLine]", 
            RowBox[{"W", "=", 
             RowBox[{"W", "+", 
              RowBox[{"dt", "*", 
-              RowBox[{"BigAMatrixFlatten", ".", "W"}]}]}]}], ";", 
+              RowBox[{"BigAMatrixWeightedSumFlatten", ".", "W"}]}]}]}], ";", 
            "\[IndentingNewLine]", "\[IndentingNewLine]", 
            RowBox[{"(*", " ", 
             RowBox[{"Relaxation", " ", "step"}], " ", "*)"}], 
@@ -2720,8 +3136,10 @@ Cell[BoxData[
   3.9028097943886585`*^9, 3.9028098094312177`*^9}, {3.902809863019637*^9, 
   3.9028099185576687`*^9}, {3.9030105185379395`*^9, 3.9030105599270067`*^9}, {
   3.9030106201824265`*^9, 3.903010623406233*^9}, {3.9030106852026143`*^9, 
-  3.9030106855915155`*^9}, {3.9030107254694676`*^9, 3.9030107258380027`*^9}},
- CellLabel->"In[7]:=",ExpressionUUID->"322e8c48-37a0-4c6e-8ef6-d3a131720e72"]
+  3.9030106855915155`*^9}, {3.9030107254694676`*^9, 3.9030107258380027`*^9}, {
+  3.9035086568888693`*^9, 3.9035086597874064`*^9}, {3.9035132115485597`*^9, 
+  3.9035132511750245`*^9}},
+ CellLabel->"In[9]:=",ExpressionUUID->"322e8c48-37a0-4c6e-8ef6-d3a131720e72"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -2738,81 +3156,8 @@ Cell[BoxData[
  RowBox[{
   RowBox[{
    RowBox[{"FiniteVolumeSchemeBiggerModel", "[", "tend_", "]"}], ":=", 
-   RowBox[{"(", "\[IndentingNewLine]", 
+   RowBox[{"(", "\[IndentingNewLine]", "\[IndentingNewLine]", 
     RowBox[{
-     RowBox[{
-      RowBox[{"Roe", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", "ARight"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"Roe", "[", 
-        RowBox[{"[", 
-         RowBox[{
-          RowBox[{"nxL", "+", "2"}], ",", 
-          RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
-       RowBox[{"[", 
-        RowBox[{"All", ",", 
-         RowBox[{
-          RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
-          RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Roe", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
-      RowBox[{"ConstantArray", "[", 
-       RowBox[{"0", ",", 
-        RowBox[{"{", 
-         RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], ";",
-      "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Roe", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
-      RowBox[{"-", "ARight"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Viscosity", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", 
-      RowBox[{"-", "QRight"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"Viscosity", "[", 
-        RowBox[{"[", 
-         RowBox[{
-          RowBox[{"nxL", "+", "2"}], ",", 
-          RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
-       RowBox[{"[", 
-        RowBox[{"All", ",", 
-         RowBox[{
-          RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
-          RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Viscosity", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
-      RowBox[{"2", "*", "QRight"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Viscosity", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
-      RowBox[{"-", "QRight"}]}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
      RowBox[{"W", "=", "Wraw"}], ";", "\[IndentingNewLine]", 
      RowBox[{"time", "=", " ", "0.0"}], ";", "\[IndentingNewLine]", 
      RowBox[{"step", "=", "0"}], ";", "\[IndentingNewLine]", 
@@ -2833,7 +3178,7 @@ Cell[BoxData[
           RowBox[{"W", "=", 
            RowBox[{"W", "+", 
             RowBox[{"dt", "*", 
-             RowBox[{"BigAMatrixFlatten", ".", "W"}]}]}]}], ";", 
+             RowBox[{"BigAMatrixBiggerModelFlatten", ".", "W"}]}]}]}], ";", 
           "\[IndentingNewLine]", "\[IndentingNewLine]", 
           RowBox[{"(*", " ", 
            RowBox[{"Relaxation", " ", "step"}], " ", "*)"}], 
@@ -2991,8 +3336,9 @@ Cell[BoxData[
    3.902982950933876*^9}, {3.902983042961362*^9, 3.9029830626423597`*^9}, {
    3.9029843661129646`*^9, 3.9029843744424243`*^9}, {3.902984617837556*^9, 
    3.90298464738953*^9}, 3.902984724924409*^9, {3.903433681381199*^9, 
-   3.9034336917876263`*^9}},
- CellLabel->"In[8]:=",ExpressionUUID->"1d6d4b43-6a11-437d-882f-6b8a46b831e6"]
+   3.9034336917876263`*^9}, {3.903434450878373*^9, 3.9034344683876123`*^9}, {
+   3.9034375109821105`*^9, 3.9034375122776613`*^9}, 3.903511396082961*^9},
+ CellLabel->"In[10]:=",ExpressionUUID->"1d6d4b43-6a11-437d-882f-6b8a46b831e6"]
 }, Open  ]],
 
 Cell[CellGroupData[{
@@ -3009,168 +3355,8 @@ Cell[BoxData[
  RowBox[{
   RowBox[{
    RowBox[{"FiniteVolumeSchemeExtendedModel", "[", "tend_", "]"}], ":=", 
-   RowBox[{"(", "\[IndentingNewLine]", 
-    RowBox[{"(*", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"BigAMatrix", "[", 
-        RowBox[{"[", 
-         RowBox[{
-          RowBox[{"nxL", "+", "2"}], ",", 
-          RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", " ", 
-       RowBox[{
-        RowBox[{"-", 
-         FractionBox["1", 
-          RowBox[{"2", "*", "dx"}]]}], "*", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{"ArrayPad", "[", 
-           RowBox[{"ALeft", ",", 
-            RowBox[{"{", 
-             RowBox[{
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
-             "}"}]}], "]"}], "-", 
-          RowBox[{"ArrayPad", "[", 
-           RowBox[{"QLeft", ",", 
-            RowBox[{"{", 
-             RowBox[{
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
-             "}"}]}], "]"}]}], ")"}]}]}], ";", "\[IndentingNewLine]", 
-      RowBox[{
-       RowBox[{"BigAMatrix", "[", 
-        RowBox[{"[", 
-         RowBox[{
-          RowBox[{"nxL", "+", "2"}], ",", 
-          RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", " ", 
-       RowBox[{
-        RowBox[{"-", 
-         FractionBox["1", 
-          RowBox[{"2", "*", "dx"}]]}], "*", 
-        RowBox[{"(", 
-         RowBox[{"2", "*", 
-          RowBox[{"ArrayPad", "[", 
-           RowBox[{"QLeft", ",", 
-            RowBox[{"{", 
-             RowBox[{
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
-             "}"}]}], "]"}]}], ")"}]}]}], ";", "\[IndentingNewLine]", 
-      RowBox[{
-       RowBox[{"BigAMatrix", "[", 
-        RowBox[{"[", 
-         RowBox[{
-          RowBox[{"nxL", "+", "2"}], ",", 
-          RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", " ", 
-       RowBox[{
-        RowBox[{"-", 
-         FractionBox["1", 
-          RowBox[{"2", "*", "dx"}]]}], "*", 
-        RowBox[{"(", 
-         RowBox[{
-          RowBox[{"-", 
-           RowBox[{"ArrayPad", "[", 
-            RowBox[{"ALeft", ",", 
-             RowBox[{"{", 
-              RowBox[{
-               RowBox[{"{", 
-                RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
-               RowBox[{"{", 
-                RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
-              "}"}]}], "]"}]}], "-", 
-          RowBox[{"ArrayPad", "[", 
-           RowBox[{"QLeft", ",", 
-            RowBox[{"{", 
-             RowBox[{
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}], ",", 
-              RowBox[{"{", 
-               RowBox[{"0", ",", "numberOfMomentsDifference"}], "}"}]}], 
-             "}"}]}], "]"}]}], ")"}]}]}], ";", "\[IndentingNewLine]", 
-      RowBox[{"BigAMatrixFlatten", "=", 
-       RowBox[{"ArrayFlatten", "[", "BigAMatrix", "]"}]}], ";"}], "*)"}], 
-    "\[IndentingNewLine]", 
+   RowBox[{"(", "\[IndentingNewLine]", "\[IndentingNewLine]", 
     RowBox[{
-     RowBox[{
-      RowBox[{"Roe", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", "ATilde"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"Roe", "[", 
-        RowBox[{"[", 
-         RowBox[{
-          RowBox[{"nxL", "+", "2"}], ",", 
-          RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
-       RowBox[{"[", 
-        RowBox[{"All", ",", 
-         RowBox[{
-          RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
-          RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Roe", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
-      RowBox[{"ConstantArray", "[", 
-       RowBox[{"0", ",", 
-        RowBox[{"{", 
-         RowBox[{"momentsRight", ",", "momentsRight"}], "}"}]}], "]"}]}], ";",
-      "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Roe", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
-      RowBox[{"-", "ARight"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Viscosity", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "=", 
-      RowBox[{"-", "QTilde"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{
-       RowBox[{"Viscosity", "[", 
-        RowBox[{"[", 
-         RowBox[{
-          RowBox[{"nxL", "+", "2"}], ",", 
-          RowBox[{"nxL", "+", "1"}]}], "]"}], "]"}], "[", 
-       RowBox[{"[", 
-        RowBox[{"All", ",", 
-         RowBox[{
-          RowBox[{"-", "numberOfMomentsDifference"}], ";;", 
-          RowBox[{"-", "1"}]}]}], "]"}], "]"}], "=", "0"}], ";", 
-     "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Viscosity", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "2"}]}], "]"}], "]"}], "=", 
-      RowBox[{"2", "*", "QRight"}]}], ";", "\[IndentingNewLine]", 
-     RowBox[{
-      RowBox[{"Viscosity", "[", 
-       RowBox[{"[", 
-        RowBox[{
-         RowBox[{"nxL", "+", "2"}], ",", 
-         RowBox[{"nxL", "+", "3"}]}], "]"}], "]"}], "=", 
-      RowBox[{"-", "QRight"}]}], ";", "\[IndentingNewLine]", 
-     "\[IndentingNewLine]", 
      RowBox[{"W", "=", "Wraw"}], ";", "\[IndentingNewLine]", 
      RowBox[{"time", "=", " ", "0.0"}], ";", "\[IndentingNewLine]", 
      RowBox[{"step", "=", "0"}], ";", "\[IndentingNewLine]", 
@@ -3191,7 +3377,7 @@ Cell[BoxData[
           RowBox[{"W", "=", 
            RowBox[{"W", "+", 
             RowBox[{"dt", "*", 
-             RowBox[{"BigAMatrixFlatten", ".", "W"}]}]}]}], ";", 
+             RowBox[{"BigAMatrixExtendedModelFlatten", ".", "W"}]}]}]}], ";", 
           "\[IndentingNewLine]", "\[IndentingNewLine]", 
           RowBox[{"(*", " ", 
            RowBox[{"Relaxation", " ", "step"}], " ", "*)"}], 
@@ -3346,8 +3532,9 @@ Cell[BoxData[
  InitializationCell->True,
  CellChangeTimes->{
   3.902984633968362*^9, {3.9030115347136626`*^9, 3.9030115840333734`*^9}, {
-   3.9030117300943937`*^9, 3.903011753243002*^9}},
- CellLabel->"In[9]:=",ExpressionUUID->"17d2e890-0432-4750-a373-1fdfcb2b149b"]
+   3.9030117300943937`*^9, 3.903011753243002*^9}, {3.9034375434869003`*^9, 
+   3.903437544218892*^9}, 3.903511461151074*^9},
+ CellLabel->"In[11]:=",ExpressionUUID->"17d2e890-0432-4750-a373-1fdfcb2b149b"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -3517,7 +3704,7 @@ Cell[BoxData[
  InitializationCell->True,
  CellChangeTimes->{
   3.902810517096759*^9, {3.90281064731122*^9, 3.902810654867694*^9}},
- CellLabel->"In[10]:=",ExpressionUUID->"bf65fd98-6242-4e53-9273-bebf8017e533"]
+ CellLabel->"In[12]:=",ExpressionUUID->"bf65fd98-6242-4e53-9273-bebf8017e533"]
 }, Closed]],
 
 Cell[CellGroupData[{
@@ -4063,7 +4250,7 @@ Cell[BoxData[
   3.902811905853942*^9}, {3.902812004892338*^9, 3.9028120337520723`*^9}, {
   3.9028122302598114`*^9, 3.902812231123058*^9}, {3.9028146823937593`*^9, 
   3.902814682795679*^9}, {3.902815064588131*^9, 3.9028150674834595`*^9}},
- CellLabel->"In[11]:=",ExpressionUUID->"7201ba37-981d-47ba-9427-d63c207b0983"]
+ CellLabel->"In[13]:=",ExpressionUUID->"7201ba37-981d-47ba-9427-d63c207b0983"]
 }, Closed]]
 }, Open  ]],
 
@@ -4189,7 +4376,7 @@ Cell[BoxData[
    RowBox[{
     RowBox[{"momentsLeft", "=", "4"}], ";"}], "\[IndentingNewLine]", 
    RowBox[{
-    RowBox[{"momentsRight", "=", "6"}], ";"}], "\[IndentingNewLine]", 
+    RowBox[{"momentsRight", "=", "5"}], ";"}], "\[IndentingNewLine]", 
    "\[IndentingNewLine]", 
    RowBox[{"(*", " ", 
     RowBox[{"Choose", " ", "initial", " ", "values"}], " ", "*)"}], 
@@ -4205,9 +4392,9 @@ Cell[BoxData[
       RowBox[{"1", ",", "1", ",", "1"}], "}"}]}], ";"}], 
    "\[IndentingNewLine]", 
    RowBox[{
-    RowBox[{"epsilon", "=", "0.01"}], ";"}], "\[IndentingNewLine]", 
+    RowBox[{"epsilon", "=", "1.0"}], ";"}], "\[IndentingNewLine]", 
    RowBox[{
-    RowBox[{"momentsBig", "=", "1.0"}], ";"}], "\[IndentingNewLine]", 
+    RowBox[{"momentsBig", "=", "0.0"}], ";"}], "\[IndentingNewLine]", 
    "\[IndentingNewLine]", 
    RowBox[{"(*", " ", 
     RowBox[{"Choose", " ", "relaxation", " ", "parameter"}], " ", "*)"}], 
@@ -4219,7 +4406,7 @@ Cell[BoxData[
     RowBox[{"Choose", " ", "end", " ", "time"}], " ", "*)"}], 
    "\[IndentingNewLine]", 
    RowBox[{
-    RowBox[{"tend", "=", "1"}], ";"}], "\[IndentingNewLine]", 
+    RowBox[{"tend", "=", "0.02"}], ";"}], "\[IndentingNewLine]", 
    "\[IndentingNewLine]", 
    RowBox[{"InitializeModel", "[", 
     RowBox[{
@@ -4322,21 +4509,39 @@ Cell[BoxData[
    3.9029817058611383`*^9, 3.902981707793995*^9}, {3.9029818008666096`*^9, 
    3.902981823861842*^9}, {3.9029820463564463`*^9, 3.902982063892074*^9}, {
    3.902982187404952*^9, 3.9029821877491865`*^9}, 3.902985345272134*^9, {
-   3.902996944965309*^9, 3.9029969452497625`*^9}, 3.903000127399849*^9},
- CellLabel->"In[12]:=",ExpressionUUID->"1b07eece-fc0f-46b8-ae52-d19ef34feaaa"],
+   3.902996944965309*^9, 3.9029969452497625`*^9}, 3.903000127399849*^9, {
+   3.903512794024233*^9, 3.903512794729368*^9}, 3.903512852288978*^9, {
+   3.903513721546875*^9, 3.903513722662053*^9}, {3.903514015180007*^9, 
+   3.903514016952473*^9}, {3.9035145288238735`*^9, 3.9035145391126776`*^9}, {
+   3.9035156298334584`*^9, 3.9035156314268637`*^9}, {3.903517422044836*^9, 
+   3.9035174242981997`*^9}, {3.9035176925662127`*^9, 3.903517703586358*^9}, {
+   3.90351830985931*^9, 3.903518312511512*^9}, {3.9035183642916145`*^9, 
+   3.903518366855283*^9}, {3.9035184697652297`*^9, 3.903518470082182*^9}, {
+   3.9035188708788447`*^9, 3.903518871209332*^9}, 3.903591447877224*^9, {
+   3.903591516529864*^9, 3.903591517037394*^9}, {3.903593272075906*^9, 
+   3.90359327385285*^9}, 3.903599008248398*^9, {3.9036210302178364`*^9, 
+   3.9036210312580185`*^9}},
+ CellLabel->"In[30]:=",ExpressionUUID->"1b07eece-fc0f-46b8-ae52-d19ef34feaaa"],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[{
- RowBox[{"Dynamic", "[", 
-  RowBox[{"ListPlot", "[", 
-   RowBox[{
-    RowBox[{"moment", "[", "0", "]"}], ",", 
-    RowBox[{"PlotRange", "->", 
-     RowBox[{"{", 
-      RowBox[{"0", ",", "1.2"}], "}"}]}]}], "]"}], 
-  "]"}], "\[IndentingNewLine]", 
- RowBox[{"FiniteVolumeSchemeBiggerModel", "[", "tend", "]"}]}], "Input",
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", 
+   RowBox[{"Dynamic", "[", 
+    RowBox[{"ListPlot", "[", 
+     RowBox[{
+      RowBox[{"moment", "[", "3", "]"}], ",", 
+      RowBox[{"PlotRange", "\[Rule]", 
+       RowBox[{"{", 
+        RowBox[{
+         RowBox[{"-", "1"}], ",", "1"}], "}"}]}]}], "]"}], "]"}], "*)"}], 
+  "\[IndentingNewLine]", 
+  RowBox[{
+   RowBox[{"Dynamic", "[", 
+    RowBox[{"ListPlot", "[", 
+     RowBox[{"moment", "[", "3", "]"}], "]"}], "]"}], "\[IndentingNewLine]", 
+   RowBox[{"FiniteVolumeSchemeBiggerModel", "[", "tend", "]"}]}]}]], "Input",
  CellChangeTimes->{{3.9026528937547836`*^9, 3.9026529168893795`*^9}, {
    3.902652947931009*^9, 3.902652950579833*^9}, {3.902654066791837*^9, 
    3.902654070119334*^9}, {3.9028252622249928`*^9, 3.902825265610036*^9}, {
@@ -4350,32 +4555,79 @@ Cell[BoxData[{
    3.9034329267079964`*^9}, {3.9034329867932525`*^9, 
    3.9034330072473154`*^9}, {3.9034331121909466`*^9, 
    3.9034331126692643`*^9}, {3.903433154975193*^9, 3.9034331644820957`*^9}, {
-   3.9034335158063684`*^9, 3.9034335464221506`*^9}},
- CellLabel->"In[26]:=",ExpressionUUID->"6d676850-501c-4f78-a97f-76431368c5b8"],
+   3.9034335158063684`*^9, 3.9034335464221506`*^9}, {3.903511508893197*^9, 
+   3.9035115250755377`*^9}, {3.9035131094661064`*^9, 3.903513111855548*^9}, 
+   3.9035131774041243`*^9, {3.903513279446025*^9, 3.9035132809298615`*^9}, {
+   3.9035136259079876`*^9, 3.9035136555099297`*^9}, {3.9035137614107337`*^9, 
+   3.903513789535844*^9}, {3.903514025073244*^9, 3.90351403323568*^9}, {
+   3.9035149978056116`*^9, 3.9035149982879667`*^9}, {3.903515722253222*^9, 
+   3.903515742477217*^9}, {3.90351592579319*^9, 3.903515958515707*^9}, {
+   3.903517108288825*^9, 3.903517116909499*^9}, {3.9035173603486147`*^9, 
+   3.9035173606914406`*^9}, {3.9035183195724487`*^9, 3.903518374363549*^9}, {
+   3.9035184377604523`*^9, 3.903518438195623*^9}, {3.903518902800809*^9, 
+   3.9035189139386425`*^9}, {3.9035914537364626`*^9, 
+   3.9035914944129324`*^9}, {3.9035989983394175`*^9, 
+   3.9035990209442277`*^9}, {3.9036204162160873`*^9, 3.903620416522438*^9}, {
+   3.9036211405155263`*^9, 3.9036211831866717`*^9}},
+ CellLabel->"In[46]:=",ExpressionUUID->"6d676850-501c-4f78-a97f-76431368c5b8"],
 
 Cell[BoxData[
  DynamicBox[ToBoxes[
    ListPlot[
-    $CellContext`moment[0], PlotRange -> {0, 1.2}], StandardForm],
-  ImageSizeCache->{251.99999999999997`, {81., 84.0716113052643}}]], "Output",
- CellChangeTimes->{
-  3.902654070815858*^9, {3.9026556931445065`*^9, 3.9026557053729343`*^9}, 
-   3.9028131784478607`*^9, 3.902813866198326*^9, 3.9028142033100557`*^9, 
-   3.902814515201832*^9, 3.9028149560082693`*^9, {3.9028252524234357`*^9, 
-   3.902825266347205*^9}, {3.9029731840797367`*^9, 3.902973210288987*^9}, 
-   3.9029815027850003`*^9, 3.9029815368679776`*^9, 3.9029817171736727`*^9, {
-   3.9029818078970757`*^9, 3.9029818310191936`*^9}, {3.9029820354746375`*^9, 
-   3.9029820679420357`*^9}, 3.9029821931539755`*^9, 3.9029849425115848`*^9, {
-   3.902985005694897*^9, 3.9029850134940205`*^9}, {3.90298531734788*^9, 
-   3.9029853634912715`*^9}, 3.902985448478527*^9, {3.9029969566237373`*^9, 
-   3.9029969830485563`*^9}, {3.903000148938828*^9, 3.903000179777929*^9}, 
-   3.9030004692693653`*^9, {3.9030105858003645`*^9, 3.903010595608567*^9}, 
-   3.9030106614981017`*^9, 3.90301070112792*^9, 3.903010744735933*^9, 
-   3.90301159203859*^9, 3.903011759928488*^9, {3.9034329071054068`*^9, 
-   3.903432927023966*^9}, {3.9034329790570526`*^9, 3.9034330081669884`*^9}, 
-   3.9034331129321775`*^9, {3.903433155930151*^9, 3.9034331649232535`*^9}, {
-   3.903433525957483*^9, 3.903433546807157*^9}, 3.903433626229739*^9},
- CellLabel->"Out[26]=",ExpressionUUID->"56ee228f-11f3-4f71-9237-1a11a7038a30"]
+    $CellContext`moment[3]], StandardForm],
+  ImageSizeCache->{251.99999999999997`, {74., 77.61700507898394}}]], "Output",
+ CellChangeTimes->{{3.9035183526283846`*^9, 3.903518375165539*^9}, 
+   3.903518438640201*^9, 3.9035184771853695`*^9, {3.903518883422341*^9, 
+   3.903518914225008*^9}, {3.90359144331594*^9, 3.90359152357685*^9}, {
+   3.9035932622773485`*^9, 3.9035932824552507`*^9}, 3.903593429550144*^9, 
+   3.903593944716757*^9, 3.9035939999849443`*^9, 3.9035987955665817`*^9, {
+   3.903598995220465*^9, 3.9035990213823543`*^9}, 3.9036204665263047`*^9, 
+   3.903621145136965*^9, 3.903621184396768*^9},
+ CellLabel->"Out[46]=",ExpressionUUID->"c287a70e-5583-4c54-85a9-7aebd9b6fce8"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"ARight", "//", "MatrixForm"}]], "Input",
+ CellChangeTimes->{{3.9035193580154347`*^9, 3.9035193609718533`*^9}, {
+  3.9035198129090652`*^9, 3.9035198135723233`*^9}, {3.903621247728674*^9, 
+  3.9036212520448475`*^9}},
+ CellLabel->"In[48]:=",ExpressionUUID->"b9320913-71da-4f9d-98c4-548b22744563"],
+
+Cell[BoxData[
+ TagBox[
+  RowBox[{"(", "\[NoBreak]", GridBox[{
+     {"0", "1", "0", "0", "0"},
+     {"1", "0", 
+      SqrtBox["2"], "0", "0"},
+     {"0", 
+      SqrtBox["2"], "0", 
+      SqrtBox["3"], "0"},
+     {"0", "0", 
+      SqrtBox["3"], "0", "2"},
+     {"0", "0", "0", "2", "0"}
+    },
+    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
+    GridBoxSpacings->{"Columns" -> {
+        Offset[0.27999999999999997`], {
+         Offset[0.7]}, 
+        Offset[0.27999999999999997`]}, "Rows" -> {
+        Offset[0.2], {
+         Offset[0.4]}, 
+        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  Function[BoxForm`e$, 
+   MatrixForm[
+   SparseArray[
+    Automatic, {5, 5}, 0, {
+     1, {{0, 1, 3, 5, 7, 8}, {{2}, {1}, {3}, {4}, {2}, {3}, {5}, {4}}}, {
+      1, 1, 2^Rational[1, 2], 3^Rational[1, 2], 2^Rational[1, 2], 3^
+       Rational[1, 2], 2, 2}}]]]]], "Output",
+ CellChangeTimes->{3.903519361358985*^9, 3.903519814101283*^9, 
+  3.90362125322567*^9},
+ CellLabel->
+  "Out[48]//MatrixForm=",ExpressionUUID->"f2e472ac-7076-425a-bc6f-\
+a7107699d519"]
 }, Open  ]],
 
 Cell[BoxData[""], "Input",
@@ -5294,102 +5546,119 @@ Cell[2188, 57, 11312, 270, 831, "Input",ExpressionUUID->"a076f216-c331-48ba-8d1c
  InitializationCell->True]
 }, Closed]],
 Cell[CellGroupData[{
-Cell[13537, 332, 270, 4, 27, "Subsection",ExpressionUUID->"7e7af735-6f65-4573-976f-cc4a0c24c91e"],
-Cell[13810, 338, 42996, 1027, 2298, "Input",ExpressionUUID->"330aa39e-6b0b-4bde-bf77-06c527d8f159",
- InitializationCell->True]
-}, Closed]]
-}, Closed]],
+Cell[13537, 332, 223, 5, 27, "Subsection",ExpressionUUID->"06f47a7d-a6ad-4504-9762-f998dc0fd460"],
 Cell[CellGroupData[{
-Cell[56855, 1371, 236, 4, 39, "Section",ExpressionUUID->"3302a49e-9607-4b36-8fd3-f1a0750fb45d"],
-Cell[CellGroupData[{
-Cell[57116, 1379, 163, 3, 37, "Subsection",ExpressionUUID->"38705eab-fdf3-4be4-a17b-e5875d8da334"],
-Cell[57282, 1384, 6112, 141, 511, "Input",ExpressionUUID->"93135c3e-4451-4bb0-a652-cb56a46ff222",
- InitializationCell->True]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[63431, 1530, 171, 3, 27, "Subsection",ExpressionUUID->"7a9be3bb-d4ae-4909-bd74-5f38dd07fe9c"],
-Cell[63605, 1535, 12018, 268, 740, "Input",ExpressionUUID->"0162c71f-f3a0-4c86-a49c-26037ecb63f9",
- InitializationCell->True]
-}, Closed]]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[75672, 1809, 256, 4, 39, "Section",ExpressionUUID->"b82cd52a-ebbd-4f71-a223-0c45c4282bb1"],
-Cell[CellGroupData[{
-Cell[75953, 1817, 188, 3, 37, "Subsection",ExpressionUUID->"cbbcfa48-923d-493e-b528-09c37a3a72aa"],
-Cell[76144, 1822, 7189, 160, 578, "Input",ExpressionUUID->"22a9f75c-fdd8-4863-8743-9adca7c5b672",
- InitializationCell->True]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[83370, 1987, 164, 3, 27, "Subsection",ExpressionUUID->"86c15b6e-5e09-4496-9266-b7825a42e390"],
-Cell[83537, 1992, 13391, 222, 378, "Input",ExpressionUUID->"08a3d49b-bfa7-4f30-9ee0-8a2c7fa8d226",
- InitializationCell->True]
-}, Closed]]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[96977, 2220, 220, 4, 39, "Section",ExpressionUUID->"3b6a3747-4955-4f11-b54f-1af93ffb228f"],
-Cell[CellGroupData[{
-Cell[97222, 2228, 250, 4, 37, "Subsection",ExpressionUUID->"214c0758-cd4d-4ef4-8e1d-b6748dbec98d"],
-Cell[97475, 2234, 21300, 489, 1506, "Input",ExpressionUUID->"322e8c48-37a0-4c6e-8ef6-d3a131720e72",
- InitializationCell->True]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[118812, 2728, 259, 6, 27, "Subsection",ExpressionUUID->"824c2fc5-b8f7-408e-a2aa-fb5b382a14f3"],
-Cell[119074, 2736, 10763, 258, 963, "Input",ExpressionUUID->"1d6d4b43-6a11-437d-882f-6b8a46b831e6",
+Cell[13785, 341, 175, 3, 32, "Subsubsection",ExpressionUUID->"c9ded7bb-8c8a-4263-9686-420485f50a01"],
+Cell[13963, 346, 3560, 97, 151, "Input",ExpressionUUID->"315ac463-77b8-4db0-8a98-76f1e0dbc246",
  InitializationCell->True]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[129874, 2999, 276, 6, 37, "Subsection",ExpressionUUID->"9ab53544-f0e3-4654-9587-07d3d303d0c2"],
-Cell[130153, 3007, 13686, 342, 1085, "Input",ExpressionUUID->"17d2e890-0432-4750-a373-1fdfcb2b149b",
+Cell[17560, 448, 177, 3, 32, "Subsubsection",ExpressionUUID->"4bf12691-2a52-46c7-aad7-1443e1bce45b"],
+Cell[17740, 453, 6833, 191, 311, "Input",ExpressionUUID->"fbbadd2f-b333-49d1-9283-036cade33f3c",
  InitializationCell->True]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[143876, 3354, 170, 3, 27, "Subsection",ExpressionUUID->"2f30bef8-4a69-46f6-b70e-e22def035c8d"],
-Cell[144049, 3359, 7251, 160, 699, "Input",ExpressionUUID->"bf65fd98-6242-4e53-9273-bebf8017e533",
- InitializationCell->True]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[151337, 3524, 381, 7, 27, "Subsection",ExpressionUUID->"4bdcfae5-fa54-4e88-8ad0-a3986e675dd7"],
-Cell[151721, 3533, 23555, 532, 1717, "Input",ExpressionUUID->"7201ba37-981d-47ba-9427-d63c207b0983",
- InitializationCell->True]
-}, Closed]]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[175325, 4071, 224, 4, 47, "Section",ExpressionUUID->"8076849a-b71a-488d-9a1c-495aa7d8da8c"],
-Cell[175552, 4077, 2165, 59, 183, "Input",ExpressionUUID->"779956f8-feb8-4032-9b59-3b177a109f61"]
-}, Closed]],
-Cell[CellGroupData[{
-Cell[177754, 4141, 215, 4, 39, "Section",ExpressionUUID->"6905ed5c-69e1-49f1-a60e-13ecb3b79967"],
-Cell[CellGroupData[{
-Cell[177994, 4149, 160, 3, 37, "Subsection",ExpressionUUID->"6541aec8-6cd5-4039-bc36-4f8207554ea5"],
-Cell[178157, 4154, 9841, 171, 382, "Input",ExpressionUUID->"1b07eece-fc0f-46b8-ae52-d19ef34feaaa"],
-Cell[CellGroupData[{
-Cell[188023, 4329, 1387, 24, 34, "Input",ExpressionUUID->"6d676850-501c-4f78-a97f-76431368c5b8"],
-Cell[189413, 4355, 1491, 22, 202, "Output",ExpressionUUID->"56ee228f-11f3-4f71-9237-1a11a7038a30"]
-}, Open  ]],
-Cell[190919, 4380, 245, 3, 21, "Input",ExpressionUUID->"a1897ec8-84a5-4b56-9d83-ec35a73023a8"]
-}, Open  ]],
-Cell[CellGroupData[{
-Cell[191201, 4388, 165, 3, 37, "Subsection",ExpressionUUID->"74d14d28-ec90-4d76-8659-33cba749c26e"],
-Cell[191369, 4393, 1335, 41, 235, "Input",ExpressionUUID->"622a1613-e60c-43a2-9786-7f40679f73ab"]
 }, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[192753, 4440, 163, 3, 47, "Section",ExpressionUUID->"7351efa1-0456-4fdc-8879-fbb470eb5aa1"],
-Cell[CellGroupData[{
-Cell[192941, 4447, 201, 3, 37, "Subsection",ExpressionUUID->"c875962d-1af7-4358-a50b-bd6a06a27a9a"],
-Cell[193145, 4452, 1005, 20, 47, "Input",ExpressionUUID->"3aef5341-8c64-4a84-b4b6-e48c2dc9d142"],
-Cell[194153, 4474, 152, 3, 21, "Input",ExpressionUUID->"85526ce8-d1c9-4a18-beca-5474bac6d767"],
-Cell[194308, 4479, 1070, 24, 60, "Input",ExpressionUUID->"bbb5cee3-6589-46da-b5a4-1b72f5ef3598"],
-Cell[CellGroupData[{
-Cell[195403, 4507, 707, 17, 34, "Input",ExpressionUUID->"68b7d96f-eb48-4bfe-a782-e0a068de0a78"],
-Cell[196113, 4526, 766, 14, 33, "Message",ExpressionUUID->"c36dac8f-1939-4e4a-8157-f93d09e0ecd1"],
-Cell[196882, 4542, 219, 4, 23, "Output",ExpressionUUID->"eba00b99-ce8b-4f0f-91db-5fd91db84491"]
+Cell[24622, 650, 270, 4, 37, "Subsection",ExpressionUUID->"7e7af735-6f65-4573-976f-cc4a0c24c91e"],
+Cell[24895, 656, 47985, 1123, 2679, "Input",ExpressionUUID->"330aa39e-6b0b-4bde-bf77-06c527d8f159",
+ InitializationCell->True]
+}, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[197138, 4551, 158, 3, 32, "Subsubsection",ExpressionUUID->"6f0b8b84-2d5e-4ae5-a76f-30801a81a7d7"],
+Cell[72929, 1785, 236, 4, 47, "Section",ExpressionUUID->"3302a49e-9607-4b36-8fd3-f1a0750fb45d"],
 Cell[CellGroupData[{
-Cell[197321, 4558, 388, 6, 21, "Input",ExpressionUUID->"3069f215-c642-4455-a70b-b78b1415eb3b"],
-Cell[197712, 4566, 41276, 693, 159, "Output",ExpressionUUID->"1ca3e8eb-9ce7-4a02-8484-0e8e867a8231"]
+Cell[73190, 1793, 163, 3, 37, "Subsection",ExpressionUUID->"38705eab-fdf3-4be4-a17b-e5875d8da334"],
+Cell[73356, 1798, 6112, 141, 511, "Input",ExpressionUUID->"93135c3e-4451-4bb0-a652-cb56a46ff222",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[79505, 1944, 171, 3, 27, "Subsection",ExpressionUUID->"7a9be3bb-d4ae-4909-bd74-5f38dd07fe9c"],
+Cell[79679, 1949, 12018, 268, 740, "Input",ExpressionUUID->"0162c71f-f3a0-4c86-a49c-26037ecb63f9",
+ InitializationCell->True]
+}, Closed]]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[91746, 2223, 256, 4, 39, "Section",ExpressionUUID->"b82cd52a-ebbd-4f71-a223-0c45c4282bb1"],
+Cell[CellGroupData[{
+Cell[92027, 2231, 188, 3, 37, "Subsection",ExpressionUUID->"cbbcfa48-923d-493e-b528-09c37a3a72aa"],
+Cell[92218, 2236, 7189, 160, 578, "Input",ExpressionUUID->"22a9f75c-fdd8-4863-8743-9adca7c5b672",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[99444, 2401, 164, 3, 27, "Subsection",ExpressionUUID->"86c15b6e-5e09-4496-9266-b7825a42e390"],
+Cell[99611, 2406, 13391, 222, 378, "Input",ExpressionUUID->"08a3d49b-bfa7-4f30-9ee0-8a2c7fa8d226",
+ InitializationCell->True]
+}, Closed]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[113051, 2634, 220, 4, 47, "Section",ExpressionUUID->"3b6a3747-4955-4f11-b54f-1af93ffb228f"],
+Cell[CellGroupData[{
+Cell[113296, 2642, 250, 4, 37, "Subsection",ExpressionUUID->"214c0758-cd4d-4ef4-8e1d-b6748dbec98d"],
+Cell[113549, 2648, 21542, 493, 1506, "Input",ExpressionUUID->"322e8c48-37a0-4c6e-8ef6-d3a131720e72",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[135128, 3146, 259, 6, 27, "Subsection",ExpressionUUID->"824c2fc5-b8f7-408e-a2aa-fb5b382a14f3"],
+Cell[135390, 3154, 8456, 186, 857, "Input",ExpressionUUID->"1d6d4b43-6a11-437d-882f-6b8a46b831e6",
+ InitializationCell->True]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[143883, 3345, 276, 6, 37, "Subsection",ExpressionUUID->"9ab53544-f0e3-4654-9587-07d3d303d0c2"],
+Cell[144162, 3353, 8160, 183, 857, "Input",ExpressionUUID->"17d2e890-0432-4750-a373-1fdfcb2b149b",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[152359, 3541, 170, 3, 27, "Subsection",ExpressionUUID->"2f30bef8-4a69-46f6-b70e-e22def035c8d"],
+Cell[152532, 3546, 7251, 160, 699, "Input",ExpressionUUID->"bf65fd98-6242-4e53-9273-bebf8017e533",
+ InitializationCell->True]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[159820, 3711, 381, 7, 27, "Subsection",ExpressionUUID->"4bdcfae5-fa54-4e88-8ad0-a3986e675dd7"],
+Cell[160204, 3720, 23555, 532, 1717, "Input",ExpressionUUID->"7201ba37-981d-47ba-9427-d63c207b0983",
+ InitializationCell->True]
+}, Closed]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[183808, 4258, 224, 4, 47, "Section",ExpressionUUID->"8076849a-b71a-488d-9a1c-495aa7d8da8c"],
+Cell[184035, 4264, 2165, 59, 183, "Input",ExpressionUUID->"779956f8-feb8-4032-9b59-3b177a109f61"]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[186237, 4328, 215, 4, 39, "Section",ExpressionUUID->"6905ed5c-69e1-49f1-a60e-13ecb3b79967"],
+Cell[CellGroupData[{
+Cell[186477, 4336, 160, 3, 37, "Subsection",ExpressionUUID->"6541aec8-6cd5-4039-bc36-4f8207554ea5"],
+Cell[186640, 4341, 10617, 182, 382, "Input",ExpressionUUID->"1b07eece-fc0f-46b8-ae52-d19ef34feaaa"],
+Cell[CellGroupData[{
+Cell[197282, 4527, 2557, 44, 47, "Input",ExpressionUUID->"6d676850-501c-4f78-a97f-76431368c5b8"],
+Cell[199842, 4573, 735, 12, 163, "Output",ExpressionUUID->"c287a70e-5583-4c54-85a9-7aebd9b6fce8"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[200614, 4590, 317, 5, 21, "Input",ExpressionUUID->"b9320913-71da-4f9d-98c4-548b22744563"],
+Cell[200934, 4597, 1064, 32, 105, "Output",ExpressionUUID->"f2e472ac-7076-425a-bc6f-a7107699d519"]
+}, Open  ]],
+Cell[202013, 4632, 245, 3, 21, "Input",ExpressionUUID->"a1897ec8-84a5-4b56-9d83-ec35a73023a8"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[202295, 4640, 165, 3, 37, "Subsection",ExpressionUUID->"74d14d28-ec90-4d76-8659-33cba749c26e"],
+Cell[202463, 4645, 1335, 41, 235, "Input",ExpressionUUID->"622a1613-e60c-43a2-9786-7f40679f73ab"]
+}, Open  ]]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[203847, 4692, 163, 3, 47, "Section",ExpressionUUID->"7351efa1-0456-4fdc-8879-fbb470eb5aa1"],
+Cell[CellGroupData[{
+Cell[204035, 4699, 201, 3, 37, "Subsection",ExpressionUUID->"c875962d-1af7-4358-a50b-bd6a06a27a9a"],
+Cell[204239, 4704, 1005, 20, 47, "Input",ExpressionUUID->"3aef5341-8c64-4a84-b4b6-e48c2dc9d142"],
+Cell[205247, 4726, 152, 3, 21, "Input",ExpressionUUID->"85526ce8-d1c9-4a18-beca-5474bac6d767"],
+Cell[205402, 4731, 1070, 24, 60, "Input",ExpressionUUID->"bbb5cee3-6589-46da-b5a4-1b72f5ef3598"],
+Cell[CellGroupData[{
+Cell[206497, 4759, 707, 17, 34, "Input",ExpressionUUID->"68b7d96f-eb48-4bfe-a782-e0a068de0a78"],
+Cell[207207, 4778, 766, 14, 33, "Message",ExpressionUUID->"c36dac8f-1939-4e4a-8157-f93d09e0ecd1"],
+Cell[207976, 4794, 219, 4, 23, "Output",ExpressionUUID->"eba00b99-ce8b-4f0f-91db-5fd91db84491"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[208232, 4803, 158, 3, 32, "Subsubsection",ExpressionUUID->"6f0b8b84-2d5e-4ae5-a76f-30801a81a7d7"],
+Cell[CellGroupData[{
+Cell[208415, 4810, 388, 6, 21, "Input",ExpressionUUID->"3069f215-c642-4455-a70b-b78b1415eb3b"],
+Cell[208806, 4818, 41276, 693, 159, "Output",ExpressionUUID->"1ca3e8eb-9ce7-4a02-8484-0e8e867a8231"]
 }, Open  ]]
 }, Open  ]]
 }, Open  ]]
