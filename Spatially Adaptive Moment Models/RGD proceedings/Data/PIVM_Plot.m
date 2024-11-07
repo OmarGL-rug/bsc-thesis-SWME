@@ -47,9 +47,9 @@ T_LowOrder = data_LowOrder(:,4);
  brown = [171, 104, 87]./255;
 
 % plotting = 'all';
- plotting = 'rho';
+% plotting = 'rho';
 % plotting = 'u';
-% plotting = 'T';
+ plotting = 'T';
 
 if(strcmp(plotting,'rho'))
     plot1 = plot(x_Adaptive,rho_Adaptive,'--',x_Reference,rho_Reference,'-.', ...
@@ -94,23 +94,23 @@ elseif(strcmp(plotting,'T'))
         x_LowOrder,T_LowOrder,'.')
 
     set(plot1(1),'Color',blue);
-    set(plot1(1),'LineWidth',3);
+    set(plot1(1),'LineWidth',4);
 
     set(plot1(2),'Color',red);
-    set(plot1(2),'LineWidth',2);
+    set(plot1(2),'LineWidth',3);
 
     set(plot1(3),'Color','black');
-    set(plot1(3),'LineWidth',2);
+    set(plot1(3),'LineWidth',3);
      
-    leg = legend('SAMM-PBC46','HSM6', 'HSM4','Location','Northwest');
-    set(leg,'FontSize',11); 
+    leg = legend('SAMM','HSM6', 'HSM4','Location','Northwest');
+    set(leg,'FontSize',12); 
     
     axis([-2,1,-0.35,0.35]); % Change if necessary
-    xlabel('$x$','Interpreter','latex','FontSize',18)
-    ylabel('\theta','FontSize',18)
+    xlabel('$x$','Interpreter','latex','FontSize',20)
+    ylabel('\theta','FontSize',20)
 end
 
 %% Export figure
  %addpath('C:\Users\rikve\Gitlab\PhD-RUG\Spatially Adaptive Moment Models\RGD proceedings\Data\Export_fig\', '-end')
  %cd export_fig
- %export_fig('linearProfile+shock_mesh100+200_rho_Adaptive_Time0.3_Moments46.pdf', '-pdf','-transparent');
+ %export_fig('linearProfile+shock_mesh100+200_rho_Adaptive_Time0.3_Moments46_Poster.pdf', '-pdf','-transparent');
