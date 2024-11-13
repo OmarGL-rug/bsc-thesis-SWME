@@ -1,5 +1,6 @@
 
 import numpy as np
+import pandas as pd
 
 ##############################################################
 ################ Parameter specifications ####################
@@ -17,9 +18,12 @@ deltaX = (x2-x1)/n #
 initialCondition = 'constantVelocity'
 
 # SPECIFY DOMAIN DECOMPOSITION
-moments = [4,6]                         # List of moments that is used in each subdomain
+orders = [0,1]                         # List of moments that is used in each subdomain
 boundaryInterfaces = [-1]               # Physical position of the boundary interfaces
 boundaryInterfaces_Discretized = []     # Initialization of the list of boundary interfaces in the discretized domain
+
+# SPECTIFY BOUNDARY CONDITION
+boundaryCondition = 'INFLOW_OUTFLOW'
 
 # SPECIFY PARAMETER VALUES
 slipLength = 1.0                        # slip length
@@ -37,37 +41,43 @@ def calculateBoundaryInterfaces():
                                               +round((boundaryInterfaces[i]-boundaryInterfaces[i-1])/(x2-x1)*n))
 
 # This function defines initial conditions
-def getInitialValues(numberOfMoments,initialCondition,x):
-    vector = np.zeros(numberOfMoments)
+def getInitialValues(order,initialCondition,x):
+    vector = np.zeros(2+order)
     if initialCondition=='constantVelocity':
         vector[0] = 1
         vector[1] = 1*vector[0]
-        if numberOfMoments > 2:
+        if order > 0:
             vector[2] = 0 
-        if numberOfMoments > 3:
+        if order > 1:
             vector[3] = 0 
-        if numberOfMoments > 4:
+        if order > 2:
             vector[4] = 0 
-        if numberOfMoments > 5:
+        if order > 3:
             vector[5] = 0 
-        if numberOfMoments > 6:
+        if order > 4:
             vector[6] = 0 
     return vector
 
 # This function preprocesses the given initial conditions and creates a list of intitial values in the grid cells
 def getInitialConditions(initialCondition,x):
     initialValues = []
+
+    initialValues.append(np.zeros(2+orders[0])) # Initialize ghost cell, this value is overriden before the start of the simulation
+
     rightBoundary_subDomain = -1
     for m in range(len(boundaryInterfaces_Discretized)):
         leftBoundary_subDomain = rightBoundary_subDomain+1
-        if moments[m+1] > moments[m]: 
+        if orders[m+1] > orders[m]: 
             rightBoundary_subDomain = boundaryInterfaces_Discretized[m]-2
         else:
             rightBoundary_subDomain = boundaryInterfaces_Discretized[m]+2
         for i in range(leftBoundary_subDomain,rightBoundary_subDomain):
-            initialValues.append(getInitialValues(moments[m],initialCondition,x[i])) 
+            initialValues.append(getInitialValues(orders[m],initialCondition,x[i])) 
     for i in range(rightBoundary_subDomain+1,n):
-         initialValues.append(getInitialValues(moments[m],initialCondition,x[i]))
+         initialValues.append(getInitialValues(orders[m],initialCondition,x[i]))
+
+    initialValues.append(np.zeros(2+orders[-1])) # Initialize ghost cell, this value is overriden before the start of the simulation
+    
     return initialValues
 
 # This function computes the system matrix
@@ -147,6 +157,10 @@ def computeViscosity(roeMatrix,deltaT,):
         viscosity = deltaX/(2*deltaT)*np.identity(roeMatrix.shape(0))+deltaT/(2*deltaX)*roeMatrix 
     return viscosity
 
+def updateBoundaryConditions(valuesBoundary):
+    if boundaryCondition == 'INFLOW_OUTFLOW':
+        return valuesBoundary #do something
+
 # This function runs the simulation and outputs the values at the end of the simulation
 def runSimulation(tend):
     calculateBoundaryInterfaces()
@@ -157,69 +171,197 @@ def runSimulation(tend):
 
     values = getInitialConditions(initialCondition,cellCentersX)
 
-    leftBoundary_subDomain = -1
+    leftBoundary_subDomain = 0
+
+    # update boundary conditions
+    values[0] = updateBoundaryConditions(values[1])
+    values[n+1] = updateBoundaryConditions(values[n])
+
     for m in range(len(boundaryInterfaces_Discretized)):
+        orderLeft = orders[m]
+        orderRight = orders[m+1]
         def systemMatrix(cellValues):
-            return computeSystemMatrix(moments[m],cellValues)
+            return computeSystemMatrix(orderLeft,cellValues)
         def sourceTerm(cellValues):
-            return computeSourceTerm(moments[m],cellValues)
-        if moments[m+1] > moments[m]: 
-            for i in range(leftBoundary_subDomain,rightBoundary_subDomain-3):
+            return computeSourceTerm(orderLeft,cellValues)
+        leftBoundary_subDomain += 1
+        rightBoundary_subDomain = boundaryInterfaces_Discretized[m]
+        if orderRight > orderLeft:
+            values[rightBoundary_subDomain-1][orderLeft+2:] = values[rightBoundary_subDomain][orderLeft+2:] # update boundary interface boundary condition 
+            for i in range(leftBoundary_subDomain,rightBoundary_subDomain-2):
                 fluctuationPlus = computeRoe(
                     values[i-1],
                     values[i],
                     systemMatrix,
                     'positive',
-                    deltaT) #TODO: fill in arguments
+                    deltaT) 
                 fluctuationMinus = computeRoe(
                     values[i],
                     values[i+1],
                     systemMatrix,
                     'negative',
-                    deltaT) #TODO: fill in arguments
-                sourceTerm = sourceTerm(values[i]) #TODO: fill in arguments
+                    deltaT) 
+                sourceTerm = sourceTerm(values[i]) 
                 values[i] = values[i] - deltaT/deltaX(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
             
-
+            # Evolution equation for the cell with index rightBoundary_subDomain-2
             fluctuationPlus = computeRoe(
                 values[rightBoundary_subDomain-3],
                 values[rightBoundary_subDomain-2],
                 systemMatrix,'positive',
-                deltaT) #TODO: fill in arguments
+                deltaT) 
             fluctuationMinus = computeRoe(
                 values[rightBoundary_subDomain-2],
-                values[rightBoundary_subDomain-1][:moments[m]],
+                values[rightBoundary_subDomain-1][:orderLeft+2],
                 systemMatrix,
                 'negative',
-                deltaT) #TODO: fill in arguments
-            sourceTerm = sourceTerm(values[i]) #TODO: fill in arguments
+                deltaT) 
+            sourceTerm = sourceTerm(values[rightBoundary_subDomain-2]) 
             values[rightBoundary_subDomain-2] = values[rightBoundary_subDomain-2] 
             -deltaT/deltaX(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
             
+            # Evolution equation for the cell with index rightBoundary_subDomain-1
             fluctuationPlus = computeRoe(
-                values[rightBoundary_subDomain-3],
                 values[rightBoundary_subDomain-2],
+                values[rightBoundary_subDomain-1][:orderLeft+2],
                 systemMatrix,'positive',
-                deltaT) #TODO: fill in arguments
+                deltaT) 
             fluctuationMinus = computeRoe(
-                values[rightBoundary_subDomain-2],
-                values[rightBoundary_subDomain-1][:moments[m]],
+                values[rightBoundary_subDomain-1][:orderLeft+2],
+                values[rightBoundary_subDomain][:orderLeft+2],
                 systemMatrix,
                 'negative',
-                deltaT) #TODO: fill in arguments
-            sourceTerm = sourceTerm(values[i]) #TODO: fill in arguments
-            values[rightBoundary_subDomain-2] = values[rightBoundary_subDomain-2] 
+                deltaT) 
+            sourceTerm = sourceTerm(values[rightBoundary_subDomain-1][:orderLeft+2]) 
+            values[rightBoundary_subDomain-1][:orderLeft+2] = values[rightBoundary_subDomain-1][:orderLeft+2] 
             -deltaT/deltaX(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
 
-            #TODO: treat special equations
+            # Evolution equation for the cell with index rightBoundary_subDomain
+            fluctuationPlus_Full = computeRoe(
+                values[rightBoundary_subDomain-1],
+                values[rightBoundary_subDomain],
+                systemMatrix,'positive',
+                deltaT) 
+            fluctuationPlus_Restricted = computeRoe(
+                values[rightBoundary_subDomain-1][:orderLeft+2],
+                values[rightBoundary_subDomain][:orderLeft+2],
+                systemMatrix,'positive',
+                deltaT) 
+            fluctuationMinus = computeRoe(
+                values[rightBoundary_subDomain],
+                values[rightBoundary_subDomain+1],
+                systemMatrix,
+                'negative',
+                deltaT) 
+            sourceTerm = sourceTerm(values[rightBoundary_subDomain]) 
+            values[rightBoundary_subDomain][:orderLeft+2] = values[rightBoundary_subDomain][:orderLeft+2] 
+            -deltaT/deltaX(fluctuationPlus_Restricted+fluctuationMinus[:orderLeft+2]) + sourceTerm[:orderLeft+2] # solve FVM equations for first moments
+            values[rightBoundary_subDomain][orderLeft+2:] = values[rightBoundary_subDomain][orderLeft+2:] 
+            -deltaT/deltaX(fluctuationPlus_Full[orderLeft+2:]+fluctuationMinus[orderLeft+2:]) + sourceTerm[orderLeft+2:] # solve FVM equations for last moment
         else:
-            rightBoundary_subDomain = boundaryInterfaces_Discretized[m]+2
-    for i in range(rightBoundary_subDomain+1,n):
-         solve=1# solve FVM equations for the last subdomain
+            values[rightBoundary_subDomain+2][orderRight+2:] = values[rightBoundary_subDomain+1][orderRight+2:] # update boundary interface boundary condition
+            for i in range(leftBoundary_subDomain,rightBoundary_subDomain+1):
+                fluctuationPlus = computeRoe(
+                    values[i-1],
+                    values[i],
+                    systemMatrix,
+                    'positive',
+                    deltaT) 
+                fluctuationMinus = computeRoe(
+                    values[i],
+                    values[i+1],
+                    systemMatrix,
+                    'negative',
+                    deltaT) 
+                sourceTerm = sourceTerm(values[i]) 
+                values[i] = values[i] - deltaT/deltaX(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+            
+            # Evolution equation for the cell with index rightBoundary_subDomain+1
+            fluctuationPlus = computeRoe(
+                values[rightBoundary_subDomain],
+                values[rightBoundary_subDomain+1],
+                systemMatrix,
+                'positive',
+                deltaT)             
+            fluctuationMinus_Full = computeRoe(
+                values[rightBoundary_subDomain+1],
+                values[rightBoundary_subDomain+2],
+                systemMatrix,'negative',
+                deltaT) 
+            fluctuationMinus_Restricted = computeRoe(
+                values[rightBoundary_subDomain+1][:orderRight+2],
+                values[rightBoundary_subDomain+2][:orderRight+2],
+                systemMatrix,'negative',
+                deltaT) 
+            sourceTerm = sourceTerm(values[rightBoundary_subDomain+1]) 
+            values[rightBoundary_subDomain][:orderRight+2] = values[rightBoundary_subDomain][:orderRight+2] 
+            -deltaT/deltaX(fluctuationPlus+fluctuationMinus_Restricted[:orderRight+2]) + sourceTerm[:orderRight+2] # solve FVM equations for first moments
+            values[rightBoundary_subDomain][orderRight+2:] = values[rightBoundary_subDomain][orderRight+2:] 
+            -deltaT/deltaX(fluctuationPlus[orderRight+2:]+fluctuationMinus_Full[orderRight+2:]) + sourceTerm[orderRight+2:] # solve FVM equations for last m
+            
+            # Evolution equation for the cell with index rightBoundary_subDomain+2
+            fluctuationPlus = computeRoe(
+                values[rightBoundary_subDomain+1][:orderRight+2],
+                values[rightBoundary_subDomain+2][:orderRight+2],
+                systemMatrix,'positive',
+                deltaT) 
+            fluctuationMinus = computeRoe(
+                values[rightBoundary_subDomain+2][:orderRight+2],
+                values[rightBoundary_subDomain+3],
+                systemMatrix,
+                'negative',
+                deltaT) 
+            sourceTerm = sourceTerm(values[rightBoundary_subDomain+2][:orderRight+2]) 
+            values[rightBoundary_subDomain+2][:orderRight+2] = values[rightBoundary_subDomain+2][:orderRight+2]
+            -deltaT/deltaX(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+
+            # Evolution equation for the cell with index rightBoundary_subDomain+3
+            fluctuationPlus = computeRoe(
+                values[rightBoundary_subDomain+2][:orderRight+2],
+                values[rightBoundary_subDomain+3],
+                systemMatrix,'positive',
+                deltaT) 
+            fluctuationMinus = computeRoe(
+                values[rightBoundary_subDomain+3],
+                values[rightBoundary_subDomain+4],
+                systemMatrix,
+                'negative',
+                deltaT) 
+            sourceTerm = sourceTerm(values[rightBoundary_subDomain+3]) 
+            values[rightBoundary_subDomain+3] = values[rightBoundary_subDomain+3]
+            -deltaT/deltaX(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+
+            rightBoundary_subDomain += 3
+    
+    for i in range(rightBoundary_subDomain+1,n+1):
+        fluctuationPlus = computeRoe(
+            values[i-1],
+            values[i],
+            systemMatrix,
+            'positive',
+            deltaT) 
+        fluctuationMinus = computeRoe(
+            values[i],
+            values[i+1],
+            systemMatrix,
+            'negative',
+            deltaT) 
+        sourceTerm = sourceTerm(values[i]) 
+        values[i] = values[i] - deltaT/deltaX(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
 
     return values
 
 # This function postprocesses the output data of the simulation and transforms it in data that can be plotted
-def postProcessing(endValues):
-    processedValues=1 #postprocess the data
-    return processedValues
+def postProcessing(endValues,x):
+    maxOrder = max(orders)
+    minOrder = min(orders)
+
+    dataArray = np.zeros((minOrder+3,n))
+
+    for i in range(n):
+        dataArray[i][0] = x[i]
+        for j in range(minOrder+2):
+            dataArray[i][j+1] = endValues[i+1][j]
+
+    dataFrame = pd.DataFrame(dataArray)
+    dataFrame.to_csv('data.csv', index=False)
