@@ -1,26 +1,33 @@
 
 import numpy as np
 
-# Specify boundaries of the domain
+##############################################################
+################ Parameter specifications ####################
+##############################################################
+
+# SPECIFY BOUNDARIES OF THE DOMAIN
 x1 = -2
 x2 = 1
 
-# Specify number of grid cells
+# SPECIFY NUMBER OF GRID CELLS
 n = 30
-deltaX = (x2-x1)/n
+deltaX = (x2-x1)/n #
 
-# Specify initial condition
+# SPECIFY INITIAL CONDITION
 initialCondition = 'constantVelocity'
 
-# Specify domain decomposition
-moments = [4,6]
-boundaryInterfaces = [-1]
-boundaryInterfaces_Discretized = []
+# SPECIFY DOMAIN DECOMPOSITION
+moments = [4,6]                         # List of moments that is used in each subdomain
+boundaryInterfaces = [-1]               # Physical position of the boundary interfaces
+boundaryInterfaces_Discretized = []     # Initialization of the list of boundary interfaces in the discretized domain
 
-# Specify parameter values
-slipLength = 1.0
-viscosity = 1.0
-g = 1.0
+# SPECIFY PARAMETER VALUES
+slipLength = 1.0                        # slip length
+viscosity = 1.0                         # dynamic viscosity
+g = 1.0                                 # gravity
+
+# VISCOSITY MODEL
+viscosityModel = 'PRICE'
 
 # This function converts the physical boundary interface positions to the boundary interface position in the discretized domain
 def calculateBoundaryInterfaces():
@@ -30,7 +37,7 @@ def calculateBoundaryInterfaces():
                                               +round((boundaryInterfaces[i]-boundaryInterfaces[i-1])/(x2-x1)*n))
 
 # This function defines initial conditions
-def getInitialMomentValue(numberOfMoments,initialCondition,x):
+def getInitialValues(numberOfMoments,initialCondition,x):
     vector = np.zeros(numberOfMoments)
     if initialCondition=='constantVelocity':
         vector[0] = 1
@@ -58,14 +65,14 @@ def getInitialConditions(initialCondition,x):
         else:
             rightBoundary_subDomain = boundaryInterfaces_Discretized[m]+2
         for i in range(leftBoundary_subDomain,rightBoundary_subDomain):
-            initialValues.append(getInitialMomentValue(moments[m],initialCondition,x[i])) #i should be replaced by the x-value in cell i
+            initialValues.append(getInitialValues(moments[m],initialCondition,x[i])) 
     for i in range(rightBoundary_subDomain+1,n):
-         initialValues.append(getInitialMomentValue(moments[m],initialCondition,x[i]))
+         initialValues.append(getInitialValues(moments[m],initialCondition,x[i]))
     return initialValues
 
 # This function computes the system matrix
 def computeSystemMatrix(order,values):
-    A=np.zeros((order,order)) #define matrix here
+    A=np.zeros((order,order)) 
     h = values[0]
     um = values[1]/values[0]
     if order == 0:
@@ -99,7 +106,7 @@ def computeSystemMatrix(order,values):
 
 # Tnis function computes the source term
 def computeSourceTerm(order,values):
-    S=np.zeros(order) #define matrix here
+    S=np.zeros(order) 
     h = values[0]
     um = values[1]/values[0]
     if order == 0:
@@ -135,8 +142,9 @@ def computeRoe(valueLeft,valueRight,systemMatrix,direction,deltaT):
     return fluctuation
 
 # This function computes the numerical viscosity matrix
-def computeViscosity(roeMatrix,deltaT):
-    viscosity = deltaX/(2*deltaT)*np.identity(roeMatrix.shape(0))+deltaT/(2*deltaX)*roeMatrix #PRICE scheme
+def computeViscosity(roeMatrix,deltaT,):
+    if viscosityModel == 'PRICE':
+        viscosity = deltaX/(2*deltaT)*np.identity(roeMatrix.shape(0))+deltaT/(2*deltaX)*roeMatrix 
     return viscosity
 
 # This function runs the simulation and outputs the values at the end of the simulation
@@ -207,7 +215,7 @@ def runSimulation(tend):
         else:
             rightBoundary_subDomain = boundaryInterfaces_Discretized[m]+2
     for i in range(rightBoundary_subDomain+1,n):
-         solve=1# solve FVM equations
+         solve=1# solve FVM equations for the last subdomain
 
     return values
 
