@@ -15,8 +15,12 @@ n = 30
 deltaX = (x2-x1)/n 
 cellCentersX = np.linspace(x1, x2, n)
 
-# SPECIFY INITIAL CONDITION
-initialCondition = 'constantHeight_noVelocity'
+# SPECIFY INITIAL CONDITION:
+### Implemented: ### 
+#1 constantHeight_noVelocity 
+#2 constantHeight_constantVelocity
+#3 linearHeight_noVelocity
+initialCondition = 'constantHeight_constantVelocity'
 
 # SPECIFY DOMAIN DECOMPOSITION
 orders = [0,1]                         # List of moments that is used in each subdomain
@@ -44,9 +48,9 @@ def calculateBoundaryInterfaces():
 # This function defines initial conditions
 def getInitialValues(order,initialCondition,x):
     vector = np.zeros(2+order)
-    if initialCondition=='constantVelocity':
+    if initialCondition=='constantHeight_noVelocity':
         vector[0] = 1
-        vector[1] = 1*vector[0]
+        vector[1] = 0
         if order > 0:
             vector[2] = 0 
         if order > 1:
@@ -57,9 +61,9 @@ def getInitialValues(order,initialCondition,x):
             vector[5] = 0 
         if order > 4:
             vector[6] = 0 
-    elif initialCondition=='constantHeight_noVelocity':
+    elif initialCondition=='constantHeight_constantVelocity':
         vector[0] = 1
-        vector[1] = 0
+        vector[1] = 1*vector[0]
         if order > 0:
             vector[2] = 0 
         if order > 1:
@@ -180,17 +184,18 @@ def updateBoundaryConditions(valuesBoundary):
 def runSimulation(tend):
     calculateBoundaryInterfaces()
     
-    CFL = 0.7
+    CFL = 0.3
     deltaT = CFL*deltaX #TODO implement CFL condition
 
     values = getInitialConditions(initialCondition,cellCentersX)
-    print(len(values))
 
     rightBoundary_subDomain = 0
 
     # update boundary conditions
     values[0] = updateBoundaryConditions(values[1])
     values[n+1] = updateBoundaryConditions(values[n])
+
+    newValues = values[:]
 
     for m in range(len(boundaryInterfaces_Discretized)):
         orderLeft = orders[m]
@@ -226,7 +231,7 @@ def runSimulation(tend):
                     'negative',
                     deltaT) 
                 sourceTerm = sourceTermLeft(values[i]) 
-                values[i] = values[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+                newValues[i] = values[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
             
             # Evolution equation for the cell with index rightBoundary_subDomain-2
             fluctuationPlus = computeRoe(
@@ -241,14 +246,15 @@ def runSimulation(tend):
                 'negative',
                 deltaT) 
             sourceTerm = sourceTermLeft(values[rightBoundary_subDomain-2]) 
-            values[rightBoundary_subDomain-2] = values[rightBoundary_subDomain-2] 
-            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+            newValues[rightBoundary_subDomain-2] = values[rightBoundary_subDomain-2] 
+            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
             
             # Evolution equation for the cell with index rightBoundary_subDomain-1
             fluctuationPlus = computeRoe(
                 values[rightBoundary_subDomain-2],
                 values[rightBoundary_subDomain-1][:orderLeft+2],
-                systemMatrixLeft,'positive',
+                systemMatrixLeft,
+                'positive',
                 deltaT) 
             fluctuationMinus = computeRoe(
                 values[rightBoundary_subDomain-1][:orderLeft+2],
@@ -257,8 +263,8 @@ def runSimulation(tend):
                 'negative',
                 deltaT) 
             sourceTerm = sourceTermLeft(values[rightBoundary_subDomain-1][:orderLeft+2]) 
-            values[rightBoundary_subDomain-1][:orderLeft+2] = values[rightBoundary_subDomain-1][:orderLeft+2] 
-            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+            newValues[rightBoundary_subDomain-1][:orderLeft+2] = values[rightBoundary_subDomain-1][:orderLeft+2] 
+            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
 
             # Evolution equation for the cell with index rightBoundary_subDomain
             fluctuationPlus_Full = computeRoe(
@@ -279,10 +285,10 @@ def runSimulation(tend):
                 'negative',
                 deltaT) 
             sourceTerm = sourceTermRight(values[rightBoundary_subDomain]) 
-            values[rightBoundary_subDomain][:orderLeft+2] = values[rightBoundary_subDomain][:orderLeft+2] 
-            -deltaT/deltaX*(fluctuationPlus_Restricted+fluctuationMinus[:orderLeft+2]) + sourceTerm[:orderLeft+2] # solve FVM equations for first moments
-            values[rightBoundary_subDomain][orderLeft+2:] = values[rightBoundary_subDomain][orderLeft+2:] 
-            -deltaT/deltaX*(fluctuationPlus_Full[orderLeft+2:]+fluctuationMinus[orderLeft+2:]) + sourceTerm[orderLeft+2:] # solve FVM equations for last moment
+            newValues[rightBoundary_subDomain][:orderLeft+2] = values[rightBoundary_subDomain][:orderLeft+2] 
+            -deltaT/deltaX*(fluctuationPlus_Restricted+fluctuationMinus[:orderLeft+2]) + deltaT*sourceTerm[:orderLeft+2] # solve FVM equations for first moments
+            newValues[rightBoundary_subDomain][orderLeft+2:] = values[rightBoundary_subDomain][orderLeft+2:] 
+            -deltaT/deltaX*(fluctuationPlus_Full[orderLeft+2:]+fluctuationMinus[orderLeft+2:]) + deltaT*sourceTerm[orderLeft+2:] # solve FVM equations for last moment
         else:
             values[rightBoundary_subDomain+2][orderRight+2:] = values[rightBoundary_subDomain+1][orderRight+2:] # update boundary interface boundary condition
             for i in range(leftBoundary_subDomain,rightBoundary_subDomain+1):
@@ -299,7 +305,7 @@ def runSimulation(tend):
                     'negative',
                     deltaT) 
                 sourceTerm = sourceTermLeft(values[i]) 
-                values[i] = values[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+                newValues[i] = values[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
             
             # Evolution equation for the cell with index rightBoundary_subDomain+1
             fluctuationPlus = computeRoe(
@@ -319,10 +325,10 @@ def runSimulation(tend):
                 systemMatrixRight,'negative',
                 deltaT) 
             sourceTerm = sourceTermLeft(values[rightBoundary_subDomain+1]) 
-            values[rightBoundary_subDomain][:orderRight+2] = values[rightBoundary_subDomain][:orderRight+2] 
-            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus_Restricted[:orderRight+2]) + sourceTerm[:orderRight+2] # solve FVM equations for first moments
-            values[rightBoundary_subDomain][orderRight+2:] = values[rightBoundary_subDomain][orderRight+2:] 
-            -deltaT/deltaX*(fluctuationPlus[orderRight+2:]+fluctuationMinus_Full[orderRight+2:]) + sourceTerm[orderRight+2:] # solve FVM equations for last m
+            newValues[rightBoundary_subDomain][:orderRight+2] = values[rightBoundary_subDomain][:orderRight+2] 
+            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus_Restricted[:orderRight+2]) + deltaT*sourceTerm[:orderRight+2] # solve FVM equations for first moments
+            newValues[rightBoundary_subDomain][orderRight+2:] = values[rightBoundary_subDomain][orderRight+2:] 
+            -deltaT/deltaX*(fluctuationPlus[orderRight+2:]+fluctuationMinus_Full[orderRight+2:]) + deltaT*sourceTerm[orderRight+2:] # solve FVM equations for last m
             
             # Evolution equation for the cell with index rightBoundary_subDomain+2
             fluctuationPlus = computeRoe(
@@ -337,8 +343,8 @@ def runSimulation(tend):
                 'negative',
                 deltaT) 
             sourceTerm = sourceTermRight(values[rightBoundary_subDomain+2][:orderRight+2]) 
-            values[rightBoundary_subDomain+2][:orderRight+2] = values[rightBoundary_subDomain+2][:orderRight+2]
-            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+            newValues[rightBoundary_subDomain+2][:orderRight+2] = values[rightBoundary_subDomain+2][:orderRight+2]
+            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
 
             # Evolution equation for the cell with index rightBoundary_subDomain+3
             fluctuationPlus = computeRoe(
@@ -353,8 +359,8 @@ def runSimulation(tend):
                 'negative',
                 deltaT) 
             sourceTerm = sourceTermRight(values[rightBoundary_subDomain+3]) 
-            values[rightBoundary_subDomain+3] = values[rightBoundary_subDomain+3]
-            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+            newValues[rightBoundary_subDomain+3] = values[rightBoundary_subDomain+3]
+            -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
 
             rightBoundary_subDomain += 3
     
@@ -372,9 +378,9 @@ def runSimulation(tend):
             'negative',
             deltaT) 
         sourceTerm = sourceTermRight(values[i]) 
-        values[i] = values[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + sourceTerm # solve FVM equations
+        newValues[i] = values[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
 
-    return values
+    return newValues
 
 # This function postprocesses the output data of the simulation and transforms it in data that can be plotted
 def postProcessing(endValues):
