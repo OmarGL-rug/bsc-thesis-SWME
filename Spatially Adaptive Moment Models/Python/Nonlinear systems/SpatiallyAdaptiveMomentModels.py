@@ -2,6 +2,7 @@
 import numpy as np
 import pandas as pd
 import copy
+import matplotlib.pyplot as plt
 
 ##############################################################
 ################ Parameter specifications ####################
@@ -12,7 +13,7 @@ x1 = -2
 x2 = 1
 
 # SPECIFY NUMBER OF GRID CELLS
-n = 30
+n = 300
 deltaX = (x2-x1)/n 
 cellCentersX = np.linspace(x1, x2, n)
 
@@ -20,11 +21,12 @@ cellCentersX = np.linspace(x1, x2, n)
 ### Implemented: ### 
 #1 constantHeight_noVelocity 
 #2 constantHeight_constantVelocity
-#3 linearHeight_noVelocity
-initialCondition = 'constantHeight_constantVelocity'
+#3 damBreak_noVelocity
+#4 linearHeight_noVelocity
+initialCondition = 'damBreak_noVelocity'
 
 # SPECIFY DOMAIN DECOMPOSITION
-orders = [0,1]                         # List of moments that is used in each subdomain
+orders = [1,0]                         # List of moments that is used in each subdomain
 boundaryInterfaces = [-1]               # Physical position of the boundary interfaces
 boundaryInterfaces_Discretized = []     # Initialization of the list of boundary interfaces in the discretized domain
 
@@ -37,6 +39,8 @@ viscosity = 1.0                         # dynamic viscosity
 g = 1.0                                 # gravity
 
 # VISCOSITY MODEL
+# PRICE
+# L-F (Lax-Friedrichs)
 viscosityModel = 'PRICE'
 
 # This function converts the physical boundary interface positions to the boundary interface position in the discretized domain
@@ -75,7 +79,47 @@ def getInitialValues(order,initialCondition,x):
             vector[5] = 0 
         if order > 4:
             vector[6] = 0 
-
+    elif initialCondition=='damBreak_noVelocity':
+        x0 = 0
+        if x < 0:
+            vector[0] = 2
+            vector[1] = 0*vector[0]
+            if order > 0:
+                vector[2] = 0 
+            if order > 1:
+                vector[3] = 0 
+            if order > 2:
+                vector[4] = 0 
+            if order > 3:
+                vector[5] = 0 
+            if order > 4:
+                vector[6] = 0 
+        else:
+            vector[0] = 1
+            vector[1] = 0*vector[0]
+            if order > 0:
+                vector[2] = 0 
+            if order > 1:
+                vector[3] = 0 
+            if order > 2:
+                vector[4] = 0 
+            if order > 3:
+                vector[5] = 0 
+            if order > 4:
+                vector[6] = 0 
+    elif initialCondition == 'linearHeight_noVelocity':
+        vector[0] = 1+0.1*x
+        vector[1] = 0*vector[0]
+        if order > 0:
+            vector[2] = 0 
+        if order > 1:
+            vector[3] = 0 
+        if order > 2:
+            vector[4] = 0 
+        if order > 3:
+            vector[5] = 0 
+        if order > 4:
+            vector[6] = 0 
     return vector
 
 # This function preprocesses the given initial conditions and creates a list of intitial values in the grid cells
@@ -123,9 +167,55 @@ def computeSystemMatrix(order,values):
         A[2][1] = 2*alpha1
         A[2][2] = um
     if order == 2:
-        A[0][0]=1 #fill (not implemented yet)
+        alpha1 = values[2]/values[0]
+        alpha2 = values[3]/values[0]
+
+        A[0][0] = 0
+        A[0][1] = 1
+        A[0][2] = 0
+        A[0][3] = 0
+        A[1][0] = g*h - um*um - alpha1*alpha1/3 - alpha2*alpha2/5
+        A[1][1] = 2*um
+        A[1][2] = 2*alpha1/3
+        A[1][3] = 2*alpha2/5
+        A[2][0] = -2/5*alpha1*(5*um+2*alpha2)
+        A[2][1] = 2*alpha1
+        A[2][2] = um + alpha2
+        A[2][3] = 3*alpha1/5
+        A[3][0] = -2/21*(7*alpha1*alpha1+3*alpha2*(7*um+alpha2))
+        A[3][1] = 2*alpha2
+        A[3][2] = alpha1/3
+        A[3][3] = um + 3/7*alpha2
     if order == 3:
-        A=[0][0]=1 #fill (not implemented yet)
+        alpha1 = values[2]/values[0]
+        alpha2 = values[3]/values[0]
+        alpha3 = values[4]/values[0]
+
+        A[0][0] = 0
+        A[0][1] = 1
+        A[0][2] = 0
+        A[0][3] = 0
+        A[0][4] = 0
+        A[1][0] = g*h - um*um - alpha1*alpha1/3 - alpha2*alpha2/5 - alpha3*alpha3/7
+        A[1][1] = 2*um
+        A[1][2] = 2*alpha1/3
+        A[1][3] = 2*alpha2/5
+        A[1][4] = 2*alpha3/7
+        A[2][0] = -2/35*(7*alpha1*(5*um+2*alpha2)+9*alpha2*alpha3)
+        A[2][1] = 2*alpha1
+        A[2][2] = um + alpha2
+        A[2][3] = 3*(alpha1+alpha3)/5
+        A[2][4] = 3*alpha2/7
+        A[3][0] = -2/21*(3*alpha2*(7*um+alpha2)+(alpha1+alpha3)*(7*alpha1+2*alpha3))
+        A[3][1] = 2*alpha2
+        A[3][2] = alpha1/3+9*alpha3/7
+        A[3][3] = um + 3/7*alpha2
+        A[3][4] = 4*alpha1/7 + alpha3/3
+        A[4][0] = -2*um*alpha3 - 2*alpha2*(9*alpha1+4*alpha3)/15 
+        A[4][1] = 2*alpha3
+        A[4][2] = 0
+        A[4][3] = 2*(alpha1+alpha3)/5
+        A[4][4] = um+alpha2/3
     if order == 4:
         A=[0][0]=1 #fill (not implemented yet)
     if order == 5:
@@ -146,12 +236,26 @@ def computeSourceTerm(order,values):
         alpha1 = values[2]/values[0]
 
         S[0]=0
-        S[1]=-viscosity/slipLength*um
+        S[1]=-viscosity/slipLength*(um+alpha1)
         S[2]=-3*viscosity/slipLength*(um+(1+4*slipLength/h)*alpha1)
     if order == 2:
-        S[0]=1 #fill (not implemented yet)
+        alpha1 = values[2]/values[0]
+        alpha2 = values[3]/values[0]
+
+        S[0]=0
+        S[1]=-viscosity/slipLength*(um+alpha1+alpha2)
+        S[2]=-3*viscosity/slipLength*(um+(1+4*slipLength/h)*alpha1+alpha2)
+        S[3]=-5*viscosity/slipLength*(um+alpha1+(1+12*slipLength/h)*alpha2)
     if order == 3:
-        S[0]=1 #fill (not implemented yet)
+        alpha1 = values[2]/values[0]
+        alpha2 = values[3]/values[0]
+        alpha3 = values[4]/values[0]
+
+        S[0]=0
+        S[1]=-viscosity/slipLength*(um+alpha1+alpha2+alpha3)
+        S[2]=-3*viscosity/slipLength*((h+4*slipLength)*alpha1+h*(um+alpha2)+(h+4*slipLength)*alpha3)/h
+        S[3]=-5*viscosity/slipLength*(um+alpha1+(1+12*slipLength/h)*alpha2+alpha3)
+        S[4]=-7*viscosity/slipLength*((h+4*slipLength)*alpha1+h*(um+alpha2)+(h+24*slipLength)*alpha3)/h
     if order == 4:
         S[0]=1 #fill (not implemented yet)
     if order == 5:
@@ -162,12 +266,12 @@ def computeSourceTerm(order,values):
 
 # This function computes the Roe linearization
 def computeRoe(valueLeft,valueRight,systemMatrix,direction,deltaT):
-    generalizedRoe = systemMatrix((valueLeft+valueRight)/2) 
+    generalizedRoe = systemMatrix((valueLeft+valueRight)/2)
     viscosity = computeViscosity(generalizedRoe,deltaT)
     if direction == 'negative':
         viscosity *= -1
     
-    fluctuation = generalizedRoe.dot(valueRight-valueLeft) + viscosity.dot(valueRight-valueLeft)
+    fluctuation = (generalizedRoe.dot(valueRight-valueLeft) + viscosity.dot(valueRight-valueLeft))/2
 
     return fluctuation
 
@@ -175,6 +279,8 @@ def computeRoe(valueLeft,valueRight,systemMatrix,direction,deltaT):
 def computeViscosity(roeMatrix,deltaT):
     if viscosityModel == 'PRICE':
         viscosity = deltaX/(2*deltaT)*np.identity(roeMatrix.shape[0])+deltaT/(2*deltaX)*roeMatrix 
+    elif viscosityModel == 'L-F':
+        viscosity = (deltaX/deltaT)*np.identity(roeMatrix.shape[0]) 
     return viscosity
 
 def updateBoundaryConditions(valuesBoundary):
@@ -185,7 +291,7 @@ def updateBoundaryConditions(valuesBoundary):
 def runSimulation(tend):
     calculateBoundaryInterfaces()
     
-    CFL = 0.3
+    CFL = 0.1
     deltaT = CFL*deltaX #TODO implement CFL condition
 
     values = getInitialConditions(initialCondition,cellCentersX)
@@ -334,10 +440,12 @@ def runSimulation(tend):
                     systemMatrixRight,'negative',
                     deltaT) 
                 sourceTerm = sourceTermLeft(previousValues[rightBoundary_subDomain+1]) 
-                values[rightBoundary_subDomain][:orderRight+2] = previousValues[rightBoundary_subDomain][:orderRight+2] 
-                -deltaT/deltaX*(fluctuationPlus+fluctuationMinus_Restricted[:orderRight+2]) + deltaT*sourceTerm[:orderRight+2] # solve FVM equations for first moments
-                values[rightBoundary_subDomain][orderRight+2:] = previousValues[rightBoundary_subDomain][orderRight+2:] 
-                -deltaT/deltaX*(fluctuationPlus[orderRight+2:]+fluctuationMinus_Full[orderRight+2:]) + deltaT*sourceTerm[orderRight+2:] # solve FVM equations for last m
+                values[rightBoundary_subDomain+1][:orderRight+2] = (previousValues[rightBoundary_subDomain+1][:orderRight+2] 
+                -deltaT/deltaX*(fluctuationPlus[:orderRight+2]+fluctuationMinus_Restricted)
+                +deltaT*sourceTerm[:orderRight+2]) # solve FVM equations for first moments
+                values[rightBoundary_subDomain+1][orderRight+2:] = (previousValues[rightBoundary_subDomain+1][orderRight+2:] 
+                -deltaT/deltaX*(fluctuationPlus[orderRight+2:]+fluctuationMinus_Full[orderRight+2:])
+                +deltaT*sourceTerm[orderRight+2:]) # solve FVM equations for last moments
                 
                 # Evolution equation for the cell with index rightBoundary_subDomain+2
                 fluctuationPlus = computeRoe(
@@ -352,8 +460,8 @@ def runSimulation(tend):
                     'negative',
                     deltaT) 
                 sourceTerm = sourceTermRight(previousValues[rightBoundary_subDomain+2][:orderRight+2]) 
-                values[rightBoundary_subDomain+2][:orderRight+2] = previousValues[rightBoundary_subDomain+2][:orderRight+2]
-                -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
+                values[rightBoundary_subDomain+2][:orderRight+2] = (previousValues[rightBoundary_subDomain+2][:orderRight+2]
+                -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm) # solve FVM equations
 
                 # Evolution equation for the cell with index rightBoundary_subDomain+3
                 fluctuationPlus = computeRoe(
@@ -368,8 +476,8 @@ def runSimulation(tend):
                     'negative',
                     deltaT) 
                 sourceTerm = sourceTermRight(previousValues[rightBoundary_subDomain+3]) 
-                values[rightBoundary_subDomain+3] = previousValues[rightBoundary_subDomain+3]
-                -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
+                values[rightBoundary_subDomain+3] = (previousValues[rightBoundary_subDomain+3]
+                -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm) # solve FVM equations
 
                 rightBoundary_subDomain += 3
         
@@ -390,7 +498,6 @@ def runSimulation(tend):
             values[i] = previousValues[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTerm # solve FVM equations
         t+=deltaT
         previousValues = copy.deepcopy(values)
-        print(t)
     return values
 
 # This function postprocesses the output data of the simulation and transforms it in data that can be plotted
@@ -409,8 +516,12 @@ def postProcessing(endValues):
     dataFrame = pd.DataFrame(dataArray)
     dataFrame.to_csv('data.csv', index=False)
 
+    plt.plot(cellCentersX, dataArray[:,1])
+    plt.show()
+
 def main(tend):
+    tend = 0.1
     endValues = runSimulation(tend)
     postProcessing(endValues)
 
-main(0.1)
+main(0.01)
