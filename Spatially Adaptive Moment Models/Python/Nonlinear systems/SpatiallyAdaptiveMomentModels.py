@@ -26,7 +26,7 @@ cellCentersX = np.linspace(x1, x2, n)
 initialCondition = 'damBreak_noVelocity'
 
 # SPECIFY DOMAIN DECOMPOSITION
-orders = [1,0]                         # List of moments that is used in each subdomain
+orders = [0,1]                         # List of moments that is used in each subdomain
 boundaryInterfaces = [-1]               # Physical position of the boundary interfaces
 boundaryInterfaces_Discretized = []     # Initialization of the list of boundary interfaces in the discretized domain
 
@@ -35,7 +35,7 @@ boundaryCondition = 'INFLOW_OUTFLOW'
 
 # SPECIFY PARAMETER VALUES
 slipLength = 1.0                        # slip length
-viscosity = 1.0                         # dynamic viscosity
+viscosity = 0.0                         # dynamic viscosity
 g = 1.0                                 # gravity
 
 # VISCOSITY MODEL
@@ -290,16 +290,31 @@ def updateBoundaryConditions(valuesBoundary):
 # This function runs the simulation and outputs the values at the end of the simulation
 def runSimulation(tend):
     calculateBoundaryInterfaces()
-    
-    CFL = 0.1
-    deltaT = CFL*deltaX #TODO implement CFL condition
 
     values = getInitialConditions(initialCondition,cellCentersX)
     previousValues = copy.deepcopy(values)
 
+    CFL = 0.25
+    
     t = 0
 
     while t < tend:
+        minOrder = min(orders)
+        if minOrder == 0:
+            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g))) for value in previousValues])
+            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g))) for value in previousValues])
+        elif minOrder == 1:
+            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g)+value[2]*value[2])) for value in previousValues])
+            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g)+value[2]*value[2])) for value in previousValues])
+        elif minOrder == 2:
+            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3])) for value in previousValues])
+            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3])) for value in previousValues]) 
+        elif minOrder == 3:
+            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3]+value[4]*value[4])) for value in previousValues])
+            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3]+value[4]*value[4])) for value in previousValues])         
+        maxSpeed = max(maxSpeedPlus,maxSpeedMin)
+        deltaT = CFL*deltaX*maxSpeed #TODO implement CFL condition
+
         rightBoundary_subDomain = 0
 
         # update boundary conditions
@@ -520,7 +535,7 @@ def postProcessing(endValues):
     plt.show()
 
 def main(tend):
-    tend = 0.1
+    tend = 0.25
     endValues = runSimulation(tend)
     postProcessing(endValues)
 
