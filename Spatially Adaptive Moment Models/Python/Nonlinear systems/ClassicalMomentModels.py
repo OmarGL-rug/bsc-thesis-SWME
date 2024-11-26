@@ -26,7 +26,7 @@ cellCentersX = np.linspace(x1, x2, n)
 initialCondition = 'damBreak_noVelocity'
 
 # SPECIFY NUMBER OF MOMENTS
-order = 1
+order = 3
 
 # SPECTIFY BOUNDARY CONDITION
 boundaryCondition = 'INFLOW_OUTFLOW'
@@ -275,28 +275,45 @@ def runSimulation(tend):
     values = getInitialConditions(initialCondition,cellCentersX)
     previousValues = copy.deepcopy(values)
 
-    CFL = 0.25
+    CFL = 0.3
     t = 0
 
     while t < tend:
-        if order == 0:
-            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g))) for value in previousValues])
-            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g))) for value in previousValues])
-        elif order == 1:
-            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g)+value[2]*value[2])) for value in previousValues])
-            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g)+value[2]*value[2])) for value in previousValues])
-        elif order == 2:
-            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3])) for value in previousValues])
-            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3])) for value in previousValues]) 
-        elif order == 3:
-            maxSpeedPlus = max([abs(value[1]+np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3]+value[4]*value[4])) for value in previousValues])
-            maxSpeedMin = max([abs(value[1]-np.sqrt(value[0]*int(g)+value[2]*value[2]+value[3]*value[3]+value[4]*value[4])) for value in previousValues])         
-        maxSpeed = max(maxSpeedPlus,maxSpeedMin)
-        deltaT = CFL*deltaX*maxSpeed #TODO implement CFL condition
 
         # update boundary conditions
         previousValues[0] = updateBoundaryConditions(previousValues[1])
         previousValues[n+1] = updateBoundaryConditions(previousValues[n])
+
+        if order == 0:
+            maxSpeedPlus = max([abs(value[1]/value[0]
+                                    +np.sqrt(value[0]*int(g))) 
+                                    for value in previousValues])
+            maxSpeedMin = max([abs(value[1]/value[0]
+                                   -np.sqrt(value[0]*int(g))) 
+                                   for value in previousValues])
+        elif order == 1:
+            maxSpeedPlus = max([abs(value[1]/value[0]
+                                    +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0])) 
+                                    for value in previousValues])
+            maxSpeedMin = max([abs(value[1]/value[0]
+                                   -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0])) 
+                                   for value in previousValues])
+        elif order == 2:
+            maxSpeedPlus = max([abs(value[1]/value[0]
+                                    +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0])) 
+                                    for value in previousValues])
+            maxSpeedMin = max([abs(value[1]/value[0]
+                                   -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0])) 
+                                   for value in previousValues]) 
+        elif order == 3:
+            maxSpeedPlus = max([abs(value[1]/value[0]
+                                    +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
+                                    for value in previousValues])
+            maxSpeedMin = max([abs(value[1]/value[0]
+                                   -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
+                                   for value in previousValues])         
+        maxSpeed = max(maxSpeedPlus,maxSpeedMin)
+        deltaT = CFL*deltaX*maxSpeed #TODO implement CFL condition
 
         for i in range(1,n+1):
             fluctuationPlus = computeRoe(
@@ -334,6 +351,15 @@ def postProcessing(endValues):
     plt.show()
 
 def main(tend):
+    h = 11
+    um = 26
+    alpha1 = -0.25
+    alpha2 = 0.7
+    alpha3 = -1.69
+    testValues = [h,h*um,alpha1*h,alpha2*h,alpha3*h]
+    testMatrix = computeSystemMatrix(testValues)
+    print(np.sum(testMatrix))
+
     tend = 0.25
     endValues = runSimulation(tend)
     postProcessing(endValues)
