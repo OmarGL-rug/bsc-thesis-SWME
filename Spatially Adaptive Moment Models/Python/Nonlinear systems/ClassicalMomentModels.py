@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import copy
 import matplotlib.pyplot as plt
+import time
 
 ##############################################################
 ################ Parameter specifications ####################
@@ -10,10 +11,10 @@ import matplotlib.pyplot as plt
 
 # SPECIFY BOUNDARIES OF THE DOMAIN
 x1 = -2
-x2 = 1
+x2 = 2
 
 # SPECIFY NUMBER OF GRID CELLS
-n = 300
+n = 400
 deltaX = (x2-x1)/n 
 cellCentersX = np.linspace(x1, x2, n)
 
@@ -26,14 +27,14 @@ cellCentersX = np.linspace(x1, x2, n)
 initialCondition = 'damBreak_noVelocity'
 
 # SPECIFY NUMBER OF MOMENTS
-order = 3
+order = 1
 
 # SPECTIFY BOUNDARY CONDITION
 boundaryCondition = 'INFLOW_OUTFLOW'
 
 # SPECIFY PARAMETER VALUES
 slipLength = 1.0                        # slip length
-viscosity = 0.0                         # dynamic viscosity
+viscosity = 1.0                         # dynamic viscosity
 g = 1.0                                 # gravity
 
 # VISCOSITY MODEL
@@ -351,17 +352,15 @@ def postProcessing(endValues):
     plt.show()
 
 def main(tend):
-    h = 11
-    um = 26
-    alpha1 = -0.25
-    alpha2 = 0.7
-    alpha3 = -1.69
-    testValues = [h,h*um,alpha1*h,alpha2*h,alpha3*h]
-    testMatrix = computeSystemMatrix(testValues)
-    print(np.sum(testMatrix))
-
     tend = 0.25
+
+    startTime = time.time()
     endValues = runSimulation(tend)
+    endTime = time.time()
+
+    elapsedTime = endTime - startTime
+
+    print(f'Time taken: {elapsedTime:.6f} seconds')
     postProcessing(endValues)
 
 main(0.01)
