@@ -15,6 +15,8 @@ class CartesianUniformMesh1D(Mesh):
         self.boundaries = boundaries
         self.resolution = resolution
 
+        self.cellCenterPositions = self.createMesh()
+
     def createMesh(self):
         cellCentersX = np.linspace(self.boundaries[0], self.boundaries[1], self.resolution)
         return cellCentersX

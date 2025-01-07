@@ -16,13 +16,17 @@ class PDE(ABC):
     def computeSourceTerm(self,order,values):
         pass
 
+    @abstractmethod
+    def getInitialValues(self,order,initialCondition,position):
+        pass
 
 class SWME1D(PDE):
 
-    def __init__(self, initialCondition):
+    def __init__(self, initialCondition,hyperbolic):
         self.initialCondition = initialCondition
+        self.hyperbolic = hyperbolic
 
-    def systemMatrix(self, order, values):
+    def computeSystemMatrix(self, order, values):
             g = 1
             A=np.zeros((order+2,order+2)) 
             h = values[0]
@@ -48,6 +52,9 @@ class SWME1D(PDE):
                 alpha1 = values[2]/values[0]
                 alpha2 = values[3]/values[0]
 
+                if self.hyperbolic:
+                    alpha2 = 0
+
                 A[0][0] = 0
                 A[0][1] = 1
                 A[0][2] = 0
@@ -68,6 +75,9 @@ class SWME1D(PDE):
                 alpha1 = values[2]/values[0]
                 alpha2 = values[3]/values[0]
                 alpha3 = values[4]/values[0]
+
+                if self.hyperbolic:
+                    alpha3 = 0
 
                 A[0][0] = 0
                 A[0][1] = 1
