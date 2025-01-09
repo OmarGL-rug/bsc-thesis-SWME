@@ -22,8 +22,10 @@ class PDE(ABC):
 
 class SWME1D(PDE):
 
-    def __init__(self, initialCondition,hyperbolic):
+    def __init__(self, initialCondition,viscosity,slipLength,hyperbolic):
         self.initialCondition = initialCondition
+        self.viscosity = viscosity
+        self.slipLength = slipLength
         self.hyperbolic = hyperbolic
 
     def computeSystemMatrix(self, order, values):
@@ -113,40 +115,38 @@ class SWME1D(PDE):
             return A
 
     def computeSourceTerm(self, order, values):
-        viscosity = 1
         g = 1
-        slipLength = 1
         
         S=np.zeros(order+2) 
         h = values[0]
         um = values[1]/values[0]
         if order == 0:
             S[0]=0
-            S[1]=-viscosity/slipLength*um
+            S[1]=-self.viscosity/self.slipLength*um
         if order == 1:
             alpha1 = values[2]/values[0]
 
             S[0]=0
-            S[1]=-viscosity/slipLength*(um+alpha1)
-            S[2]=-3*viscosity/slipLength*(um+(1+4*slipLength/h)*alpha1)
+            S[1]=-self.viscosity/self.slipLength*(um+alpha1)
+            S[2]=-3*self.viscosity/self.slipLength*(um+(1+4*self.slipLength/h)*alpha1)
         if order == 2:
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
 
             S[0]=0
-            S[1]=-viscosity/slipLength*(um+alpha1+alpha2)
-            S[2]=-3*viscosity/slipLength*(um+(1+4*slipLength/h)*alpha1+alpha2)
-            S[3]=-5*viscosity/slipLength*(um+alpha1+(1+12*slipLength/h)*alpha2)
+            S[1]=-self.viscosity/self.slipLength*(um+alpha1+alpha2)
+            S[2]=-3*self.viscosity/self.slipLength*(um+(1+4*self.slipLength/h)*alpha1+alpha2)
+            S[3]=-5*self.viscosity/self.slipLength*(um+alpha1+(1+12*self.slipLength/h)*alpha2)
         if order == 3:
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
 
             S[0]=0
-            S[1]=-viscosity/slipLength*(um+alpha1+alpha2+alpha3)
-            S[2]=-3*viscosity/slipLength*((h+4*slipLength)*alpha1+h*(um+alpha2)+(h+4*slipLength)*alpha3)/h
-            S[3]=-5*viscosity/slipLength*(um+alpha1+(1+12*slipLength/h)*alpha2+alpha3)
-            S[4]=-7*viscosity/slipLength*((h+4*slipLength)*alpha1+h*(um+alpha2)+(h+24*slipLength)*alpha3)/h
+            S[1]=-self.viscosity/self.slipLength*(um+alpha1+alpha2+alpha3)
+            S[2]=-3*self.viscosity/self.slipLength*((h+4*self.slipLength)*alpha1+h*(um+alpha2)+(h+4*self.slipLength)*alpha3)/h
+            S[3]=-5*self.viscosity/self.slipLength*(um+alpha1+(1+12*self.slipLength/h)*alpha2+alpha3)
+            S[4]=-7*self.viscosity/self.slipLength*((h+4*self.slipLength)*alpha1+h*(um+alpha2)+(h+24*self.slipLength)*alpha3)/h
         if order == 4:
             S[0]=1 #fill (not implemented yet)
         if order == 5:

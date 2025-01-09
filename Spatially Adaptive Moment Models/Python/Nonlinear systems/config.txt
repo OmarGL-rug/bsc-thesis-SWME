@@ -1,0 +1,35 @@
+###### GRID INFORMATION #######
+
+[grid_information]
+
+# True: one-dimensional, False: two-dimensional
+1D = True
+
+# Only structured grids implemented currently
+structuredGrid = True
+
+# Number of grid points in x-direction and y-direction (if the simulation is 1D: only resolutionX is used)
+resolutionX = 400
+resolutionY = 400
+
+# Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
+x1boundary = -2
+x2boundary = 2
+y1boundary = -2
+y2boundary = 2
+
+###### PDE INFORMATION #######
+
+[pde_information]
+
+# PDE type. implemented: SWME1D
+PDE = SWME1D
+hyperbolicity = False
+
+# Initial conditions
+initialCondition = DamBreak
+
+##### Numerical method information ######
+[numerical_method_information]
+# True: spatially adaptive simulation, False: classical simulation
+spatiallyAdaptive = True

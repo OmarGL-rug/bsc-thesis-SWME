@@ -5,6 +5,7 @@ import spatialDiscretization
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import configparser
 
 # SPECIFY BOUNDARIES OF THE DOMAIN
 x1 = -2
@@ -12,8 +13,6 @@ x2 = 2
 
 # SPECIFY NUMBER OF GRID CELLS
 n = 200
-#deltaX = (x2-x1)/n 
-#cellCentersX = np.linspace(x1, x2, n)
 
 # SPECIFY INITIAL CONDITION:
 ### Implemented: ### 
@@ -24,7 +23,7 @@ n = 200
 initialCondition = 'damBreak_noVelocity'
 
 # SPECIFY WHETHER THE SIMULATION IS SPATIALLY ADAPTIVE (TRUE) OR CLASSICAL (FALSE)
-spatiallyAdaptive = True
+spatiallyAdaptive = False
 
 # SPECIFY WHETHER THE SIMULATION IS 1D OR 2D
 OneDimensional = True
@@ -34,6 +33,7 @@ hyperbolic = False
 
 # SPECIFY DOMAIN DECOMPOSITION
 orders = [0,3,0]                         # List of moments that is used in each subdomain
+order = 3                                # Order of classical simulation
 boundaryInterfaces = [-1,1]               # Physical position of the boundary interfaces
 boundaryInterfaces_Discretized = []     # Initialization of the list of boundary interfaces in the discretized domain
 
@@ -52,8 +52,10 @@ viscosityModel = 'PRICE'
 
 def main():
 
+    config = configparser.ConfigParser()
+    
     tend = 0.25
-    _pde = pde.SWME1D(initialCondition,hyperbolic)
+    _pde = pde.SWME1D(initialCondition,viscosity,slipLength,hyperbolic)
     _mesh = mesh.CartesianUniformMesh1D([x1,x2],n)
     _spatialDiscretization = spatialDiscretization.PRICE()
 
@@ -62,7 +64,6 @@ def main():
             spatiallyAdaptiveSimulation1D = simulation.SpatiallyAdaptiveSimulation1D(boundaryInterfaces,
                                                                                     orders,
                                                                                     [x1,x2],
-                                                                                    n,
                                                                                     _pde,
                                                                                     _mesh,
                                                                                     boundaryCondition,
@@ -75,11 +76,9 @@ def main():
             relativeValuesLastMoment = spatiallyAdaptiveSimulation1D.computeBreakdownCriteria(endValues)
 
             maxOrder = max(orders)
-            minOrder = min(orders)
 
             dataArray = np.zeros((n,maxOrder+3))
-
-            #TODO: rewrite this such that I save the higher order moments too 
+ 
             for i in range(n):
                 dataArray[i][0] = _mesh.cellCenterPositions[i]
                 for j in range(len(endValues[i+1])):
@@ -88,13 +87,40 @@ def main():
             dataFrame = pd.DataFrame(dataArray)
             dataFrame.to_csv('data.csv', index=False)
 
-            #plt.plot(_mesh.cellCenterPositions, dataArray[:,5])
-            plt.plot(_mesh.cellCenterPositions,relativeValuesLastMoment)
+            plt.plot(_mesh.cellCenterPositions, dataArray[:,1])
+            #plt.plot(_mesh.cellCenterPositions,relativeValuesLastMoment)
             plt.show()
+        else:
+            print("2D not implemented yet")
 
     else:
-        classicalSimulation1D = simulation.ClassicalSimulation1D()
-    print("python main function")
+        if OneDimensional:
+            classicalSimulation1D = simulation.ClassicalSimulation1D(order,
+                                                                     [x1,x2],
+                                                                     _pde,
+                                                                     _mesh,
+                                                                     boundaryCondition,
+                                                                     initialCondition,
+                                                                     _spatialDiscretization)
+
+            endValues = classicalSimulation1D.runSimulation(tend)
+
+            dataArray = np.zeros((n,order+3))
+ 
+            for i in range(n):
+                dataArray[i][0] = _mesh.cellCenterPositions[i]
+                for j in range(len(endValues[i+1])):
+                    dataArray[i][j+1] = endValues[i+1][j]
+
+            dataFrame = pd.DataFrame(dataArray)
+            dataFrame.to_csv('data.csv', index=False)
+
+            plt.plot(_mesh.cellCenterPositions, dataArray[:,1])
+            #plt.plot(_mesh.cellCenterPositions,relativeValuesLastMoment)
+            plt.show()
+        else:
+            print("not implemented yet")
+
 
 
 if __name__ == '__main__':
