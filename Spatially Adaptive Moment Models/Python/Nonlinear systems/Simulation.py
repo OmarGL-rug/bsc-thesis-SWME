@@ -6,451 +6,643 @@ import copy
 import spatialDiscretization
 
 class Simulation(ABC):
+
+    """
+    This interface represents a simulation.
+
+    ...
+
+    Attributes
+    ----------
+    physical_domain : list of floats (if 1D) or numpy 2D array of floats (if 2D)  
+        the boundaries of the physical domain
+    pde_type : str
+        the partial differential equations that is simulated
+    mesh : RectangularMesh
+        the used mesh
+    boundary_condition: str
+        the used boundary condition
+    initial_condition: str
+        the initial condition for the simulation
+    spatial_discretization: spatial_discretization
+        the numerical method for the spatial discretization
+
+    
+    Abstract methods
+    -------
+    def run_simulation(t_end):
+        runs the simulation and outputs the end values
+    def get_initial_conditions(self,cell_centers_x):
+        constructs the initial values in each grid cell
+    def update_boundary_conditions(self,values_boundary):
+        updates the boundary conditions
+    """
+
     @abstractmethod
     def __init__(self):
+        """
+        Implemented in the child classes.
+        """
         pass
 
     @abstractmethod
-    def runSimulation(self,tend):
+    def run_simulation(self,t_end):
+        """
+        Runs the simulation until the end time t_end and returns the end values of the variables
+
+        Parameters
+        ----------
+        t_end : float
+            end time of the simulation
+        
+        Returns
+        -------
+        values: list of numpy arrays
+            values of the variables at the end of the simulation
+
+        """
+        pass
+
+    @abstractmethod
+    def get_initial_conditions(self,cell_centers):
+        """
+        Implemented and documented in the child classes. 
+        """
+        pass
+
+    @abstractmethod
+    def update_boundary_conditions(self,values_boundary):
+        """
+        Implemented and documented in the child classes.
+        """
         pass
 
 class ClassicalSimulation1D(Simulation):
+
+    """
+    This interface represents a classical (not spatially adaptive) simulation in 1D.
+
+    ...
+
+    Attributes
+    ----------
+    order: int
+        order of the moment model
+    physical_domain : list of floats (if 1D) or numpy 2D array of floats (if 2D)  
+        the boundaries of the physical domain
+    pde_type : str
+        the partial differential equations that is simulated
+    mesh : RectangularMesh
+        the used mesh
+    boundary_condition: str
+        the used boundary condition
+    initial_condition: str
+        the initial condition for the simulation
+    spatial_discretization: spatial_discretization
+        the numerical method for the spatial discretization
+
+    
+    Implemented methods from interface Simulation
+    -------
+    def run_simulation(t_end):
+        runs the simulation and outputs the end values
+    def get_initial_conditions(self,cell_centers_x):
+        constructs the initial values in each grid cell
+    def update_boundary_conditions(self,values_boundary):
+        updates the boundary conditions
+    """
+
     def __init__(self,
                  order,
-                 physicalDomain,
-                 PDEType: pde.PDE,
-                 mesh: mesh.Mesh,
-                 boundaryCondition,
-                 initialCondition,
-                 spatialDiscretization: spatialDiscretization.SpatialDiscretization):
+                 physical_domain,
+                 pde_type: pde.PDE,
+                 mesh: mesh.RectangularMesh,
+                 boundary_condition,
+                 initial_condition,
+                 spatial_discretization: spatialDiscretization.SpatialDiscretization):
+        """
+        Constructs all the necessary attributes for the ClassicalSimulation1D object.
+
+        Parameters
+        ----------
+        order: int
+            order of the moment model
+        physical_domain : list of floats (if 1D) or numpy 2D array of floats (if 2D)  
+            the boundaries of the physical domain
+        pde_type : str
+            the partial differential equations that is simulated
+        mesh : RectangularMesh
+            the used mesh
+        boundary_condition: str
+            the used boundary condition
+        initial_condition: str
+            the initial condition for the simulation
+        spatial_discretization: spatial_discretization
+            the numerical method for the spatial discretization
+
+        """
         self.order = order
-        self.physicalDomain = physicalDomain
-        self.x1 = physicalDomain[0]
-        self.x2 = physicalDomain[1]
-        self.PDEType = PDEType
+        self.physical_domain = physical_domain
+        self.x1 = physical_domain[0]
+        self.x2 = physical_domain[1]
+        self.pde_type = pde_type
         self.mesh = mesh
-        self.boundaryCondition = boundaryCondition
-        self.initialCondition = initialCondition
-        self.spatialDiscretization = spatialDiscretization
+        self.boundary_condition = boundary_condition
+        self.initial_condition = initial_condition
+        self.spatial_discretization = spatial_discretization
 
-    def runSimulation(self,tend):
+    def run_simulation(self,t_end):
 
-        deltaX = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
+        delta_x = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 
-        values = self.getInitialConditions(self.mesh.cellCenterPositions)
-        previousValues = copy.deepcopy(values)
+        values = self.get_initial_conditions(self.mesh.cell_center_positions)
+        previous_values = copy.deepcopy(values)
 
         CFL = 0.25
         t = 0
 
-        def systemMatrix(cellValues):
-            return self.PDEType.computeSystemMatrix(self.order,cellValues)
+        def system_matrix(cell_values):
+            return self.pde_type.compute_system_matrix(self.order,cell_values)
 
-        def sourceTerm(cellValues):
-            return self.PDEType.computeSourceTerm(self.order,cellValues)
+        def source_term(cell_values):
+            return self.pde_type.compute_source_term(self.order,cell_values)
 
 
-        while t < tend:
+        while t < t_end:
             g = 1
 
             # update boundary conditions
-            previousValues[0] = self.updateBoundaryConditions(previousValues[1])
-            previousValues[self.mesh.resolution+1] = self.updateBoundaryConditions(previousValues[self.mesh.resolution])
+            previous_values[0] = self.update_boundary_conditions(previous_values[1])
+            previous_values[self.mesh.resolution+1] = self.update_boundary_conditions(previous_values[self.mesh.resolution])
 
             if self.order == 0:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g))) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g))) 
-                                    for value in previousValues])
+                                    for value in previous_values])
             elif self.order == 1:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0])) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0])) 
-                                    for value in previousValues])
+                                    for value in previous_values])
             elif self.order == 2:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0])) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0])) 
-                                    for value in previousValues]) 
+                                    for value in previous_values]) 
             elif self.order == 3:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
-                                    for value in previousValues])         
-            maxSpeed = max(maxSpeedPlus,maxSpeedMin)
-            deltaT = CFL*deltaX*maxSpeed #TODO implement CFL condition
+                                    for value in previous_values])         
+            max_speed = max(max_speed_plus,max_speed_min)
+            delta_t = CFL*delta_x*max_speed #TODO implement CFL condition
 
             for i in range(1,self.mesh.resolution+1):
-                fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                    previousValues[i-1],
-                    previousValues[i],
-                    systemMatrix,
+                fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                    previous_values[i-1],
+                    previous_values[i],
+                    system_matrix,
                     'positive',
-                    deltaT,
-                    deltaX) 
-                fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                    previousValues[i],
-                    previousValues[i+1],
-                    systemMatrix,'negative',
-                    deltaT,
-                    deltaX) 
-                sourceTermValue = sourceTerm(previousValues[i]) 
-                values[i] = previousValues[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue # solve FVM equations
+                    delta_t,
+                    delta_x) 
+                fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                    previous_values[i],
+                    previous_values[i+1],
+                    system_matrix,
+                    'negative',
+                    delta_t,
+                    delta_x) 
+                source_term_value = source_term(previous_values[i]) 
+                values[i] = previous_values[i] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
 
-            t+=deltaT
-            previousValues = copy.deepcopy(values)
+            t+=delta_t
+            previous_values = copy.deepcopy(values)
         return values
 
-    def getInitialConditions(self,cellCentersX):
-        initialValues = []
+    def get_initial_conditions(self,cell_centers_x):
 
-        initialValues.append(np.zeros(2+self.order)) # Initialize ghost cell, this value is overriden before the start of the simulation
+        """
+        construct the initial values for the variables
+
+        Parameters
+        ----------
+        cell_centers_x : numpy 1D array
+            the centers of the cells
+        
+        Returns
+        -------
+        initial_values: list of numpy arrays
+            initial values of the variables in each grid cell
+
+        """
+        
+        initial_values = []
+
+        initial_values.append(np.zeros(2+self.order)) # Initialize ghost cell, this value is overriden before the start of the simulation
 
         for i in range(0,self.mesh.resolution):
-            initialValues.append(self.PDEType.getInitialValues(self.order,self.initialCondition,cellCentersX[i]))
+            initial_values.append(self.pde_type.get_initial_values(self.order,self.initial_condition,cell_centers_x[i]))
 
-        initialValues.append(np.zeros(2+self.order)) # Initialize ghost cell, this value is overriden before the start of the simulation
+        initial_values.append(np.zeros(2+self.order)) # Initialize ghost cell, this value is overriden before the start of the simulation
         
-        return initialValues
+        return initial_values
     
-    def updateBoundaryConditions(self,valuesBoundary):
-        if self.boundaryCondition == 'INFLOW_OUTFLOW':
-            return valuesBoundary 
+    def update_boundary_conditions(self,values_boundary):
+        """
+        update the boundary conditions
+
+        Parameters
+        ----------
+        values_boundary : numpy 1D array #TODO: implement boundary conditions that include more cells
+            the values of the variables in the boundary cell
+        
+        Returns
+        -------
+        values_boundary: numpy 1D array
+            the values of the variables in the ghost cell
+
+        """
+
+        if self.boundary_condition == 'INFLOW_OUTFLOW':
+            return values_boundary 
 
 class SpatiallyAdaptiveSimulation1D(Simulation):
-    def __init__(self,
-                 boundaryInterfaces,
-                 orders,
-                 physicalDomain,
-                 PDEType: pde.PDE,
-                 mesh: mesh.Mesh,
-                 boundaryCondition,
-                 initialCondition,
-                 spatialDiscretization: spatialDiscretization.SpatialDiscretization):
-        self.boundaryInterfaces = boundaryInterfaces
-        self.orders = orders
-        self.physicalDomain = physicalDomain
-        self.x1 = physicalDomain[0]
-        self.x2 = physicalDomain[1]
-        self.PDEType = PDEType
-        self.mesh = mesh
-        self.boundaryCondition = boundaryCondition
-        self.initialCondition = initialCondition
-        self.spatialDiscretization = spatialDiscretization
 
-        self.boundaryInterfaces_Discretized = []
+    """
+    This interface represents a spatially adaptive simulation in 1D.
+
+    ...
+
+    Attributes
+    ----------
+    boundary_interfaces: list of floats
+        list of the physical positions of the interfaces that separate the domain into subdomains
+    orders: list of integers
+        list of the order of the moment model in each subdomain
+    physical_domain : list of floats (if 1D) or numpy 2D array of floats (if 2D)  
+        the boundaries of the physical domain
+    pde_type : str
+        the partial differential equations that is simulated
+    mesh : RectangularMesh
+        the used mesh
+    boundary_condition: str
+        the used boundary condition
+    initial_condition: str
+        the initial condition for the simulation
+    spatial_discretization: spatial_discretization
+        the numerical method for the spatial discretization
 
     
-    def runSimulation(self,tend):
+    Implemented methods from interface Simulation
+    -------
+    def run_simulation(t_end):
+        runs the simulation and outputs the end values
+    def get_initial_conditions(self,cell_centers_x):
+        constructs the initial values in each grid cell
+    def update_boundary_conditions(self,values_boundary):
+        updates the boundary conditions
+
+
+    Instance methods
+    ----------------
+    def compute_breakdown_criteria(self,values): 
+        compute the breakdown criteria for increasing/decreasing the order in a subdomain
+    """
+
+    def __init__(self,
+                 boundary_interfaces,
+                 orders,
+                 physical_domain,
+                 pde_type: pde.PDE,
+                 mesh: mesh.RectangularMesh,
+                 boundary_condition,
+                 initial_condition,
+                 spatial_discretization: spatialDiscretization.SpatialDiscretization):
+        self.boundary_interfaces = boundary_interfaces
+        self.orders = orders
+        self.physical_domain = physical_domain
+        self.x1 = physical_domain[0]
+        self.x2 = physical_domain[1]
+        self.pde_type = pde_type
+        self.mesh = mesh
+        self.boundary_condition = boundary_condition
+        self.initial_condition = initial_condition
+        self.spatial_discretization = spatial_discretization
+
+        self.boundary_interfaces_discretized = []
+
+    
+    def run_simulation(self,t_end):
         g = 1
-        deltaX = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
+        delta_x = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 
-        self.calculateBoundaryInterfaces()
+        self.calculate_boundary_interfaces()
 
-        values = self.getInitialConditions(self.mesh.cellCenterPositions)
-        previousValues = copy.deepcopy(values)
+        values = self.get_initial_conditions(self.mesh.cell_center_positions)
+        previous_values = copy.deepcopy(values)
 
         CFL = 0.25
         
         t = 0
 
-        while t < tend:
+        while t < t_end:
 
             # update boundary conditions
-            previousValues[0] = self.updateBoundaryConditions(previousValues[1])
-            previousValues[self.mesh.resolution+1] = self.updateBoundaryConditions(previousValues[self.mesh.resolution])
+            previous_values[0] = self.update_boundary_conditions(previous_values[1])
+            previous_values[self.mesh.resolution+1] = self.update_boundary_conditions(previous_values[self.mesh.resolution])
 
-            minOrder = min(self.orders)
-            if minOrder == 0:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+            min_order = min(self.orders)
+            if min_order == 0:
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g))) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g))) 
-                                    for value in previousValues])
-            elif minOrder == 1:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+                                    for value in previous_values])
+            elif min_order == 1:
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0])) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0])) 
-                                    for value in previousValues])
-            elif minOrder == 2:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+                                    for value in previous_values])
+            elif min_order == 2:
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0])) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0])) 
-                                    for value in previousValues]) 
-            elif minOrder == 3:
-                maxSpeedPlus = max([abs(value[1]/value[0]
+                                    for value in previous_values]) 
+            elif min_order == 3:
+                max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
-                                        for value in previousValues])
-                maxSpeedMin = max([abs(value[1]/value[0]
+                                        for value in previous_values])
+                max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
-                                    for value in previousValues])         
-            maxSpeed = max(maxSpeedPlus,maxSpeedMin)
-            deltaT = CFL*deltaX*maxSpeed #TODO implement CFL condition
+                                    for value in previous_values])         
+            max_speed = max(max_speed_plus,max_speed_min)
+            delta_t = CFL*delta_x*max_speed #TODO implement CFL condition
 
-            rightBoundary_subDomain = 0
+            right_boundary_subdomain = 0
 
-            for m in range(len(self.boundaryInterfaces_Discretized)):
-                orderLeft = self.orders[m]
-                orderRight = self.orders[m+1]
+            for m in range(len(self.boundary_interfaces_discretized)):
+                order_left = self.orders[m]
+                order_right = self.orders[m+1]
 
-                def systemMatrixLeft(cellValues):
-                    return self.PDEType.computeSystemMatrix(orderLeft,cellValues)
+                def system_matrix_left(cell_values):
+                    return self.pde_type.compute_system_matrix(order_left,cell_values)
 
-                def sourceTermLeft(cellValues):
-                    return self.PDEType.computeSourceTerm(orderLeft,cellValues)
+                def source_term_left(cell_values):
+                    return self.pde_type.compute_source_term(order_left,cell_values)
 
-                def systemMatrixRight(cellValues):
-                    return self.PDEType.computeSystemMatrix(orderRight,cellValues)
+                def system_matrix_right(cell_values):
+                    return self.pde_type.compute_system_matrix(order_right,cell_values)
 
-                def sourceTermRight(cellValues):
-                    return self.PDEType.computeSourceTerm(orderRight,cellValues)
+                def source_term_right(cell_values):
+                    return self.pde_type.compute_source_term(order_right,cell_values)
 
-                leftBoundary_subDomain = rightBoundary_subDomain+1
-                rightBoundary_subDomain = self.boundaryInterfaces_Discretized[m]
+                left_boundary_subdomain = right_boundary_subdomain+1
+                right_boundary_subdomain = self.boundary_interfaces_discretized[m]
                 
-                if orderRight > orderLeft:
-                    previousValues[rightBoundary_subDomain-1][orderLeft+2:] = previousValues[rightBoundary_subDomain][orderLeft+2:] # update boundary interface boundary condition 
-                    for i in range(leftBoundary_subDomain,rightBoundary_subDomain-2):
-                        fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                            previousValues[i-1],
-                            previousValues[i],
-                            systemMatrixLeft,
+                if order_right > order_left:
+                    previous_values[right_boundary_subdomain-1][order_left+2:] = previous_values[right_boundary_subdomain][order_left+2:] # update boundary interface boundary condition 
+                    for i in range(left_boundary_subdomain,right_boundary_subdomain-2):
+                        fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                            previous_values[i-1],
+                            previous_values[i],
+                            system_matrix_left,
                             'positive',
-                            deltaT,
-                            deltaX) 
-                        fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                            previousValues[i],
-                            previousValues[i+1],
-                            systemMatrixLeft,
+                            delta_t,
+                            delta_x) 
+                        fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                            previous_values[i],
+                            previous_values[i+1],
+                            system_matrix_left,
                             'negative',
-                            deltaT,
-                            deltaX) 
-                        sourceTermValue = sourceTermLeft(previousValues[i]) 
-                        values[i] = previousValues[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue # solve FVM equations
+                            delta_t,
+                            delta_x) 
+                        source_term_value = source_term_left(previous_values[i]) 
+                        values[i] = previous_values[i] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
                     
-                    # Evolution equation for the cell with index rightBoundary_subDomain-2
-                    fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain-3],
-                        previousValues[rightBoundary_subDomain-2],
-                        systemMatrixLeft,
+                    # Evolution equation for the cell with index right_boundary_subdomain-2
+                    fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain-3],
+                        previous_values[right_boundary_subdomain-2],
+                        system_matrix_left,
                         'positive',
-                        deltaT,
-                        deltaX) 
-                    fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain-2],
-                        previousValues[rightBoundary_subDomain-1][:orderLeft+2],
-                        systemMatrixLeft,
+                        delta_t,
+                        delta_x) 
+                    fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain-2],
+                        previous_values[right_boundary_subdomain-1][:order_left+2],
+                        system_matrix_left,
                         'negative',
-                        deltaT,
-                        deltaX) 
-                    sourceTermValue = sourceTermLeft(previousValues[rightBoundary_subDomain-2]) 
-                    values[rightBoundary_subDomain-2] = (previousValues[rightBoundary_subDomain-2]
-                    -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue) # solve FVM equations
+                        delta_t,
+                        delta_x) 
+                    source_term_value = source_term_left(previous_values[right_boundary_subdomain-2]) 
+                    values[right_boundary_subdomain-2] = (previous_values[right_boundary_subdomain-2]
+                    -delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value) # solve FVM equations
                     
-                    # Evolution equation for the cell with index rightBoundary_subDomain-1
-                    fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain-2],
-                        previousValues[rightBoundary_subDomain-1][:orderLeft+2],
-                        systemMatrixLeft,
+                    # Evolution equation for the cell with index right_boundary_subdomain-1
+                    fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain-2],
+                        previous_values[right_boundary_subdomain-1][:order_left+2],
+                        system_matrix_left,
                         'positive',
-                        deltaT,
-                        deltaX) 
-                    fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain-1][:orderLeft+2],
-                        previousValues[rightBoundary_subDomain][:orderLeft+2],
-                        systemMatrixLeft,
+                        delta_t,
+                        delta_x) 
+                    fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain-1][:order_left+2],
+                        previous_values[right_boundary_subdomain][:order_left+2],
+                        system_matrix_left,
                         'negative',
-                        deltaT,
-                        deltaX) 
-                    sourceTermValue = sourceTermLeft(previousValues[rightBoundary_subDomain-1][:orderLeft+2]) 
-                    values[rightBoundary_subDomain-1][:orderLeft+2] = (previousValues[rightBoundary_subDomain-1][:orderLeft+2]
-                    -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue) # solve FVM equations
+                        delta_t,
+                        delta_x) 
+                    source_term_value = source_term_left(previous_values[right_boundary_subdomain-1][:order_left+2]) 
+                    values[right_boundary_subdomain-1][:order_left+2] = (previous_values[right_boundary_subdomain-1][:order_left+2]
+                    -delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value) # solve FVM equations
 
 
-                    # Evolution equation for the cell with index rightBoundary_subDomain
-                    fluctuationPlus_Full = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain-1],
-                        previousValues[rightBoundary_subDomain],
-                        systemMatrixRight,
+                    # Evolution equation for the cell with index right_boundary_subdomain
+                    fluctuation_plus_Full = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain-1],
+                        previous_values[right_boundary_subdomain],
+                        system_matrix_right,
                         'positive',
-                        deltaT,
-                        deltaX) 
-                    fluctuationPlus_Restricted = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain-1][:orderLeft+2],
-                        previousValues[rightBoundary_subDomain][:orderLeft+2],
-                        systemMatrixLeft,'positive',
-                        deltaT,
-                        deltaX) 
-                    fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain],
-                        previousValues[rightBoundary_subDomain+1],
-                        systemMatrixRight,
+                        delta_t,
+                        delta_x) 
+                    fluctuation_plus_Restricted = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain-1][:order_left+2],
+                        previous_values[right_boundary_subdomain][:order_left+2],
+                        system_matrix_left,'positive',
+                        delta_t,
+                        delta_x) 
+                    fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain],
+                        previous_values[right_boundary_subdomain+1],
+                        system_matrix_right,
                         'negative',
-                        deltaT,
-                        deltaX) 
-                    sourceTermValue = sourceTermRight(previousValues[rightBoundary_subDomain]) 
+                        delta_t,
+                        delta_x) 
+                    source_term_value = source_term_right(previous_values[right_boundary_subdomain]) 
                     
-                    values[rightBoundary_subDomain][:orderLeft+2] = (previousValues[rightBoundary_subDomain][:orderLeft+2]
-                    -deltaT/deltaX*(fluctuationPlus_Restricted+fluctuationMinus[:orderLeft+2])
-                    +deltaT*sourceTermValue[:orderLeft+2]) # solve FVM equations for first moments
-                    values[rightBoundary_subDomain][orderLeft+2:] = (previousValues[rightBoundary_subDomain][orderLeft+2:]
-                    -deltaT/deltaX*(fluctuationPlus_Full[orderLeft+2:]+fluctuationMinus[orderLeft+2:])
-                    +deltaT*sourceTermValue[orderLeft+2:]) # solve FVM equations for last moment
+                    values[right_boundary_subdomain][:order_left+2] = (previous_values[right_boundary_subdomain][:order_left+2]
+                    -delta_t/delta_x*(fluctuation_plus_Restricted+fluctuation_minus[:order_left+2])
+                    +delta_t*source_term_value[:order_left+2]) # solve FVM equations for first moments
+                    values[right_boundary_subdomain][order_left+2:] = (previous_values[right_boundary_subdomain][order_left+2:]
+                    -delta_t/delta_x*(fluctuation_plus_Full[order_left+2:]+fluctuation_minus[order_left+2:])
+                    +delta_t*source_term_value[order_left+2:]) # solve FVM equations for last moment
                 else:
-                    previousValues[rightBoundary_subDomain+2][orderRight+2:] = previousValues[rightBoundary_subDomain+1][orderRight+2:] # update boundary interface boundary condition
-                    for i in range(leftBoundary_subDomain,rightBoundary_subDomain+1):
-                        fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                            previousValues[i-1],
-                            previousValues[i],
-                            systemMatrixLeft,
+                    previous_values[right_boundary_subdomain+2][order_right+2:] = previous_values[right_boundary_subdomain+1][order_right+2:] # update boundary interface boundary condition
+                    for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
+                        fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                            previous_values[i-1],
+                            previous_values[i],
+                            system_matrix_left,
                             'positive',
-                            deltaT,
-                            deltaX) 
-                        fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                            previousValues[i],
-                            previousValues[i+1],
-                            systemMatrixLeft,
+                            delta_t,
+                            delta_x) 
+                        fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                            previous_values[i],
+                            previous_values[i+1],
+                            system_matrix_left,
                             'negative',
-                            deltaT,
-                            deltaX) 
-                        sourceTermValue = sourceTermLeft(previousValues[i]) 
-                        values[i] = previousValues[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue # solve FVM equations
+                            delta_t,
+                            delta_x) 
+                        source_term_value = source_term_left(previous_values[i]) 
+                        values[i] = previous_values[i] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
                     
-                    # Evolution equation for the cell with index rightBoundary_subDomain+1
-                    fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain],
-                        previousValues[rightBoundary_subDomain+1],
-                        systemMatrixLeft,
+                    # Evolution equation for the cell with index right_boundary_subdomain+1
+                    fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain],
+                        previous_values[right_boundary_subdomain+1],
+                        system_matrix_left,
                         'positive',
-                        deltaT,
-                        deltaX)             
-                    fluctuationMinus_Full = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain+1],
-                        previousValues[rightBoundary_subDomain+2],
-                        systemMatrixLeft,'negative',
-                        deltaT,
-                        deltaX) 
-                    fluctuationMinus_Restricted = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain+1][:orderRight+2],
-                        previousValues[rightBoundary_subDomain+2][:orderRight+2],
-                        systemMatrixRight,'negative',
-                        deltaT,
-                        deltaX) 
-                    sourceTermValue = sourceTermLeft(previousValues[rightBoundary_subDomain+1]) 
-                    values[rightBoundary_subDomain+1][:orderRight+2] = (previousValues[rightBoundary_subDomain+1][:orderRight+2] 
-                    -deltaT/deltaX*(fluctuationPlus[:orderRight+2]+fluctuationMinus_Restricted)
-                    +deltaT*sourceTermValue[:orderRight+2]) # solve FVM equations for first moments
-                    values[rightBoundary_subDomain+1][orderRight+2:] = (previousValues[rightBoundary_subDomain+1][orderRight+2:] 
-                    -deltaT/deltaX*(fluctuationPlus[orderRight+2:]+fluctuationMinus_Full[orderRight+2:])
-                    +deltaT*sourceTermValue[orderRight+2:]) # solve FVM equations for last moments
+                        delta_t,
+                        delta_x)             
+                    fluctuation_minus_Full = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain+1],
+                        previous_values[right_boundary_subdomain+2],
+                        system_matrix_left,'negative',
+                        delta_t,
+                        delta_x) 
+                    fluctuation_minus_Restricted = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain+1][:order_right+2],
+                        previous_values[right_boundary_subdomain+2][:order_right+2],
+                        system_matrix_right,'negative',
+                        delta_t,
+                        delta_x) 
+                    source_term_value = source_term_left(previous_values[right_boundary_subdomain+1]) 
+                    values[right_boundary_subdomain+1][:order_right+2] = (previous_values[right_boundary_subdomain+1][:order_right+2] 
+                    -delta_t/delta_x*(fluctuation_plus[:order_right+2]+fluctuation_minus_Restricted)
+                    +delta_t*source_term_value[:order_right+2]) # solve FVM equations for first moments
+                    values[right_boundary_subdomain+1][order_right+2:] = (previous_values[right_boundary_subdomain+1][order_right+2:] 
+                    -delta_t/delta_x*(fluctuation_plus[order_right+2:]+fluctuation_minus_Full[order_right+2:])
+                    +delta_t*source_term_value[order_right+2:]) # solve FVM equations for last moments
                     
-                    # Evolution equation for the cell with index rightBoundary_subDomain+2
-                    fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain+1][:orderRight+2],
-                        previousValues[rightBoundary_subDomain+2][:orderRight+2],
-                        systemMatrixRight,'positive',
-                        deltaT,
-                        deltaX) 
-                    fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain+2][:orderRight+2],
-                        previousValues[rightBoundary_subDomain+3],
-                        systemMatrixRight,
+                    # Evolution equation for the cell with index right_boundary_subdomain+2
+                    fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain+1][:order_right+2],
+                        previous_values[right_boundary_subdomain+2][:order_right+2],
+                        system_matrix_right,'positive',
+                        delta_t,
+                        delta_x) 
+                    fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain+2][:order_right+2],
+                        previous_values[right_boundary_subdomain+3],
+                        system_matrix_right,
                         'negative',
-                        deltaT,
-                        deltaX) 
-                    sourceTermValue = sourceTermRight(previousValues[rightBoundary_subDomain+2][:orderRight+2]) 
-                    values[rightBoundary_subDomain+2][:orderRight+2] = (previousValues[rightBoundary_subDomain+2][:orderRight+2]
-                    -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue) # solve FVM equations
+                        delta_t,
+                        delta_x) 
+                    source_term_value = source_term_right(previous_values[right_boundary_subdomain+2][:order_right+2]) 
+                    values[right_boundary_subdomain+2][:order_right+2] = (previous_values[right_boundary_subdomain+2][:order_right+2]
+                    -delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value) # solve FVM equations
 
-                    # Evolution equation for the cell with index rightBoundary_subDomain+3
-                    fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain+2][:orderRight+2],
-                        previousValues[rightBoundary_subDomain+3],
-                        systemMatrixRight,'positive',
-                        deltaT,
-                        deltaX) 
-                    fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                        previousValues[rightBoundary_subDomain+3],
-                        previousValues[rightBoundary_subDomain+4],
-                        systemMatrixRight,
+                    # Evolution equation for the cell with index right_boundary_subdomain+3
+                    fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain+2][:order_right+2],
+                        previous_values[right_boundary_subdomain+3],
+                        system_matrix_right,'positive',
+                        delta_t,
+                        delta_x) 
+                    fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                        previous_values[right_boundary_subdomain+3],
+                        previous_values[right_boundary_subdomain+4],
+                        system_matrix_right,
                         'negative',
-                        deltaT,
-                        deltaX) 
-                    sourceTermValue = sourceTermRight(previousValues[rightBoundary_subDomain+3]) 
-                    values[rightBoundary_subDomain+3] = (previousValues[rightBoundary_subDomain+3]
-                    -deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue) # solve FVM equations
+                        delta_t,
+                        delta_x) 
+                    source_term_value = source_term_right(previous_values[right_boundary_subdomain+3]) 
+                    values[right_boundary_subdomain+3] = (previous_values[right_boundary_subdomain+3]
+                    -delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value) # solve FVM equations
 
-                    rightBoundary_subDomain += 3
+                    right_boundary_subdomain += 3
             
-            for i in range(rightBoundary_subDomain+1,self.mesh.resolution+1):
-                fluctuationPlus = self.spatialDiscretization.computeFluctuation(
-                    previousValues[i-1],
-                    previousValues[i],
-                    systemMatrixRight,
+            for i in range(right_boundary_subdomain+1,self.mesh.resolution+1):
+                fluctuation_plus = self.spatial_discretization.compute_fluctuation(
+                    previous_values[i-1],
+                    previous_values[i],
+                    system_matrix_right,
                     'positive',
-                    deltaT,
-                    deltaX) 
-                fluctuationMinus = self.spatialDiscretization.computeFluctuation(
-                    previousValues[i],
-                    previousValues[i+1],
-                    systemMatrixRight,
+                    delta_t,
+                    delta_x) 
+                fluctuation_minus = self.spatial_discretization.compute_fluctuation(
+                    previous_values[i],
+                    previous_values[i+1],
+                    system_matrix_right,
                     'negative',
-                    deltaT,
-                    deltaX) 
-                sourceTermValue = sourceTermRight(previousValues[i]) 
-                values[i] = previousValues[i] - deltaT/deltaX*(fluctuationPlus+fluctuationMinus) + deltaT*sourceTermValue # solve FVM equations
-            t+=deltaT
-            previousValues = copy.deepcopy(values)
+                    delta_t,
+                    delta_x) 
+                source_term_value = source_term_right(previous_values[i]) 
+                values[i] = previous_values[i] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
+            t+=delta_t
+            previous_values = copy.deepcopy(values)
         return values
     
-    def calculateBoundaryInterfaces(self):
-        self.boundaryInterfaces_Discretized.append(round((self.boundaryInterfaces[0] - self.x1)/(self.x2 - self.x1)*self.mesh.resolution))
-        for i in range(1,len(self.boundaryInterfaces)):
-            self.boundaryInterfaces_Discretized.append(self.boundaryInterfaces_Discretized[i-1]
-                + round((self.boundaryInterfaces[i]-self.boundaryInterfaces[i-1])/(self.x2-self.x1)*self.mesh.resolution))
+    def calculate_boundary_interfaces(self):
+        self.boundary_interfaces_discretized.append(round((self.boundary_interfaces[0] - self.x1)/(self.x2 - self.x1)*self.mesh.resolution))
+        for i in range(1,len(self.boundary_interfaces)):
+            self.boundary_interfaces_discretized.append(self.boundary_interfaces_discretized[i-1]
+                + round((self.boundary_interfaces[i]-self.boundary_interfaces[i-1])/(self.x2-self.x1)*self.mesh.resolution))
             
-    def updateBoundaryConditions(self,valuesBoundary):
-        if self.boundaryCondition == 'INFLOW_OUTFLOW':
-            return valuesBoundary 
+    def update_boundary_conditions(self,values_boundary):
+        if self.boundary_condition == 'INFLOW_OUTFLOW':
+            return values_boundary 
 
-    def getInitialConditions(self,cellCentersX):
-            initialValues = []
+    def get_initial_conditions(self,cell_centers_x):
+            initial_values = []
 
-            initialValues.append(np.zeros(2+self.orders[0])) # Initialize ghost cell, this value is overriden before the start of the simulation
+            initial_values.append(np.zeros(2+self.orders[0])) # Initialize ghost cell, this value is overriden before the start of the simulation
 
-            rightBoundary_subDomain = 0
-            for m in range(len(self.boundaryInterfaces_Discretized)):
-                leftBoundary_subDomain = rightBoundary_subDomain
+            right_boundary_subdomain = 0
+            for m in range(len(self.boundary_interfaces_discretized)):
+                left_boundary_subdomain = right_boundary_subdomain
                 if self.orders[m+1] > self.orders[m]: 
-                    rightBoundary_subDomain = self.boundaryInterfaces_Discretized[m]-2
+                    right_boundary_subdomain = self.boundary_interfaces_discretized[m]-2
                 else:
-                    rightBoundary_subDomain = self.boundaryInterfaces_Discretized[m]+2
-                for i in range(leftBoundary_subDomain,rightBoundary_subDomain):
-                    initialValues.append(self.PDEType.getInitialValues(self.orders[m],self.initialCondition,cellCentersX[i])) 
-            for i in range(rightBoundary_subDomain,self.mesh.resolution):
-                initialValues.append(self.PDEType.getInitialValues(self.orders[-1],self.initialCondition,cellCentersX[i]))
+                    right_boundary_subdomain = self.boundary_interfaces_discretized[m]+2
+                for i in range(left_boundary_subdomain,right_boundary_subdomain):
+                    initial_values.append(self.pde_type.get_initial_values(self.orders[m],self.initial_condition,cell_centers_x[i])) 
+            for i in range(right_boundary_subdomain,self.mesh.resolution):
+                initial_values.append(self.pde_type.get_initial_values(self.orders[-1],self.initial_condition,cell_centers_x[i]))
 
-            initialValues.append(np.zeros(2+self.orders[-1])) # Initialize ghost cell, this value is overriden before the start of the simulation
+            initial_values.append(np.zeros(2+self.orders[-1])) # Initialize ghost cell, this value is overriden before the start of the simulation
             
-            return initialValues
+            return initial_values
     
-    def computeBreakdownCriteria(self,values):
-        relativeValueLastMoment = np.zeros(self.mesh.resolution)
+    def compute_breakdown_criteria(self,values):
+        relative_value_last_moment = np.zeros(self.mesh.resolution)
         for i in range(self.mesh.resolution):
             #relativeValueLastMoment[i] = np.abs(values[i+1][-1])/np.sum(np.abs(values[i+1][0:]))
-            relativeValueLastMoment[i] = values[i+1][-1]
+            relative_value_last_moment[i] = values[i+1][-1]
 
-        return relativeValueLastMoment
+        return relative_value_last_moment

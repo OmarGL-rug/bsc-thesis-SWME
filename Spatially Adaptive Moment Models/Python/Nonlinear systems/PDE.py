@@ -1,26 +1,139 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-#TODO: use duck typing
+#TODO: implement MomentModel as a subclass of PDE and include the possibility of simulating PDEs that are not moment models (and don't have an order)
 class PDE(ABC):
+    """
+    This interface represents a partial differential equation.
+
+    ...
+
+    Attributes
+    ----------
+    initial_condition : str
+        initial condition for the partial differential equation
+
+    
+    Abstract methods
+    -------
+    def compute_system_matrix(order,values):
+        computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
+    def compute_source_term(self,order,values):
+        computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
+    def get_initial_values(self,order,initial_condition,position):
+        calculates the initial values for one specific physical position
+    """
 
     @abstractmethod
     def __init__(self, initial_condition):
+        """
+        Constructs all the necessary attributes for the PDE object.
+
+        Parameters
+        ----------
+        initial_condition : str
+            initial condition of the PDE
+        """
+
         pass
 
     @abstractmethod
     def compute_system_matrix(self,order,values):
+        """
+        Computes the system matrix with a given order of the PDE evaluated in the given values.
+
+        Parameters
+        ----------
+        order : int
+            order of the moment model PDE (TODO: create MomentModel as a subclass of PDE)
+        values : numpy 1D array
+            values of the variables
+        
+        
+        Returns
+        -------
+        A: numpy 2D array
+            System matrix
+
+        """
+
+
         pass
     
     @abstractmethod
     def compute_source_term(self,order,values):
+        """
+        Computes the source term with a given order of the PDE evaluated in the given values.
+
+        Parameters
+        ----------
+        order : int
+            order of the moment model PDE (TODO: create MomentModel as a subclass of PDE)
+        values : numpy 1D array
+            values of the variables
+        
+        
+        Returns
+        -------
+        S: numpy 1D array
+            source term vector
+
+        """
+
         pass
 
     @abstractmethod
     def get_initial_values(self,order,initial_condition,position):
+
+        """
+        calculates the initial values for one specific physical position
+
+        Parameters
+        ----------
+        order : int
+            order of the moment model PDE (TODO: create MomentModel as a subclass of PDE)
+        initial condition : str
+            name of the initial condition
+        position : float (if 1D) or numpy 1D array of floats (2D)
+            the physical position in which the initial values are computed
+        
+        
+        Returns
+        -------
+        initial_values: numpy 1D array
+            initial values for the given initial condition evaluated in the phyiscal position
+
+        """
+
         pass
 
 class SWME1D(PDE):
+
+    """
+    This class represents the one-dimensional Shallow Water Moment Equations (SWME1D).
+
+    ...
+
+    Attributes
+    ----------
+    initial_condition : str
+        initial condition for the SWME1D
+
+    
+    Implemented methods from interface PDE
+    ---------------------------------
+    def compute_system_matrix(order,values):
+        computes the system matrix of the SWME1D evaluated in the given values, for the given order. 
+    def compute_source_term(self,order,values):
+        computes the system matrix of the SWME1D evaluated in the given values, for the given order.
+    def get_initial_values(self,order,initial_condition,position):
+        calculates the initial values for one specific physical position
+
+    Instance methods
+    ----------------
+    None
+    
+    """
 
     def __init__(self, initial_condition,viscosity,slip_length,hyperbolic):
         self.initial_condition = initial_condition
@@ -114,8 +227,8 @@ class SWME1D(PDE):
                 A=[0][0]=1 #fill (not implemented yet)
             return A
 
-    def computeSourceTerm(self, order, values):
-        g = 1
+    def compute_source_term(self, order, values):
+        g = 1 #TODO: set g = 1 somewhere else
         
         S = np.zeros(order+2) 
         h = values[0]
@@ -156,72 +269,72 @@ class SWME1D(PDE):
         return S
     
     def get_initial_values(self,order,initial_condition,position):
-            vector = np.zeros(2+order)
+            initial_values = np.zeros(2+order)
             if initial_condition == 'constantHeight_noVelocity':
-                vector[0] = 1
-                vector[1] = 0
+                initial_values[0] = 1
+                initial_values[1] = 0
                 if order > 0:
-                    vector[2] = 0 
+                    initial_values[2] = 0 
                 if order > 1:
-                    vector[3] = 0 
+                    initial_values[3] = 0 
                 if order > 2:
-                    vector[4] = 0 
+                    initial_values[4] = 0 
                 if order > 3:
-                    vector[5] = 0 
+                    initial_values[5] = 0 
                 if order > 4:
-                    vector[6] = 0 
+                    initial_values[6] = 0 
             elif initial_condition == 'constantHeight_constantVelocity':
-                vector[0] = 1
-                vector[1] = 1*vector[0]
+                initial_values[0] = 1
+                initial_values[1] = 1*initial_values[0]
                 if order > 0:
-                    vector[2] = 0 
+                    initial_values[2] = 0 
                 if order > 1:
-                    vector[3] = 0 
+                    initial_values[3] = 0 
                 if order > 2:
-                    vector[4] = 0 
+                    initial_values[4] = 0 
                 if order > 3:
-                    vector[5] = 0 
+                    initial_values[5] = 0 
                 if order > 4:
-                    vector[6] = 0 
+                    initial_values[6] = 0 
             elif initial_condition == 'damBreak_noVelocity':
                 x0 = 0
                 if position < x0:
-                    vector[0] = 2
-                    vector[1] = 0*vector[0]
+                    initial_values[0] = 2
+                    initial_values[1] = 0*initial_values[0]
                     if order > 0:
-                        vector[2] = 0 
+                        initial_values[2] = 0 
                     if order > 1:
-                        vector[3] = 0 
+                        initial_values[3] = 0 
                     if order > 2:
-                        vector[4] = 0 
+                        initial_values[4] = 0 
                     if order > 3:
-                        vector[5] = 0 
+                        initial_values[5] = 0 
                     if order > 4:
-                        vector[6] = 0 
+                        initial_values[6] = 0 
                 else:
-                    vector[0] = 1
-                    vector[1] = 0*vector[0]
+                    initial_values[0] = 1
+                    initial_values[1] = 0*initial_values[0]
                     if order > 0:
-                        vector[2] = 0 
+                        initial_values[2] = 0 
                     if order > 1:
-                        vector[3] = 0 
+                        initial_values[3] = 0 
                     if order > 2:
-                        vector[4] = 0 
+                        initial_values[4] = 0 
                     if order > 3:
-                        vector[5] = 0 
+                        initial_values[5] = 0 
                     if order > 4:
-                        vector[6] = 0 
+                        initial_values[6] = 0 
             elif initial_condition == 'linearHeight_noVelocity':
-                vector[0] = 1 + 0.1*position
-                vector[1] = 0*vector[0]
+                initial_values[0] = 1 + 0.1*position
+                initial_values[1] = 0*initial_values[0]
                 if order > 0:
-                    vector[2] = 0 
+                    initial_values[2] = 0 
                 if order > 1:
-                    vector[3] = 0 
+                    initial_values[3] = 0 
                 if order > 2:
-                    vector[4] = 0 
+                    initial_values[4] = 0 
                 if order > 3:
-                    vector[5] = 0 
+                    initial_values[5] = 0 
                 if order > 4:
-                    vector[6] = 0 
-            return vector
+                    initial_values[6] = 0 
+            return initial_values
