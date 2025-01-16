@@ -25,7 +25,8 @@ class PDE(ABC):
     """
 
     @abstractmethod
-    def __init__(self, initial_condition):
+    def __init__(self, 
+                initial_condition: str):
         """
         Constructs all the necessary attributes for the PDE object.
 
@@ -38,7 +39,9 @@ class PDE(ABC):
         pass
 
     @abstractmethod
-    def compute_system_matrix(self,order,values):
+    def compute_system_matrix(self,
+                              order: int,
+                              values: np.array) -> np.array:
         """
         Computes the system matrix with a given order of the PDE evaluated in the given values.
 
@@ -61,7 +64,9 @@ class PDE(ABC):
         pass
     
     @abstractmethod
-    def compute_source_term(self,order,values):
+    def compute_source_term(self,
+                            order: int,
+                            values: np.array) -> np.array:
         """
         Computes the source term with a given order of the PDE evaluated in the given values.
 
@@ -83,7 +88,10 @@ class PDE(ABC):
         pass
 
     @abstractmethod
-    def get_initial_values(self,order,initial_condition,position):
+    def get_initial_values(self,
+                           order: int,
+                           initial_condition: str,
+                           position) -> np.array:
 
         """
         calculates the initial values for one specific physical position
@@ -131,17 +139,24 @@ class SWME1D(PDE):
 
     Instance methods
     ----------------
-    None
+    def compute_vertical_velocity_profile(values):
+        reconstruct the vertical velocity profiles from the moment values
     
     """
 
-    def __init__(self, initial_condition,viscosity,slip_length,hyperbolic):
+    def __init__(self, 
+                initial_condition: str,
+                viscosity: float,
+                slip_length: float,
+                hyperbolic: bool):
         self.initial_condition = initial_condition
         self.viscosity = viscosity
         self.slip_length = slip_length
         self.hyperbolic = hyperbolic
 
-    def compute_system_matrix(self, order, values):
+    def compute_system_matrix(self,
+                              order: int,
+                              values: np.array) -> np.array:
             g = 1
             A=np.zeros((order+2,order+2)) 
             h = values[0]
@@ -227,7 +242,9 @@ class SWME1D(PDE):
                 A=[0][0]=1 #fill (not implemented yet)
             return A
 
-    def compute_source_term(self, order, values):
+    def compute_source_term(self,
+                            order: int,
+                            values: np.array) -> np.array:
         g = 1 #TODO: set g = 1 somewhere else
         
         S = np.zeros(order+2) 
@@ -268,64 +285,41 @@ class SWME1D(PDE):
             S[0]=1 #fill (not implemented yet)
         return S
     
-    def get_initial_values(self,order,initial_condition,position):
-            initial_values = np.zeros(2+order)
-            if initial_condition == 'constantHeight_noVelocity':
-                initial_values[0] = 1
-                initial_values[1] = 0
-                if order > 0:
-                    initial_values[2] = 0 
-                if order > 1:
-                    initial_values[3] = 0 
-                if order > 2:
-                    initial_values[4] = 0 
-                if order > 3:
-                    initial_values[5] = 0 
-                if order > 4:
-                    initial_values[6] = 0 
-            elif initial_condition == 'constantHeight_constantVelocity':
-                initial_values[0] = 1
-                initial_values[1] = 1*initial_values[0]
-                if order > 0:
-                    initial_values[2] = 0 
-                if order > 1:
-                    initial_values[3] = 0 
-                if order > 2:
-                    initial_values[4] = 0 
-                if order > 3:
-                    initial_values[5] = 0 
-                if order > 4:
-                    initial_values[6] = 0 
-            elif initial_condition == 'damBreak_noVelocity':
-                x0 = 0
-                if position < x0:
-                    initial_values[0] = 2
-                    initial_values[1] = 0*initial_values[0]
-                    if order > 0:
-                        initial_values[2] = 0 
-                    if order > 1:
-                        initial_values[3] = 0 
-                    if order > 2:
-                        initial_values[4] = 0 
-                    if order > 3:
-                        initial_values[5] = 0 
-                    if order > 4:
-                        initial_values[6] = 0 
-                else:
-                    initial_values[0] = 1
-                    initial_values[1] = 0*initial_values[0]
-                    if order > 0:
-                        initial_values[2] = 0 
-                    if order > 1:
-                        initial_values[3] = 0 
-                    if order > 2:
-                        initial_values[4] = 0 
-                    if order > 3:
-                        initial_values[5] = 0 
-                    if order > 4:
-                        initial_values[6] = 0 
-            elif initial_condition == 'linearHeight_noVelocity':
-                initial_values[0] = 1 + 0.1*position
+    def get_initial_values(self,
+                           order: int,
+                           initial_condition: str,
+                           position: float) -> np.array:
+        initial_values = np.zeros(2+order)
+        if initial_condition == 'constantHeight_noVelocity':
+            initial_values[0] = 1
+            initial_values[1] = 0
+            if order > 0:
+                initial_values[2] = 0 
+            if order > 1:
+                initial_values[3] = 0 
+            if order > 2:
+                initial_values[4] = 0 
+            if order > 3:
+                initial_values[5] = 0 
+            if order > 4:
+                initial_values[6] = 0 
+        elif initial_condition == 'constantHeight_constantVelocity':
+            initial_values[0] = 1
+            initial_values[1] = 20*initial_values[0]
+            if order > 0:
+                initial_values[2] = 0 
+            if order > 1:
+                initial_values[3] = 0 
+            if order > 2:
+                initial_values[4] = 0 
+            if order > 3:
+                initial_values[5] = 0 
+            if order > 4:
+                initial_values[6] = 0 
+        elif initial_condition == 'damBreak_noVelocity':
+            x0 = 0
+            if position < x0:
+                initial_values[0] = 2
                 initial_values[1] = 0*initial_values[0]
                 if order > 0:
                     initial_values[2] = 0 
@@ -337,4 +331,68 @@ class SWME1D(PDE):
                     initial_values[5] = 0 
                 if order > 4:
                     initial_values[6] = 0 
-            return initial_values
+            else:
+                initial_values[0] = 1
+                initial_values[1] = 0*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0 
+        elif initial_condition == 'linearHeight_noVelocity':
+            initial_values[0] = 1 + 0.1*position
+            initial_values[1] = 0*initial_values[0]
+            if order > 0:
+                initial_values[2] = 0 
+            if order > 1:
+                initial_values[3] = 0 
+            if order > 2:
+                initial_values[4] = 0 
+            if order > 3:
+                initial_values[5] = 0 
+            if order > 4:
+                initial_values[6] = 0 
+        return initial_values
+    
+    def compute_vertical_velocity_profile(self,
+                                          order: int, 
+                                          values: np.array,
+                                          z_points: np.array) -> np.array:
+        """
+        reconstructs the vertical velocity profile from the moment values and evaluates the velocity profile pointwise
+
+        Parameters
+        ----------
+        order: integer
+            order of the model
+        values: np.array (2D)
+            2D numpy array containing the values of the variables in each mesh cell
+        z_points: 
+            the locations in vertical direction in which the velocity is computed
+        
+        Returns
+        -------
+        velocity_profile: numpy 2D array
+            lateral velocity evaluated in in each point in z_points in z-direction
+
+        """
+        velocity_profile = np.zeros((len(values), len(z_points)))
+        if order >= 0:
+            for i in range(len(values)):
+                velocity_profile[i,:] += values[i,2]*(np.ones(len(z_points)))
+        if order >= 1:
+            for i in range(len(values)):
+                velocity_profile[i,:] += values[i,3]*(np.ones(len(z_points)) - 2*z_points)
+        if order >= 2:
+            for i in range(len(values)):
+                velocity_profile[i,:] += values[i,4]*(np.ones(len(z_points)) - 6*z_points + 6*np.square(z_points))
+        if order >= 3:
+            for i in range(len(values)):
+                velocity_profile[i,:] += values[i,5]*(np.ones(len(z_points)) - 12*z_points + 30*np.square(z_points) - 20*np.power(z_points,3))
+        
+        return velocity_profile

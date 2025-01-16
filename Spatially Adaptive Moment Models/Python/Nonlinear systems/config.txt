@@ -18,6 +18,7 @@ slipLength = 0.1
 viscosity = 0.1
 
 # Specify initial conditions. Implemented: DamBreak
+# SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity
 initialCondition = damBreak_noVelocity
 
 

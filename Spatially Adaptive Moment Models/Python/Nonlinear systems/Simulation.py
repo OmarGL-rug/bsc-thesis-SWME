@@ -32,9 +32,9 @@ class Simulation(ABC):
     -------
     def run_simulation(t_end):
         runs the simulation and outputs the end values
-    def get_initial_conditions(self,cell_centers_x):
+    def _get_initial_conditions(self,cell_centers_x):
         constructs the initial values in each grid cell
-    def update_boundary_conditions(self,values_boundary):
+    def _update_boundary_conditions(self,values_boundary):
         updates the boundary conditions
     """
 
@@ -46,7 +46,8 @@ class Simulation(ABC):
         pass
 
     @abstractmethod
-    def run_simulation(self,t_end):
+    def run_simulation(self,
+                       t_end: float) -> list:
         """
         Runs the simulation until the end time t_end and returns the end values of the variables
 
@@ -64,14 +65,24 @@ class Simulation(ABC):
         pass
 
     @abstractmethod
-    def get_initial_conditions(self,cell_centers):
+    def _get_initial_conditions(self,
+                               cell_centers):
         """
         Implemented and documented in the child classes. 
         """
         pass
 
     @abstractmethod
-    def update_boundary_conditions(self,values_boundary):
+    def _update_boundary_conditions(self,
+                                   values_boundary):
+        """
+        Implemented and documented in the child classes.
+        """
+        pass
+
+    @abstractmethod
+    def _post_processing(self,
+                         end_values):
         """
         Implemented and documented in the child classes.
         """
@@ -106,19 +117,19 @@ class ClassicalSimulation1D(Simulation):
     -------
     def run_simulation(t_end):
         runs the simulation and outputs the end values
-    def get_initial_conditions(self,cell_centers_x):
+    def _get_initial_conditions(self,cell_centers_x):
         constructs the initial values in each grid cell
-    def update_boundary_conditions(self,values_boundary):
+    def _update_boundary_conditions(self,values_boundary):
         updates the boundary conditions
     """
 
     def __init__(self,
-                 order,
-                 physical_domain,
+                 order: int,
+                 physical_domain: list,
                  pde_type: pde.PDE,
                  mesh: mesh.RectangularMesh,
-                 boundary_condition,
-                 initial_condition,
+                 boundary_condition: str,
+                 initial_condition: str,
                  spatial_discretization: spatialDiscretization.SpatialDiscretization):
         """
         Constructs all the necessary attributes for the ClassicalSimulation1D object.
@@ -127,7 +138,7 @@ class ClassicalSimulation1D(Simulation):
         ----------
         order: int
             order of the moment model
-        physical_domain : list of floats (if 1D) or numpy 2D array of floats (if 2D)  
+        physical_domain : list of floats  
             the boundaries of the physical domain
         pde_type : str
             the partial differential equations that is simulated
@@ -151,11 +162,12 @@ class ClassicalSimulation1D(Simulation):
         self.initial_condition = initial_condition
         self.spatial_discretization = spatial_discretization
 
-    def run_simulation(self,t_end):
+    def run_simulation(self,
+                       t_end: float) -> list:
 
         delta_x = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 
-        values = self.get_initial_conditions(self.mesh.cell_center_positions)
+        values = self._get_initial_conditions(self.mesh.cell_center_positions)
         previous_values = copy.deepcopy(values)
 
         CFL = 0.25
@@ -172,8 +184,8 @@ class ClassicalSimulation1D(Simulation):
             g = 1
 
             # update boundary conditions
-            previous_values[0] = self.update_boundary_conditions(previous_values[1])
-            previous_values[self.mesh.resolution+1] = self.update_boundary_conditions(previous_values[self.mesh.resolution])
+            previous_values[0] = self._update_boundary_conditions(previous_values[1])
+            previous_values[self.mesh.resolution+1] = self._update_boundary_conditions(previous_values[self.mesh.resolution])
 
             if self.order == 0:
                 max_speed_plus = max([abs(value[1]/value[0]
@@ -228,7 +240,8 @@ class ClassicalSimulation1D(Simulation):
             previous_values = copy.deepcopy(values)
         return values
 
-    def get_initial_conditions(self,cell_centers_x):
+    def _get_initial_conditions(self,
+                               cell_centers_x: np.array) -> np.array:
 
         """
         construct the initial values for the variables
@@ -256,7 +269,8 @@ class ClassicalSimulation1D(Simulation):
         
         return initial_values
     
-    def update_boundary_conditions(self,values_boundary):
+    def _update_boundary_conditions(self,
+                                   values_boundary: np.array) -> np.array:
         """
         update the boundary conditions
 
@@ -267,13 +281,21 @@ class ClassicalSimulation1D(Simulation):
         
         Returns
         -------
-        values_boundary: numpy 1D array
+        values_ghost: numpy 1D array
             the values of the variables in the ghost cell
 
         """
 
         if self.boundary_condition == 'INFLOW_OUTFLOW':
-            return values_boundary 
+            values_ghost = values_boundary
+        return values_ghost 
+    
+    def _post_processing(self,
+                         end_values):
+        """
+        TO BE IMPLEMENTED.
+        """
+        pass
 
 class SpatiallyAdaptiveSimulation1D(Simulation):
 
@@ -306,9 +328,9 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
     -------
     def run_simulation(t_end):
         runs the simulation and outputs the end values
-    def get_initial_conditions(self,cell_centers_x):
+    def _get_initial_conditions(self,cell_centers_x):
         constructs the initial values in each grid cell
-    def update_boundary_conditions(self,values_boundary):
+    def _update_boundary_conditions(self,values_boundary):
         updates the boundary conditions
 
 
@@ -319,14 +341,39 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
     """
 
     def __init__(self,
-                 boundary_interfaces,
-                 orders,
-                 physical_domain,
+                 boundary_interfaces: list,
+                 orders: list,
+                 physical_domain: list,
                  pde_type: pde.PDE,
                  mesh: mesh.RectangularMesh,
-                 boundary_condition,
-                 initial_condition,
+                 boundary_condition: str,
+                 initial_condition: str,
                  spatial_discretization: spatialDiscretization.SpatialDiscretization):
+
+        """
+        Constructs all the necessary attributes for the SpatiallyAdaptiveSimulation1D object.
+
+        Parameters
+        ----------
+        boundary_interfaces: list of floats
+            list of the physical positions of the boundary interfaces between the different subdomains
+        orders: list of integers
+            list of the orders of the moment model in each subdomain
+        physical_domain : list of floats 
+            the boundaries of the physical domain
+        pde_type : str
+            the partial differential equations that is simulated
+        mesh : RectangularMesh
+            the used mesh
+        boundary_condition: str
+            the used boundary condition
+        initial_condition: str
+            the initial condition for the simulation
+        spatial_discretization: spatial_discretization
+            the numerical method for the spatial discretization
+
+        """
+
         self.boundary_interfaces = boundary_interfaces
         self.orders = orders
         self.physical_domain = physical_domain
@@ -341,13 +388,14 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
         self.boundary_interfaces_discretized = []
 
     
-    def run_simulation(self,t_end):
+    def run_simulation(self,
+                       t_end: float) -> np.array:
         g = 1
         delta_x = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 
-        self.calculate_boundary_interfaces()
+        self._calculate_boundary_interfaces()
 
-        values = self.get_initial_conditions(self.mesh.cell_center_positions)
+        values = self._get_initial_conditions(self.mesh.cell_center_positions)
         previous_values = copy.deepcopy(values)
 
         CFL = 0.25
@@ -357,8 +405,10 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
         while t < t_end:
 
             # update boundary conditions
-            previous_values[0] = self.update_boundary_conditions(previous_values[1])
-            previous_values[self.mesh.resolution+1] = self.update_boundary_conditions(previous_values[self.mesh.resolution])
+            previous_values[0] = self._update_boundary_conditions(previous_values[1])
+            previous_values[self.mesh.resolution+1] = self._update_boundary_conditions(previous_values[self.mesh.resolution])
+            values[0] = self._update_boundary_conditions(previous_values[1])
+            values[self.mesh.resolution+1] = self._update_boundary_conditions(previous_values[self.mesh.resolution])
 
             min_order = min(self.orders)
             if min_order == 0:
@@ -606,43 +656,143 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
                 values[i] = previous_values[i] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
             t+=delta_t
             previous_values = copy.deepcopy(values)
-        return values
+        simulation_data = self._post_processing(values)
+        return simulation_data
     
-    def calculate_boundary_interfaces(self):
+    def _calculate_boundary_interfaces(self):
+
+        """
+        Calculates the interfaces in the grid that correspond to the physical positions of the boundary interfaces
+
+        Parameters
+        ----------
+        None
+        
+        
+        Returns
+        -------
+        None
+        """
+
         self.boundary_interfaces_discretized.append(round((self.boundary_interfaces[0] - self.x1)/(self.x2 - self.x1)*self.mesh.resolution))
         for i in range(1,len(self.boundary_interfaces)):
             self.boundary_interfaces_discretized.append(self.boundary_interfaces_discretized[i-1]
                 + round((self.boundary_interfaces[i]-self.boundary_interfaces[i-1])/(self.x2-self.x1)*self.mesh.resolution))
             
-    def update_boundary_conditions(self,values_boundary):
+    def _update_boundary_conditions(self,
+                                    values_boundary: np.array) -> np.array:
+
+        """
+        update the boundary conditions
+
+        Parameters
+        ----------
+        values_boundary : numpy 1D array #TODO: implement boundary conditions that include more cells
+            the values of the variables in the boundary cell
+        
+        Returns
+        -------
+        values_ghost: numpy 1D array
+            the values of the variables in the ghost cell
+
+        """
+
         if self.boundary_condition == 'INFLOW_OUTFLOW':
-            return values_boundary 
+            values_ghost = values_boundary
+        return values_ghost 
 
-    def get_initial_conditions(self,cell_centers_x):
-            initial_values = []
-
-            initial_values.append(np.zeros(2+self.orders[0])) # Initialize ghost cell, this value is overriden before the start of the simulation
-
-            right_boundary_subdomain = 0
-            for m in range(len(self.boundary_interfaces_discretized)):
-                left_boundary_subdomain = right_boundary_subdomain
-                if self.orders[m+1] > self.orders[m]: 
-                    right_boundary_subdomain = self.boundary_interfaces_discretized[m]-2
-                else:
-                    right_boundary_subdomain = self.boundary_interfaces_discretized[m]+2
-                for i in range(left_boundary_subdomain,right_boundary_subdomain):
-                    initial_values.append(self.pde_type.get_initial_values(self.orders[m],self.initial_condition,cell_centers_x[i])) 
-            for i in range(right_boundary_subdomain,self.mesh.resolution):
-                initial_values.append(self.pde_type.get_initial_values(self.orders[-1],self.initial_condition,cell_centers_x[i]))
-
-            initial_values.append(np.zeros(2+self.orders[-1])) # Initialize ghost cell, this value is overriden before the start of the simulation
+    def _get_initial_conditions(self,
+                                cell_centers_x: np.array) -> list:
             
-            return initial_values
+        """
+        construct the initial values for the variables
+
+        Parameters
+        ----------
+        cell_centers_x : numpy 1D array
+            the centers of the cells
+        
+        Returns
+        -------
+        initial_values: list of numpy arrays
+            initial values of the variables in each grid cell
+
+        """
+            
+        initial_values = []
+
+        initial_values.append(np.zeros(2+self.orders[0])) # Initialize ghost cell, this value is overriden before the start of the simulation
+
+        right_boundary_subdomain = 0
+        for m in range(len(self.boundary_interfaces_discretized)):
+            left_boundary_subdomain = right_boundary_subdomain
+            if self.orders[m+1] > self.orders[m]: 
+                right_boundary_subdomain = self.boundary_interfaces_discretized[m]-2
+            else:
+                right_boundary_subdomain = self.boundary_interfaces_discretized[m]+2
+            for i in range(left_boundary_subdomain,right_boundary_subdomain):
+                initial_values.append(self.pde_type.get_initial_values(self.orders[m],self.initial_condition,cell_centers_x[i])) 
+        for i in range(right_boundary_subdomain,self.mesh.resolution):
+            initial_values.append(self.pde_type.get_initial_values(self.orders[-1],self.initial_condition,cell_centers_x[i]))
+
+        initial_values.append(np.zeros(2+self.orders[-1])) # Initialize ghost cell, this value is overriden before the start of the simulation
+            
+        return initial_values
     
-    def compute_breakdown_criteria(self,values):
+    def compute_breakdown_criteria(self,
+                                   values: np.array) -> list:
+
+        """
+        Compute breakdown criteria for quantifying the required modelling complexity
+
+        Parameters
+        ----------
+        values : list of numpy 1D arrays
+            the values of the variables in each mesh cell
+        
+        Returns
+        -------
+        relative_value_last_moment: list of floats
+            modelling complexity quantity in each mesh cell
+
+        """
+
         relative_value_last_moment = np.zeros(self.mesh.resolution)
         for i in range(self.mesh.resolution):
-            #relativeValueLastMoment[i] = np.abs(values[i+1][-1])/np.sum(np.abs(values[i+1][0:]))
-            relative_value_last_moment[i] = values[i+1][-1]
+            relative_value_last_moment[i] = np.abs(values[i,-1])/np.sum(np.abs(values[i,0:]))
 
-        return relative_value_last_moment
+        gradients = np.zeros((self.mesh.resolution,max(self.orders ) + 2)) #TODO: rewrite this such that it is generalizable
+
+        height_gradient = np.zeros(self.mesh.resolution)
+        velocity_gradient = np.zeros(self.mesh.resolution)
+
+        for j in range(max(self.orders) + 2):
+            for i in range(self.mesh.resolution-1):
+                if values[i,j+1] < 0.01:
+                    gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.01)
+                else:
+                    gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/values[i,j+1])
+            if values[i,j+1] < 0.01:
+                gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.01)
+            else:
+                gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/values[i,j+1])
+            #gradients[:,j] = gradients[:,j]/gradients[:,j].max()   
+
+        return gradients[:,1]
+    
+    def _post_processing(self,
+                         values: list) -> np.array:
+        """
+        TODO: write docstring
+        """
+        max_order = max(self.orders)
+
+        data_array = np.zeros((self.mesh.resolution,max_order+3)) # rewrite this such that it can be generalized to other PDE models
+ 
+        for i in range(self.mesh.resolution):
+            data_array[i,0] = self.mesh.cell_center_positions[i]
+            data_array[i,1] = values[i+1][0]
+            for j in range(1,len(values[i+1])):
+                data_array[i,j+1] = values[i+1][j]/data_array[i,1]
+
+        return data_array

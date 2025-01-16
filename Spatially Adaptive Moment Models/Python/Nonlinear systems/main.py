@@ -58,7 +58,7 @@ def main():
 
         n = grid_information.getint('resolutionX')
 
-        _mesh = mesh.CartesianUniformMesh1D([x1,x2],n) #TODO: Implement different grids
+        _mesh = mesh.UniformRectangularMesh1D([x1,x2],n) #TODO: Implement different grids
 
         if spatiallyAdaptive:
             boundaryInterfaces = numerical_method_information['boundaryInterfaces']
@@ -77,22 +77,29 @@ def main():
                 _spatialDiscretization
             )
 
-            endValues = _simulation.runSimulation(tend)
+            #endValues = _simulation.run_simulation(t_end)
             
-            maxOrder = max(orders)
+            #maxOrder = max(orders)
 
-            dataArray = np.zeros((n,maxOrder+3))
+            #dataArray = np.zeros((n,maxOrder+3))
  
-            for i in range(n):
-                dataArray[i][0] = _mesh.cellCenterPositions[i]
-                for j in range(len(endValues[i+1])):
-                    dataArray[i][j+1] = endValues[i+1][j]
+            #for i in range(n):
+            #    dataArray[i][0] = _mesh.cell_center_positions[i]
+            #    for j in range(len(endValues[i+1])):
+            #        dataArray[i][j+1] = endValues[i+1][j]
 
-            dataFrame = pd.DataFrame(dataArray)
-            dataFrame.to_csv('data.csv', index=False)
+            #dataFrame = pd.DataFrame(dataArray)
+            data_array = _simulation.run_simulation(t_end)
+            data_frame = pd.DataFrame(data_array)
+            data_frame.to_csv('data.csv', index=False)
 
-            plt.plot(_mesh.cellCenterPositions, dataArray[:,1])
-            #plt.plot(_mesh.cellCenterPositions,relativeValuesLastMoment)
+            z = np.linspace(0,1,100)
+            velocity_profile = _pde.compute_vertical_velocity_profile(np.max(orders),data_array,z)
+
+            plt.plot(velocity_profile[250,:], z)
+
+            #plt.plot(_mesh.cell_center_positions, data_array[:,3])
+            #plt.plot(_mesh.cell_center_positions,_simulation.compute_breakdown_criteria(data_array))
             plt.show()
         
         else:

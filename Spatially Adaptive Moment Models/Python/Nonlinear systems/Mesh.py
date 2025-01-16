@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 
-#TODO: only rectangular meshes are considered here. Extend to other types of mesh.
+#TODO: only rectangular, quadrilateral meshes with constant cell size are considered here. Extend to other types of mesh.
 class RectangularMesh(ABC):
 
     """
@@ -19,12 +19,12 @@ class RectangularMesh(ABC):
     
     Abstract methods
     -------
-    def compute_cell_centers():
+    def _compute_cell_centers():
         computes the cell centers of the mesh.
     """
 
     @abstractmethod
-    def __init__(self, boundaries: list, resolution):
+    def __init__(self, boundaries, resolution):
         """
         Constructs all the necessary attributes for the PDE object.
 
@@ -39,10 +39,10 @@ class RectangularMesh(ABC):
         self.boundaries = boundaries
         self.resolution = resolution
 
-        self.cell_center_positions = self.compute_cell_centers()
+        self.cell_center_positions = self._compute_cell_centers()
 
     @abstractmethod
-    def compute_cell_centers(self):
+    def _compute_cell_centers(self):
         """
         Helper function that computes the cell centers of the cells in the mesh.
 
@@ -77,7 +77,7 @@ class UniformRectangularMesh1D(RectangularMesh):
     
     Implemented methods from interface Rectangular Mesh
     -------
-    def compute_cell_centers():
+    def _compute_cell_centers():
         computes the cell centers of the mesh.
     """
 
@@ -85,9 +85,9 @@ class UniformRectangularMesh1D(RectangularMesh):
         self.boundaries = boundaries
         self.resolution = resolution
 
-        self.cell_center_positions = self.compute_cell_centers()
+        self.cell_center_positions = self._compute_cell_centers()
 
-    def compute_cell_centers(self):
+    def _compute_cell_centers(self):
         cell_centers = np.linspace(self.boundaries[0], self.boundaries[1], self.resolution)
         return cell_centers
     
@@ -96,9 +96,9 @@ class UniformRectangularMesh2D(RectangularMesh):
         self.boundaries = boundaries
         self.resolution = resolution
 
-        self.cell_center_positions = self.compute_cell_centers()
+        self.cell_center_positions = self._compute_cell_centers()
 
-    def compute_cell_centers(self):
+    def _compute_cell_centers(self):
         cell_centers_x = np.linspace(self.boundaries[0,0], self.boundaries[0,1], self.resolution[0])
         cell_centers_y = np.linspace(self.boundaries[1,0], self.boundaries[1,1], self.resolution[1])
         cell_centers = [cell_centers_x,cell_centers_y]
