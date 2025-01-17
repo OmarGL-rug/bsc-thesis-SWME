@@ -411,6 +411,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
             values[self.mesh.resolution+1] = self._update_boundary_conditions(previous_values[self.mesh.resolution])
 
             min_order = min(self.orders)
+            #TODO: add method to PDE class that computes the wave speed (approximately)
             if min_order == 0:
                 max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g))) 
@@ -432,7 +433,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
                 max_speed_min = max([abs(value[1]/value[0]
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0])) 
                                     for value in previous_values]) 
-            elif min_order == 3:
+            elif min_order >= 3: #TODO: add higher orders
                 max_speed_plus = max([abs(value[1]/value[0]
                                         +np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
                                         for value in previous_values])
@@ -440,7 +441,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
                                     -np.sqrt(value[0]*int(g)+value[2]/value[0]*value[2]/value[0]+value[3]/value[0]*value[3]/value[0]+value[4]/value[0]*value[4]/value[0])) 
                                     for value in previous_values])         
             max_speed = max(max_speed_plus,max_speed_min)
-            delta_t = CFL*delta_x*max_speed #TODO implement CFL condition
+            delta_t = CFL*delta_x*max_speed 
 
             right_boundary_subdomain = 0
 
