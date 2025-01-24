@@ -19,7 +19,7 @@ viscosity = 0.1
 
 # Specify initial conditions. Implemented: DamBreak
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity
-initialCondition = constantHeight_constantVelocity
+initialCondition = damBreak_noVelocity
 
 
 ###############################
@@ -48,10 +48,10 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 0.03
+t_end = 0.3
 
 # True: spatially adaptive simulation, False: classical simulation
-spatiallyAdaptive = True
+spatiallyAdaptive = False
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
 boundaryInterfaces = -1,1

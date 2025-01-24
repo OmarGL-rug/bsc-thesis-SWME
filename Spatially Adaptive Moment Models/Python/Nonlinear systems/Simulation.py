@@ -47,7 +47,7 @@ class Simulation(ABC):
 
     @abstractmethod
     def run_simulation(self,
-                       t_end: float) -> list:
+                       t_end: float) -> np.array:
         """
         Runs the simulation until the end time t_end and returns the end values of the variables
 
@@ -58,8 +58,8 @@ class Simulation(ABC):
         
         Returns
         -------
-        values: list of numpy arrays
-            values of the variables at the end of the simulation
+        values: numpy arrays
+            data array containing values of the variables at the end of the simulation
 
         """
         pass
@@ -154,8 +154,8 @@ class ClassicalSimulation1D(Simulation):
         """
         self.order = order
         self.physical_domain = physical_domain
-        self.x1 = physical_domain[0]
-        self.x2 = physical_domain[1]
+        #self.x1 = physical_domain[0]
+        #self.x2 = physical_domain[1]
         self.pde_type = pde_type
         self.mesh = mesh
         self.boundary_condition = boundary_condition
@@ -163,9 +163,9 @@ class ClassicalSimulation1D(Simulation):
         self.spatial_discretization = spatial_discretization
 
     def run_simulation(self,
-                       t_end: float) -> list:
+                       t_end: float) -> np.array:
 
-        delta_x = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
+        delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 
         values = self._get_initial_conditions(self.mesh.cell_center_positions)
         previous_values = copy.deepcopy(values)
@@ -238,7 +238,8 @@ class ClassicalSimulation1D(Simulation):
 
             t+=delta_t
             previous_values = copy.deepcopy(values)
-        return values
+        simulation_data = self._post_processing(values)
+        return simulation_data
 
     def _get_initial_conditions(self,
                                cell_centers_x: np.array) -> np.array:
@@ -291,11 +292,17 @@ class ClassicalSimulation1D(Simulation):
         return values_ghost 
     
     def _post_processing(self,
-                         end_values):
-        """
-        TO BE IMPLEMENTED.
-        """
-        pass
+                         values) -> list:
+
+        data_array = np.zeros((self.mesh.resolution,self.order+3)) # rewrite this such that it can be generalized to other PDE models
+ 
+        for i in range(self.mesh.resolution):
+            data_array[i,0] = self.mesh.cell_center_positions[i]
+            data_array[i,1] = values[i+1][0]
+            for j in range(1,len(values[i+1])):
+                data_array[i,j+1] = values[i+1][j]/data_array[i,1]
+
+        return data_array
 
 class SpatiallyAdaptiveSimulation1D(Simulation):
 
@@ -376,9 +383,9 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
 
         self.boundary_interfaces = boundary_interfaces
         self.orders = orders
-        self.physical_domain = physical_domain
-        self.x1 = physical_domain[0]
-        self.x2 = physical_domain[1]
+        #self.physical_domain = physical_domain
+        #self.x1 = physical_domain[0]
+        #self.x2 = physical_domain[1]
         self.pde_type = pde_type
         self.mesh = mesh
         self.boundary_condition = boundary_condition
@@ -391,7 +398,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
     def run_simulation(self,
                        t_end: float) -> np.array:
         g = 1
-        delta_x = (self.x2 - self.x1)/self.mesh.resolution #TODO: include the possibility of nonuniform grids
+        delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 
         self._calculate_boundary_interfaces()
 
@@ -675,10 +682,10 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
         None
         """
 
-        self.boundary_interfaces_discretized.append(round((self.boundary_interfaces[0] - self.x1)/(self.x2 - self.x1)*self.mesh.resolution))
+        self.boundary_interfaces_discretized.append(round((self.boundary_interfaces[0] - self.mesh.boundaries[0])/(self.mesh.boundaries[1] - self.mesh.boundaries[0])*self.mesh.resolution))
         for i in range(1,len(self.boundary_interfaces)):
             self.boundary_interfaces_discretized.append(self.boundary_interfaces_discretized[i-1]
-                + round((self.boundary_interfaces[i]-self.boundary_interfaces[i-1])/(self.x2-self.x1)*self.mesh.resolution))
+                + round((self.boundary_interfaces[i]-self.boundary_interfaces[i-1])/(self.mesh.boundaries[1]-self.mesh.boundaries[0])*self.mesh.resolution))
             
     def _update_boundary_conditions(self,
                                     values_boundary: np.array) -> np.array:
