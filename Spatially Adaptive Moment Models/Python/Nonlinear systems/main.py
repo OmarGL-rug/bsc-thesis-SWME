@@ -55,7 +55,6 @@ def main():
             _simulation = simulation.SpatiallyAdaptiveSimulation1D(
                 [float(boundaryInterface) for boundaryInterface in numerical_method_information['boundaryInterfaces'].split(',')],
                 [int(order) for order in numerical_method_information['orders'].split(',')],
-                [grid_information.getfloat('x1boundary'),grid_information.getfloat('x2boundary')],
                 _pde,
                 _mesh,
                 numerical_method_information['boundaryCondition'],
@@ -66,7 +65,6 @@ def main():
         else:
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
-                [int(order) for order in numerical_method_information['orders'].split(',')],
                 _pde,
                 _mesh,
                 numerical_method_information['boundaryCondition'],
@@ -90,7 +88,7 @@ def main():
         #plt.plot(velocity_profile[200,:], z)
 
         plt.plot(_mesh.cell_center_positions, data_array[:,1])
-        #plt.plot(_mesh.cell_center_positions,_simulation.compute_breakdown_criteria(data_array))
+        #plt.plot(_mesh.cell_center_positions,_simulation.compute_all_breakdown_criteria(data_array)[:,1])
         plt.show()
     else:
         print('2D not implemented yet')

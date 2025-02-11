@@ -136,6 +136,3 @@ class PRICE(PVM):
                           delta_x: float):
         viscosity = delta_x/(2*delta_t)*np.identity(np.shape(roe_matrix)[0])+delta_t/(2*delta_x)*roe_matrix 
         return viscosity
-
-
-

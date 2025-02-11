@@ -22,6 +22,8 @@ class PDE(ABC):
         computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
     def get_initial_values(self,order,initial_condition,position):
         calculates the initial values for one specific physical position
+    def compute_number_of_variables(self,order):
+        computes the number of state variables in the PDE given the order of the moment model
     """
 
     @abstractmethod
@@ -115,6 +117,28 @@ class PDE(ABC):
 
         pass
 
+    @abstractmethod
+    def compute_number_of_variables(self,
+                           order: int) -> int:
+
+        """
+        given the order of the moment model expansion, compute the number of state variables in the PDE
+
+        Parameters
+        ----------
+        order : int
+            order of the moment model PDE (TODO: create MomentModel as a subclass of PDE)
+        
+        
+        Returns
+        -------
+        number_of_variables: int
+            number of state variables in the PDE
+
+        """
+
+        pass
+
 class SWME1D(PDE):
 
     """
@@ -126,6 +150,12 @@ class SWME1D(PDE):
     ----------
     initial_condition : str
         initial condition for the SWME1D
+    viscosity : float
+        value for the dynamic viscosity
+    slip_length : float
+        value for the slip length
+    hyperbolic : boolean
+        whether the model is hyperbolic, true (HSWME) or false (SWME)
 
     
     Implemented methods from interface PDE
@@ -136,6 +166,8 @@ class SWME1D(PDE):
         computes the system matrix of the SWME1D evaluated in the given values, for the given order.
     def get_initial_values(self,order,initial_condition,position):
         calculates the initial values for one specific physical position
+    def compute_number_of_variables(self,order):
+        computes the number of state variables in the PDE given the order of the moment model
 
     Instance methods
     ----------------
@@ -156,8 +188,8 @@ class SWME1D(PDE):
 
     def compute_system_matrix(self,
                               order: int,
-                              values: np.array) -> np.array:
-            g = 1
+                              values: np.array,
+                              g = 9.81) -> np.array:
             A=np.zeros((order+2,order+2)) 
             h = values[0]
             um = values[1]/values[0]
@@ -464,8 +496,8 @@ class SWME1D(PDE):
 
     def compute_source_term(self,
                             order: int,
-                            values: np.array) -> np.array:
-        g = 1 #TODO: set g = 1 somewhere else
+                            values: np.array,
+                            g = 9.81) -> np.array:
         
         S = np.zeros(order+2) 
         h = values[0]
@@ -664,6 +696,10 @@ class SWME1D(PDE):
             if order > 5:
                 initial_values[7] = 0
         return initial_values
+    
+    def compute_number_of_variables(self, order):
+        number_of_variables = order + 2
+        return number_of_variables
     
     def compute_vertical_velocity_profile(self,
                                           order: int, 

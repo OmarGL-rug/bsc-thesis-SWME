@@ -1,0 +1,10 @@
+# implement a number_of_variables variable in the class Simulation that transforms the order to the number of state variables.
+
+# keep the data in an array instead of a list of arrays while running the simulation in the method run_simulation.
+
+# introduce an instance parameter max_order in the class SpatiallyAdaptiveSimulation1D.
+
+# post_processing method in Simulation class uses information from PDE class: implement this.
+
+# computing the wave speeds should be done in the PDE class: implement this
+

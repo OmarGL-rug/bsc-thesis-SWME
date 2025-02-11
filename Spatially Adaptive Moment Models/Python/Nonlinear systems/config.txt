@@ -48,7 +48,7 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 0.3
+t_end = 0.05
 
 # True: spatially adaptive simulation, False: classical simulation
 spatiallyAdaptive = False
