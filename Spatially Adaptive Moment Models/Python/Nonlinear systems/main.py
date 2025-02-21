@@ -96,9 +96,9 @@ def main():
             z = np.linspace(0,1,100)
             velocity_profile = _pde.compute_vertical_velocity_profile(np.max(orders),data_array,z)
 
-            #plt.plot(velocity_profile[200,:], z)
+            plt.plot(velocity_profile[200,:], z)
 
-            plt.plot(_mesh.cell_center_positions, data_array[:,4])
+            #plt.plot(_mesh.cell_center_positions, data_array[:,2])
             #plt.plot(_mesh.cell_center_positions,_simulation.compute_breakdown_criteria(data_array))
             plt.show()
         
