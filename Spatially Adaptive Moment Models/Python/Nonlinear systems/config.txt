@@ -19,7 +19,7 @@ viscosity = 0.1
 
 # Specify initial conditions. Implemented: DamBreak
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity
-initialCondition = constantHeight_constantVelocity
+initialCondition = damBreak_noVelocity
 
 
 ###############################
@@ -48,7 +48,7 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 0.03
+t_end = 0.05
 
 # True: spatially adaptive simulation, False: classical simulation
 spatiallyAdaptive = True
@@ -59,7 +59,7 @@ boundaryInterfaces = -1,1
 orders = 1,5,1
     ### CLASSICAL ###
     # Order of the model
-order = 2
+order = 5
 
 
 # Finite volume method type. Implemented: PVM

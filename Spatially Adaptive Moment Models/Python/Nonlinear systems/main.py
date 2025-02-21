@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import configparser
+import timeit
 
 def main():
 
@@ -15,32 +16,23 @@ def main():
     grid_information = config['grid_information']
     numerical_method_information = config['numerical_method_information']
 
-
-    OneDimensional = pde_information.getboolean('1D')
-    pde_type = pde_information['pde_type']
-    initialCondition = pde_information['initialCondition']
-
-    spatiallyAdaptive = numerical_method_information.getboolean('spatiallyAdaptive')
-    fvm_type = numerical_method_information['fvm_type']
-    boundaryCondition = numerical_method_information['boundaryCondition']
-
-
-    if pde_type == 'SWME1D':
-        viscosity = pde_information.getfloat('viscosity')
-        slipLength = pde_information.getfloat('slipLength')
-        _pde = pde.SWME1D(initialCondition,viscosity,slipLength,hyperbolic=False)
-    elif pde_type == 'HSWME1D':
-        viscosity = pde_information.getfloat('viscosity')
-        slipLength = pde_information.getfloat('slipLength')
-        _pde = pde.SWME1D(initialCondition,viscosity,slipLength,hyperbolic=True)
+    if pde_information['pde_type'] == 'SWME1D':
+        _pde = pde.SWME1D(pde_information['initialCondition'],
+                          pde_information.getfloat('viscosity'),
+                          pde_information.getfloat('slipLength'),
+                          hyperbolic=False)
+    elif pde_information['pde_type'] == 'HSWME1D':
+        _pde = pde.SWME1D(pde_information['initialCondition'],
+                          pde_information.getfloat('viscosity'),
+                          pde_information.getfloat('slipLength'),
+                          hyperbolic=True)
     else:
         print('PDE_type is not implemented yet')
     
     ##########################################################################
 
-    if fvm_type == 'PVM':
-        pvm = numerical_method_information['pvm']
-        if pvm == 'PRICE':
+    if numerical_method_information['fvm_type'] == 'PVM':
+        if numerical_method_information['pvm'] == 'PRICE':
             _spatialDiscretization = spatialDiscretization.PRICE()
         else:
             print('this pvm method is not implemented yet')
@@ -50,89 +42,61 @@ def main():
 
     #########################################################################
 
-    t_end = numerical_method_information.getfloat('t_end')
+    if pde_information.getboolean('1D'):
 
-    if OneDimensional:
-        x1 = grid_information.getfloat('x1boundary')
-        x2 = grid_information.getfloat('x2boundary')
+        _mesh = mesh.UniformRectangularMesh1D([grid_information.getfloat('x1boundary'),grid_information.getfloat('x2boundary')],
+                                               grid_information.getint('resolutionX')) #TODO: Implement different grids
 
-        n = grid_information.getint('resolutionX')
-
-        _mesh = mesh.UniformRectangularMesh1D([x1,x2],n) #TODO: Implement different grids
-
-        if spatiallyAdaptive:
+        if numerical_method_information.getboolean('spatiallyAdaptive'):
             boundaryInterfaces = numerical_method_information['boundaryInterfaces']
             boundaryInterfaces = [float(boundaryInterface) for boundaryInterface in boundaryInterfaces.split(',')]
             orders = numerical_method_information['orders']
             orders = [int(order) for order in orders.split(',')]
 
             _simulation = simulation.SpatiallyAdaptiveSimulation1D(
-                boundaryInterfaces,
-                orders,
-                [x1,x2],
+                [float(boundaryInterface) for boundaryInterface in numerical_method_information['boundaryInterfaces'].split(',')],
+                [int(order) for order in numerical_method_information['orders'].split(',')],
                 _pde,
                 _mesh,
-                boundaryCondition,
-                initialCondition,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
                 _spatialDiscretization
             )
-
-            #endValues = _simulation.run_simulation(t_end)
-            
-            #maxOrder = max(orders)
-
-            #dataArray = np.zeros((n,maxOrder+3))
- 
-            #for i in range(n):
-            #    dataArray[i][0] = _mesh.cell_center_positions[i]
-            #    for j in range(len(endValues[i+1])):
-            #        dataArray[i][j+1] = endValues[i+1][j]
-
-            #dataFrame = pd.DataFrame(dataArray)
-            data_array = _simulation.run_simulation(t_end)
-            data_frame = pd.DataFrame(data_array)
-            data_frame.to_csv('data.csv', index=False)
-
-            z = np.linspace(0,1,100)
-            velocity_profile = _pde.compute_vertical_velocity_profile(np.max(orders),data_array,z)
-
-            plt.plot(velocity_profile[200,:], z)
-
-            #plt.plot(_mesh.cell_center_positions, data_array[:,2])
-            #plt.plot(_mesh.cell_center_positions,_simulation.compute_breakdown_criteria(data_array))
-            plt.show()
         
         else:
-            order = numerical_method_information.getint('order')
+
             _simulation = simulation.ClassicalSimulation1D(
-                order,
-                [x1,x2],
+                numerical_method_information.getint('order'),
                 _pde,
                 _mesh,
-                boundaryCondition,
-                initialCondition,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
                 _spatialDiscretization)
-            
-            tend = 0.25
-            endValues = _simulation.runSimulation(tend)
 
-            dataArray = np.zeros((n,order+3))
- 
-            for i in range(n):
-                dataArray[i][0] = _mesh.cellCenterPositions[i]
-                for j in range(len(endValues[i+1])):
-                    dataArray[i][j+1] = endValues[i+1][j]
+        start = timeit.default_timer()
+        data_array = _simulation.run_simulation(numerical_method_information.getfloat('t_end'))
+        stop = timeit.default_timer()
+        print('Time: ', stop - start)
+        data_frame = pd.DataFrame(data_array)
+        data_frame.to_csv('data.csv', index=False)
 
-            dataFrame = pd.DataFrame(dataArray)
-            dataFrame.to_csv('data.csv', index=False)
+        z = np.linspace(0,1,100)
+        if numerical_method_information.getboolean('spatiallyAdaptive'):
+            velocity_profile = _pde.compute_vertical_velocity_profile(np.max([int(order) for order in numerical_method_information['orders'].split(',')]),
+                                                                      data_array,
+                                                                      z)
+        else: 
+            velocity_profile = _pde.compute_vertical_velocity_profile(numerical_method_information.getint('order'),
+                                                                      data_array,
+                                                                      z)
 
-            plt.plot(_mesh.cellCenterPositions, dataArray[:,1])
-            #plt.plot(_mesh.cellCenterPositions,relativeValuesLastMoment)
-            plt.show()
+        #plt.plot(velocity_profile[200,:], z)
+
+        plt.plot(_mesh.cell_center_positions, data_array[:,1])
+        #plt.plot(_mesh.cell_center_positions,_simulation.compute_all_breakdown_criteria(data_array)[:,1])
+        plt.show()
     else:
         print('2D not implemented yet')
-
-
 
 if __name__ == '__main__':
     main()
