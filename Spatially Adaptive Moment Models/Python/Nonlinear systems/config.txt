@@ -51,7 +51,7 @@ y2boundary = 2
 t_end = 0.05
 
 # True: spatially adaptive simulation, False: classical simulation
-spatiallyAdaptive = False
+spatiallyAdaptive = True
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
 boundaryInterfaces = -1,1
@@ -59,7 +59,7 @@ boundaryInterfaces = -1,1
 orders = 1,2,1
     ### CLASSICAL ###
     # Order of the model
-order = 2
+order = 5
 
 
 # Finite volume method type. Implemented: PVM

@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import configparser
+import timeit
 
 def main():
 
@@ -63,6 +64,7 @@ def main():
             )
         
         else:
+
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
                 _pde,
@@ -71,7 +73,10 @@ def main():
                 pde_information['initialCondition'],
                 _spatialDiscretization)
 
+        start = timeit.default_timer()
         data_array = _simulation.run_simulation(numerical_method_information.getfloat('t_end'))
+        stop = timeit.default_timer()
+        print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
         data_frame.to_csv('data.csv', index=False)
 
