@@ -10,73 +10,87 @@
 NotebookFileLineBreakTest
 NotebookFileLineBreakTest
 NotebookDataPosition[       154,          7]
-NotebookDataLength[     86458,       1992]
-NotebookOptionsPosition[     84643,       1953]
-NotebookOutlinePosition[     85047,       1969]
-CellTagsIndexPosition[     85004,       1966]
+NotebookDataLength[    129058,       2351]
+NotebookOptionsPosition[    126581,       2303]
+NotebookOutlinePosition[    127015,       2320]
+CellTagsIndexPosition[    126972,       2317]
 WindowFrame->Normal*)
 
 (* Beginning of Notebook Content *)
 Notebook[{
 
 Cell[CellGroupData[{
-Cell[BoxData[{
+Cell["Plotting of the Legendre polynomials", "Subsubsection",
+ CellChangeTimes->{{3.94937892086784*^9, 
+  3.9493789291851482`*^9}},ExpressionUUID->"55a4a2c8-7b8f-ca4b-8836-\
+b9fc764e3dd1"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
  RowBox[{
-  RowBox[{
-   RowBox[{"\[Phi]0", "[", "\[Zeta]_", "]"}], "=", 
+  RowBox[{"(*", " ", 
    RowBox[{
-    SuperscriptBox[
-     RowBox[{"(", 
-      RowBox[{"-", "1"}], ")"}], "0"], 
-    RowBox[{"LegendreP", "[", 
-     RowBox[{"0", ",", 
-      RowBox[{
-       RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
+   "Visualization", " ", "of", " ", "the", " ", "profiles", " ", "of", " ", 
+    "the", " ", "Legendre", " ", "polynomials"}], " ", "*)"}], 
+  "\[IndentingNewLine]", 
   RowBox[{
-   RowBox[{"\[Phi]1", "[", "\[Zeta]_", "]"}], "=", 
    RowBox[{
-    SuperscriptBox[
-     RowBox[{"(", 
-      RowBox[{"-", "1"}], ")"}], "1"], 
-    RowBox[{"LegendreP", "[", 
-     RowBox[{"1", ",", 
-      RowBox[{
-       RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-   RowBox[{"\[Phi]2", "[", "\[Zeta]_", "]"}], "=", 
+    RowBox[{
+     RowBox[{"\[Phi]0", "[", "\[Zeta]_", "]"}], "=", 
+     RowBox[{
+      SuperscriptBox[
+       RowBox[{"(", 
+        RowBox[{"-", "1"}], ")"}], "0"], 
+      RowBox[{"LegendreP", "[", 
+       RowBox[{"0", ",", 
+        RowBox[{
+         RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], ";"}], 
+   "\[IndentingNewLine]", 
    RowBox[{
-    SuperscriptBox[
-     RowBox[{"(", 
-      RowBox[{"-", "1"}], ")"}], "2"], 
-    RowBox[{"LegendreP", "[", 
-     RowBox[{"2", ",", 
-      RowBox[{
-       RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{
-   RowBox[{"\[Phi]3", "[", "\[Zeta]_", "]"}], "=", 
+    RowBox[{
+     RowBox[{"\[Phi]1", "[", "\[Zeta]_", "]"}], "=", 
+     RowBox[{
+      SuperscriptBox[
+       RowBox[{"(", 
+        RowBox[{"-", "1"}], ")"}], "1"], 
+      RowBox[{"LegendreP", "[", 
+       RowBox[{"1", ",", 
+        RowBox[{
+         RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], ";"}], 
+   "\[IndentingNewLine]", 
    RowBox[{
-    SuperscriptBox[
-     RowBox[{"(", 
-      RowBox[{"-", "1"}], ")"}], "3"], 
-    RowBox[{"LegendreP", "[", 
-     RowBox[{"3", ",", 
-      RowBox[{
-       RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{"Plot", "[", 
-  RowBox[{
-   RowBox[{"\[Phi]3", "[", "\[Zeta]", "]"}], ",", 
-   RowBox[{"{", 
-    RowBox[{"\[Zeta]", ",", "0", ",", "1"}], "}"}]}], "]"}]}], "Input",
+    RowBox[{
+     RowBox[{"\[Phi]2", "[", "\[Zeta]_", "]"}], "=", 
+     RowBox[{
+      SuperscriptBox[
+       RowBox[{"(", 
+        RowBox[{"-", "1"}], ")"}], "2"], 
+      RowBox[{"LegendreP", "[", 
+       RowBox[{"2", ",", 
+        RowBox[{
+         RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{
+     RowBox[{"\[Phi]3", "[", "\[Zeta]_", "]"}], "=", 
+     RowBox[{
+      SuperscriptBox[
+       RowBox[{"(", 
+        RowBox[{"-", "1"}], ")"}], "3"], 
+      RowBox[{"LegendreP", "[", 
+       RowBox[{"3", ",", 
+        RowBox[{
+         RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}]}], ";"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{"Plot", "[", 
+    RowBox[{
+     RowBox[{"\[Phi]3", "[", "\[Zeta]", "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{"\[Zeta]", ",", "0", ",", "1"}], "}"}]}], "]"}]}]}]], "Input",
  CellChangeTimes->{{3.9491245209856625`*^9, 3.949124680916744*^9}, {
-  3.9491300411533775`*^9, 
-  3.9491300439143677`*^9}},ExpressionUUID->"4eaeb39a-4a87-a84f-b3dd-\
+  3.9491300411533775`*^9, 3.9491300439143677`*^9}, {3.949377900603613*^9, 
+  3.9493779267786083`*^9}},ExpressionUUID->"4eaeb39a-4a87-a84f-b3dd-\
 373dabc2cc78"],
 
 Cell[BoxData[
@@ -452,8 +466,8 @@ vyOm/P/3RPQ/m2W8Gg==
          "Meta" -> <|
          "DefaultHighlight" -> {"Dynamic", None}, "Index" -> {}, "Function" -> 
           Plot, "GroupHighlight" -> False|>|>],
-      ImageSizeCache->{{4.503599627370496*^15, -4.503599627370496*^15}, {
-       4.503599627370496*^15, -4.503599627370496*^15}}],
+      ImageSizeCache->{{118.33868637202873`, 
+       256.52253022740973`}, {-13.951904401998036`, 7.219970598001964}}],
      Selectable->False]},
    Annotation[{{{{}, {}, 
        Annotation[{
@@ -678,1034 +692,316 @@ vyOm/P/3RPQ/m2W8Gg==
  CellChangeTimes->{{3.9491245965689945`*^9, 3.9491245995312386`*^9}, {
   3.9491246485260754`*^9, 3.949124681328022*^9}},
  CellLabel->"Out[28]=",ExpressionUUID->"216d8def-09de-2f4d-a6ce-0cbe5e2f4d60"]
-}, Open  ]],
+}, Open  ]]
+}, Closed]],
 
 Cell[CellGroupData[{
 
+Cell["Computation of the integrals", "Subsubsection",
+ CellChangeTimes->{{3.94937885616263*^9, 
+  3.949378860436636*^9}},ExpressionUUID->"62a91770-83fb-9b43-8b8b-\
+1d4e3f53447e"],
+
 Cell[BoxData[
- RowBox[{"Integrate", "[", 
+ RowBox[{
+  RowBox[{"order", "=", "7"}], ";"}]], "Input",
+ CellChangeTimes->{{3.9493795495150394`*^9, 3.9493795601863384`*^9}, {
+  3.94938326783687*^9, 3.949383277136656*^9}, {3.9493836344396496`*^9, 
+  3.949383634701309*^9}, {3.9493839646077003`*^9, 3.949383964791521*^9}, {
+  3.94938854911532*^9, 3.9493885493241577`*^9}, {3.949393362504631*^9, 
+  3.949393362993307*^9}},
+ CellLabel->"In[1]:=",ExpressionUUID->"ad5cdf1e-0116-4e4a-a698-24ab87685396"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"(*", " ", 
+   RowBox[{"integrals", " ", "of", " ", "the", " ", "Legendre", " ", 
+    RowBox[{"polynomials", ":", " ", 
+     RowBox[{
+      SuperscriptBox[
+       SubscriptBox["\[Integral]", "0"], "a"], 
+      RowBox[{
+       SubscriptBox["\[Phi]", "i"], "d\[Zeta]"}]}]}]}], " ", "*)"}], 
+  "\[IndentingNewLine]", 
   RowBox[{
    RowBox[{
-    RowBox[{"\[Phi]3", "[", "\[Zeta]", "]"}], "*", 
-    RowBox[{"\[Phi]1", "[", "\[Zeta]", "]"}]}], ",", 
-   RowBox[{"{", 
-    RowBox[{"\[Zeta]", ",", "0", ",", "a"}], "}"}]}], "]"}]], "Input",
- CellChangeTimes->{{3.9491246897826576`*^9, 3.949124753860447*^9}, {
-  3.9491247865666885`*^9, 3.9491248166537533`*^9}, {3.9491300471483803`*^9, 
-  3.94913004731781*^9}, {3.949130089440113*^9, 3.9491301085607586`*^9}, {
-  3.949130831183489*^9, 3.949130836231968*^9}},
- CellLabel->"In[53]:=",ExpressionUUID->"563eead3-8dac-dd4a-aa0e-3b8ba4e8546f"],
-
-Cell[BoxData[
- RowBox[{"a", "-", 
-  RowBox[{"7", " ", 
-   SuperscriptBox["a", "2"]}], "+", 
-  RowBox[{"18", " ", 
-   SuperscriptBox["a", "3"]}], "-", 
-  RowBox[{"20", " ", 
-   SuperscriptBox["a", "4"]}], "+", 
-  RowBox[{"8", " ", 
-   SuperscriptBox["a", "5"]}]}]], "Output",
- CellChangeTimes->{{3.9491247261762295`*^9, 3.9491247540834465`*^9}, {
-   3.9491247927590313`*^9, 3.949124817316204*^9}, {3.9491300868199825`*^9, 
-   3.9491301092683086`*^9}, 3.949130836778372*^9},
- CellLabel->"Out[53]=",ExpressionUUID->"809be582-a888-eb40-b34f-2e1266886018"]
-}, Open  ]],
-
-Cell[BoxData[{
- RowBox[{
-  RowBox[{"integrandValues1", " ", "=", " ", 
-   RowBox[{"Table", "[", 
-    RowBox[{
-     RowBox[{"Integrate", "[", 
+    RowBox[{"integralValuesSingle", " ", "=", " ", 
+     RowBox[{"Table", "[", 
       RowBox[{
-       RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"-", "1"}], ")"}], "i"], 
-        RowBox[{"LegendreP", "[", 
-         RowBox[{"i", ",", 
-          RowBox[{
-           RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}], "*", 
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"-", "1"}], ")"}], "j"], 
-        RowBox[{"LegendreP", "[", 
-         RowBox[{"j", ",", 
-          RowBox[{
-           RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}], ",", 
+       RowBox[{"Integrate", "[", 
+        RowBox[{
+         RowBox[{
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"-", "1"}], ")"}], "i"], 
+          RowBox[{"LegendreP", "[", 
+           RowBox[{"i", ",", 
+            RowBox[{
+             RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"\[Zeta]", ",", "0", ",", "a"}], "}"}]}], "]"}], ",", 
        RowBox[{"{", 
-        RowBox[{"\[Zeta]", ",", "0", ",", "a"}], "}"}]}], "]"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"i", ",", "1", ",", "7"}], "}"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"j", ",", "1", ",", "7"}], "}"}]}], "]"}]}], 
-  ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"integrandValues2", " ", "=", " ", 
-   RowBox[{"Table", "[", 
+        RowBox[{"i", ",", "1", ",", "order"}], "}"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
     RowBox[{
-     RowBox[{"Integrate", "[", 
+    "double", " ", "integrals", " ", "of", " ", "the", " ", "Legendre", " ", 
+     RowBox[{"polynomials", ":", " ", 
       RowBox[{
+       SuperscriptBox[
+        SubscriptBox["\[Integral]", "0"], "a"], 
        RowBox[{
-        SuperscriptBox[
-         RowBox[{"(", 
-          RowBox[{"-", "1"}], ")"}], "i"], 
-        RowBox[{"LegendreP", "[", 
-         RowBox[{"i", ",", 
-          RowBox[{
-           RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}], ",", 
+        SubscriptBox["\[Phi]", "i"], 
+        SubscriptBox["\[Phi]", "j"], "d\[Zeta]"}]}]}]}], " ", "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"integralValuesDouble", " ", "=", " ", 
+     RowBox[{"Table", "[", 
+      RowBox[{
+       RowBox[{"Integrate", "[", 
+        RowBox[{
+         RowBox[{
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"-", "1"}], ")"}], "i"], 
+          RowBox[{"LegendreP", "[", 
+           RowBox[{"i", ",", 
+            RowBox[{
+             RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}], "*", 
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"-", "1"}], ")"}], "j"], 
+          RowBox[{"LegendreP", "[", 
+           RowBox[{"j", ",", 
+            RowBox[{
+             RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"\[Zeta]", ",", "0", ",", "a"}], "}"}]}], "]"}], ",", 
        RowBox[{"{", 
-        RowBox[{"\[Zeta]", ",", "0", ",", "a"}], "}"}]}], "]"}], ",", 
-     RowBox[{"{", 
-      RowBox[{"i", ",", "1", ",", "7"}], "}"}]}], "]"}]}], ";"}]}], "Input",
+        RowBox[{"i", ",", "1", ",", "order"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"j", ",", "1", ",", "order"}], "}"}]}], "]"}]}], ";"}], 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"(*", " ", 
+    RowBox[{
+    "triple", " ", "integrals", " ", "of", " ", "the", " ", "Legendre", " ", 
+     RowBox[{"polynomials", ":", " ", 
+      RowBox[{
+       SuperscriptBox[
+        SubscriptBox["\[Integral]", "0"], "a"], 
+       RowBox[{
+        SubscriptBox["\[Phi]", "i"], 
+        SubscriptBox["\[Phi]", "j"], 
+        SubscriptBox["\[Phi]", "k"], "d\[Zeta]"}]}]}]}], " ", "*)"}], 
+   "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"integralValuesTriple", " ", "=", " ", 
+     RowBox[{"Table", "[", 
+      RowBox[{
+       RowBox[{"Integrate", "[", 
+        RowBox[{
+         RowBox[{
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"-", "1"}], ")"}], "i"], 
+          RowBox[{"LegendreP", "[", 
+           RowBox[{"i", ",", 
+            RowBox[{
+             RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}], "*", 
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"-", "1"}], ")"}], "j"], 
+          RowBox[{"LegendreP", "[", 
+           RowBox[{"j", ",", 
+            RowBox[{
+             RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}], "*", 
+          SuperscriptBox[
+           RowBox[{"(", 
+            RowBox[{"-", "1"}], ")"}], "k"], 
+          RowBox[{"LegendreP", "[", 
+           RowBox[{"k", ",", 
+            RowBox[{
+             RowBox[{"2", "*", "\[Zeta]"}], "-", "1"}]}], "]"}]}], ",", 
+         RowBox[{"{", 
+          RowBox[{"\[Zeta]", ",", "0", ",", "a"}], "}"}]}], "]"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"i", ",", "1", ",", "order"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"j", ",", "1", ",", "order"}], "}"}], ",", 
+       RowBox[{"{", 
+        RowBox[{"k", ",", "1", ",", "order"}], "}"}]}], "]"}]}], 
+    ";"}]}]}]], "Input",
  CellChangeTimes->{{3.9491303972557793`*^9, 3.9491304648337193`*^9}, {
   3.9491305446313896`*^9, 3.949130587548355*^9}, {3.949131322433634*^9, 
   3.9491313232037926`*^9}, {3.949132800827141*^9, 3.9491328016282024`*^9}, {
   3.9491328320534*^9, 3.949132849057829*^9}, {3.949133231931654*^9, 
-  3.949133242053564*^9}},
- CellLabel->"In[65]:=",ExpressionUUID->"b512ddae-9bd7-4642-9a7b-7ae91e8a60b3"],
+  3.949133242053564*^9}, {3.9493788349783955`*^9, 3.949378839840708*^9}, {
+  3.9493789464275227`*^9, 3.949379129514824*^9}, {3.9493791861484375`*^9, 
+  3.949379191988596*^9}, {3.9493794957227783`*^9, 3.949379497697523*^9}, {
+  3.94937961739036*^9, 3.9493796282055054`*^9}, {3.9493832320353527`*^9, 
+  3.949383298562887*^9}, {3.949388531596607*^9, 3.949388543060549*^9}},
+ CellLabel->"In[2]:=",ExpressionUUID->"b512ddae-9bd7-4642-9a7b-7ae91e8a60b3"],
 
 Cell[CellGroupData[{
 
 Cell[BoxData[
  RowBox[{
-  RowBox[{"integrandValues1", "/.", 
-   RowBox[{"{", 
-    RowBox[{"a", "->", "h_r"}], "}"}]}], "//", "MatrixForm"}]], "Input",
- CellChangeTimes->{{3.9491306219524155`*^9, 3.9491306247264614`*^9}, {
-  3.9491328573822136`*^9, 3.949132862126856*^9}, {3.9491332593595276`*^9, 
-  3.9491333165933876`*^9}, {3.9491347273903255`*^9, 3.94913472756583*^9}},
- CellLabel->"In[71]:=",ExpressionUUID->"5101aa9e-4cbe-f746-973a-b3dc8c75677b"],
+  RowBox[{"integralValuesTriple", "[", 
+   RowBox[{"[", 
+    RowBox[{"4", ",", "3", ",", "2"}], "]"}], "]"}], "//", 
+  "MatrixForm"}]], "Input",
+ CellChangeTimes->{{3.9493799846825047`*^9, 3.949379988504305*^9}, {
+  3.9493833058963203`*^9, 3.949383328368204*^9}, {3.9493839691852036`*^9, 
+  3.9493839693456573`*^9}, {3.949388546460367*^9, 3.949388562807205*^9}},
+ CellLabel->
+  "In[190]:=",ExpressionUUID->"1c83f652-cd4d-3d46-bbdb-8085906b75f6"],
 
 Cell[BoxData[
  TagBox[
-  RowBox[{"(", "\[NoBreak]", GridBox[{
-     {
-      RowBox[{"h_r", "-", 
-       RowBox[{"2", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"4", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"4", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"6", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"3", " ", 
-        SuperscriptBox["h_r", "4"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"7", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"18", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"20", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"8", " ", 
-        SuperscriptBox["h_r", "5"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"11", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"130", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"80", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"70", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       FractionBox[
-        RowBox[{"70", " ", 
-         SuperscriptBox["h_r", "6"]}], "3"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"16", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"90", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"245", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"350", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"252", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"72", " ", 
-        SuperscriptBox["h_r", "7"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"22", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"168", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"630", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"1302", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"1512", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"924", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"231", " ", 
-        SuperscriptBox["h_r", "8"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"29", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"868", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"1428", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"3990", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"6622", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"6468", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"3432", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       FractionBox[
-        RowBox[{"2288", " ", 
-         SuperscriptBox["h_r", "9"]}], "3"]}]},
-     {
-      RowBox[{"h_r", "-", 
-       RowBox[{"4", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"6", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"3", " ", 
-        SuperscriptBox["h_r", "4"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"6", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"16", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"18", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       FractionBox[
-        RowBox[{"36", " ", 
-         SuperscriptBox["h_r", "5"]}], "5"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"9", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"36", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"68", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"60", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"20", " ", 
-        SuperscriptBox["h_r", "6"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"13", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"72", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"200", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"290", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"210", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"60", " ", 
-        SuperscriptBox["h_r", "7"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"18", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"132", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"500", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"1050", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"1232", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"756", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"189", " ", 
-        SuperscriptBox["h_r", "8"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"24", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"226", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"1113", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"3150", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"5292", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"5208", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"2772", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"616", " ", 
-        SuperscriptBox["h_r", "9"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"31", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"366", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"2268", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       FractionBox[
-        RowBox[{"41286", " ", 
-         SuperscriptBox["h_r", "5"]}], "5"], "-", 
-       RowBox[{"18522", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"25872", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"21912", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"10296", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       FractionBox[
-        RowBox[{"10296", " ", 
-         SuperscriptBox["h_r", "10"]}], "5"]}]},
-     {
-      RowBox[{"h_r", "-", 
-       RowBox[{"7", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"18", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"20", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"8", " ", 
-        SuperscriptBox["h_r", "5"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"9", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"36", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"68", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"60", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"20", " ", 
-        SuperscriptBox["h_r", "6"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"12", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"68", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"190", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"276", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"200", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       FractionBox[
-        RowBox[{"400", " ", 
-         SuperscriptBox["h_r", "7"]}], "7"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"16", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"120", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"460", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"970", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"1140", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"700", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"175", " ", 
-        SuperscriptBox["h_r", "8"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"21", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"200", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"1000", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"2850", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"4802", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"4732", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"2520", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"560", " ", 
-        SuperscriptBox["h_r", "9"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"27", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"318", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"2000", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"7350", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"16562", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"23184", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"19656", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"9240", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"1848", " ", 
-        SuperscriptBox["h_r", "10"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"34", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"486", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"3743", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"17150", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"49392", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"91728", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"109692", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"81576", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"34320", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"6240", " ", 
-        SuperscriptBox["h_r", "11"]}]}]},
-     {
-      RowBox[{"h_r", "-", 
-       RowBox[{"11", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"130", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"80", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"70", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       FractionBox[
-        RowBox[{"70", " ", 
-         SuperscriptBox["h_r", "6"]}], "3"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"13", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"72", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"200", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"290", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"210", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"60", " ", 
-        SuperscriptBox["h_r", "7"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"16", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"120", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"460", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"970", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"1140", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"700", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"175", " ", 
-        SuperscriptBox["h_r", "8"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"20", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"580", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"970", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"2768", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       FractionBox[
-        RowBox[{"14000", " ", 
-         SuperscriptBox["h_r", "6"]}], "3"], "+", 
-       RowBox[{"4600", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"2450", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       FractionBox[
-        RowBox[{"4900", " ", 
-         SuperscriptBox["h_r", "9"]}], "9"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"25", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"300", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"1900", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"7000", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"15792", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"22120", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"18760", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"8820", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"1764", " ", 
-        SuperscriptBox["h_r", "10"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"31", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"450", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"3500", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"16100", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"46452", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"86352", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"103320", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"76860", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"32340", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"5880", " ", 
-        SuperscriptBox["h_r", "11"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"38", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"1966", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"6125", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"34300", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       FractionBox[
-        RowBox[{"367696", " ", 
-         SuperscriptBox["h_r", "6"]}], "3"], "+", 
-       RowBox[{"289296", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"456444", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"476300", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"315480", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"120120", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"20020", " ", 
-        SuperscriptBox["h_r", "12"]}]}]},
-     {
-      RowBox[{"h_r", "-", 
-       RowBox[{"16", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"90", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"245", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"350", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"252", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"72", " ", 
-        SuperscriptBox["h_r", "7"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"18", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"132", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"500", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"1050", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"1232", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"756", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"189", " ", 
-        SuperscriptBox["h_r", "8"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"21", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"200", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"1000", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"2850", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"4802", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"4732", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"2520", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"560", " ", 
-        SuperscriptBox["h_r", "9"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"25", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"300", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"1900", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"7000", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"15792", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"22120", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"18760", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"8820", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"1764", " ", 
-        SuperscriptBox["h_r", "10"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"30", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"440", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"3430", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"15792", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"45584", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"84760", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"101430", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"75460", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"31752", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       FractionBox[
-        RowBox[{"63504", " ", 
-         SuperscriptBox["h_r", "11"]}], "11"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"36", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"630", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"5915", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"33180", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"118664", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"280224", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"442260", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"461580", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"305760", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"116424", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"19404", " ", 
-        SuperscriptBox["h_r", "12"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"43", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"882", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"9800", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"65660", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"284004", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"825552", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"1645128", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"2252700", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"2083620", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"1243704", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"432432", " ", 
-        SuperscriptBox["h_r", "12"]}], "+", 
-       RowBox[{"66528", " ", 
-        SuperscriptBox["h_r", "13"]}]}]},
-     {
-      RowBox[{"h_r", "-", 
-       RowBox[{"22", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"168", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"630", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"1302", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"1512", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"924", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"231", " ", 
-        SuperscriptBox["h_r", "8"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"24", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"226", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"1113", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"3150", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"5292", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"5208", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"2772", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"616", " ", 
-        SuperscriptBox["h_r", "9"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"27", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"318", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"2000", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"7350", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"16562", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"23184", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"19656", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"9240", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"1848", " ", 
-        SuperscriptBox["h_r", "10"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"31", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"450", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"3500", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"16100", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"46452", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"86352", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"103320", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"76860", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"32340", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"5880", " ", 
-        SuperscriptBox["h_r", "11"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"36", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"630", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"5915", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"33180", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"118664", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"280224", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"442260", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"461580", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"305760", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"116424", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"19404", " ", 
-        SuperscriptBox["h_r", "12"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"42", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"868", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"9660", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"64764", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"280224", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"814728", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"1623762", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"2223620", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"2056824", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"1227744", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"426888", " ", 
-        SuperscriptBox["h_r", "12"]}], "+", 
-       FractionBox[
-        RowBox[{"853776", " ", 
-         SuperscriptBox["h_r", "13"]}], "13"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"49", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"1176", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"15288", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"120540", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"619164", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"2165016", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"5284344", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"9094932", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"10990980", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"9125424", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"4956336", " ", 
-        SuperscriptBox["h_r", "12"]}], "+", 
-       RowBox[{"1585584", " ", 
-        SuperscriptBox["h_r", "13"]}], "-", 
-       RowBox[{"226512", " ", 
-        SuperscriptBox["h_r", "14"]}]}]},
-     {
-      RowBox[{"h_r", "-", 
-       RowBox[{"29", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"868", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"1428", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"3990", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"6622", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"6468", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"3432", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       FractionBox[
-        RowBox[{"2288", " ", 
-         SuperscriptBox["h_r", "9"]}], "3"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"31", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"366", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"2268", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       FractionBox[
-        RowBox[{"41286", " ", 
-         SuperscriptBox["h_r", "5"]}], "5"], "-", 
-       RowBox[{"18522", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"25872", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"21912", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"10296", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       FractionBox[
-        RowBox[{"10296", " ", 
-         SuperscriptBox["h_r", "10"]}], "5"]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"34", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"486", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"3743", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"17150", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"49392", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"91728", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"109692", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"81576", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"34320", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"6240", " ", 
-        SuperscriptBox["h_r", "11"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"38", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"1966", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"6125", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"34300", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       FractionBox[
-        RowBox[{"367696", " ", 
-         SuperscriptBox["h_r", "6"]}], "3"], "+", 
-       RowBox[{"289296", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"456444", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"476300", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"315480", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"120120", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"20020", " ", 
-        SuperscriptBox["h_r", "12"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"43", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"882", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"9800", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"65660", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"284004", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"825552", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"1645128", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"2252700", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"2083620", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"1243704", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"432432", " ", 
-        SuperscriptBox["h_r", "12"]}], "+", 
-       RowBox[{"66528", " ", 
-        SuperscriptBox["h_r", "13"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"49", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       RowBox[{"1176", " ", 
-        SuperscriptBox["h_r", "3"]}], "-", 
-       RowBox[{"15288", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       RowBox[{"120540", " ", 
-        SuperscriptBox["h_r", "5"]}], "-", 
-       RowBox[{"619164", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"2165016", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"5284344", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       RowBox[{"9094932", " ", 
-        SuperscriptBox["h_r", "9"]}], "-", 
-       RowBox[{"10990980", " ", 
-        SuperscriptBox["h_r", "10"]}], "+", 
-       RowBox[{"9125424", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"4956336", " ", 
-        SuperscriptBox["h_r", "12"]}], "+", 
-       RowBox[{"1585584", " ", 
-        SuperscriptBox["h_r", "13"]}], "-", 
-       RowBox[{"226512", " ", 
-        SuperscriptBox["h_r", "14"]}]}], 
-      RowBox[{"h_r", "-", 
-       RowBox[{"56", " ", 
-        SuperscriptBox["h_r", "2"]}], "+", 
-       FractionBox[
-        RowBox[{"4648", " ", 
-         SuperscriptBox["h_r", "3"]}], "3"], "-", 
-       RowBox[{"23268", " ", 
-        SuperscriptBox["h_r", "4"]}], "+", 
-       FractionBox[
-        RowBox[{"1065036", " ", 
-         SuperscriptBox["h_r", "5"]}], "5"], "-", 
-       RowBox[{"1279544", " ", 
-        SuperscriptBox["h_r", "6"]}], "+", 
-       RowBox[{"5284344", " ", 
-        SuperscriptBox["h_r", "7"]}], "-", 
-       RowBox[{"15439974", " ", 
-        SuperscriptBox["h_r", "8"]}], "+", 
-       FractionBox[
-        RowBox[{"97219276", " ", 
-         SuperscriptBox["h_r", "9"]}], "3"], "-", 
-       FractionBox[
-        RowBox[{"245144592", " ", 
-         SuperscriptBox["h_r", "10"]}], "5"], "+", 
-       RowBox[{"52993584", " ", 
-        SuperscriptBox["h_r", "11"]}], "-", 
-       RowBox[{"39903864", " ", 
-        SuperscriptBox["h_r", "12"]}], "+", 
-       RowBox[{"19880784", " ", 
-        SuperscriptBox["h_r", "13"]}], "-", 
-       RowBox[{"5889312", " ", 
-        SuperscriptBox["h_r", "14"]}], "+", 
-       FractionBox[
-        RowBox[{"3926208", " ", 
-         SuperscriptBox["h_r", "15"]}], "5"]}]}
-    },
-    GridBoxAlignment->{"Columns" -> {{Center}}, "Rows" -> {{Baseline}}},
-    GridBoxSpacings->{"Columns" -> {
-        Offset[0.27999999999999997`], {
-         Offset[0.7]}, 
-        Offset[0.27999999999999997`]}, "Rows" -> {
-        Offset[0.2], {
-         Offset[0.4]}, 
-        Offset[0.2]}}], "\[NoBreak]", ")"}],
+  RowBox[{"a", "-", 
+   RowBox[{"19", " ", 
+    SuperscriptBox["a", "2"]}], "+", 
+   RowBox[{"186", " ", 
+    SuperscriptBox["a", "3"]}], "-", 
+   RowBox[{"1048", " ", 
+    SuperscriptBox["a", "4"]}], "+", 
+   RowBox[{"3610", " ", 
+    SuperscriptBox["a", "5"]}], "-", 
+   RowBox[{"7830", " ", 
+    SuperscriptBox["a", "6"]}], "+", 
+   RowBox[{"10720", " ", 
+    SuperscriptBox["a", "7"]}], "-", 
+   RowBox[{"8980", " ", 
+    SuperscriptBox["a", "8"]}], "+", 
+   RowBox[{"4200", " ", 
+    SuperscriptBox["a", "9"]}], "-", 
+   RowBox[{"840", " ", 
+    SuperscriptBox["a", "10"]}]}],
   Function[BoxForm`e$, 
    MatrixForm[BoxForm`e$]]]], "Output",
- CellChangeTimes->{
-  3.949130625337364*^9, 3.9491313268727245`*^9, 3.9491328107572174`*^9, {
-   3.949132858428648*^9, 3.949132862924061*^9}, {3.9491332351602345`*^9, 
-   3.94913327416572*^9}, 3.949133317252863*^9, 3.949134728085655*^9},
+ CellChangeTimes->{{3.9493799888626823`*^9, 3.949379994637068*^9}, {
+   3.9493833088041267`*^9, 3.9493833286061916`*^9}, 3.949383972595518*^9, {
+   3.949388559055929*^9, 3.9493885635075283`*^9}},
  CellLabel->
-  "Out[71]//MatrixForm=",ExpressionUUID->"f2c10328-18b0-9e4a-ae77-\
-e91e61a81000"]
+  "Out[190]//MatrixForm=",ExpressionUUID->"855a1141-04c8-a049-953a-\
+1a7860889170"]
+}, Open  ]]
 }, Open  ]],
 
 Cell[CellGroupData[{
 
+Cell["Python output", "Subsubsection",
+ CellChangeTimes->{{3.9493788975328903`*^9, 
+  3.9493789009535847`*^9}},ExpressionUUID->"d4ed9ee1-a9ea-d547-89f3-\
+7b96ace2c5f6"],
+
+Cell[TextData[StyleBox["Single integral",
+ FontSize->18,
+ FontColor->RGBColor[0, 0, 1]]], "Text",
+ CellChangeTimes->{{3.949379577021902*^9, 3.9493795809858704`*^9}, {
+  3.949379924367985*^9, 
+  3.9493799253811226`*^9}},ExpressionUUID->"77fb9cd4-013a-ec46-b122-\
+c9de328be7bf"],
+
 Cell[BoxData[{
  RowBox[{
-  RowBox[{"i", "=", "0"}], ";"}], "\[IndentingNewLine]", 
+  RowBox[{"NumberOfEntriesSingle", "=", "order"}], 
+  ";"}], "\[IndentingNewLine]", 
  RowBox[{
-  RowBox[{"j", "=", "1"}], ";"}], "\[IndentingNewLine]", 
- RowBox[{"integrandValues1", "[", 
-  RowBox[{"[", 
+  RowBox[{"OutputPythonElements", "=", 
+   RowBox[{"ConstantArray", "[", 
+    RowBox[{"0", ",", 
+     RowBox[{"{", 
+      RowBox[{"NumberOfEntriesSingle", ",", "1"}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"k", "=", "1"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"For", "[", 
+  RowBox[{
+   RowBox[{"i", "=", "1"}], ",", 
+   RowBox[{"i", "<=", "order"}], ",", 
+   RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
    RowBox[{
-    RowBox[{"i", "+", "1"}], ",", 
-    RowBox[{"j", "+", "1"}]}], "]"}], "]"}]}], "Input",
- CellChangeTimes->{{3.949135002193798*^9, 3.9491350301927376`*^9}, {
-   3.949135067578354*^9, 3.94913508950231*^9}, 3.9491353454286785`*^9},
- CellLabel->"In[84]:=",ExpressionUUID->"5cc2c164-a458-1643-8908-02eb57c446d0"],
+    RowBox[{
+     RowBox[{"OutputPythonElements", "[", 
+      RowBox[{"[", 
+       RowBox[{
+        RowBox[{"k", "++"}], ",", "1"}], "]"}], "]"}], "=", 
+     RowBox[{"integralValuesSingle", "[", 
+      RowBox[{"[", "i", "]"}], "]"}]}], ";"}]}], "\[IndentingNewLine]", 
+  "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"OutputPython", " ", "=", " ", 
+   RowBox[{"StringReplace", "[", 
+    RowBox[{
+     RowBox[{"ToString", "[", 
+      RowBox[{"CForm", "[", "OutputPythonElements", "]"}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"\"\<a\>\"", "->", "\"\<h_r\>\""}], ",", 
+       RowBox[{"\"\<Power(a,2)\>\"", "->", "\"\<h_r**2\>\""}], ",", 
+       RowBox[{"\"\<Power(a,3)\>\"", "->", "\"\<h_r**3\>\""}], ",", 
+       RowBox[{"\"\<Power(a,4)\>\"", "->", "\"\<h_r**4\>\""}], ",", 
+       RowBox[{"\"\<Power(a,5)\>\"", "->", "\"\<h_r**5\>\""}], ",", 
+       RowBox[{"\"\<Power(a,6)\>\"", "->", "\"\<h_r**6\>\""}], ",", 
+       RowBox[{"\"\<Power(a,7)\>\"", "->", "\"\<h_r**7\>\""}], ",", 
+       RowBox[{"\"\<Power(a,8)\>\"", "->", "\"\<h_r**8\>\""}], ",", 
+       RowBox[{"\"\<List(List(\>\"", "->", "\"\<integrals = \>\""}], ",", 
+       RowBox[{"\"\<),List(\>\"", "->", "\"\<\\nintegrals = \>\""}]}], 
+      "}"}]}], "]"}]}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"For", "[", 
+   RowBox[{
+    RowBox[{"i", "=", "0"}], ",", 
+    RowBox[{"i", " ", "<", "order"}], ",", 
+    RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+    RowBox[{
+     RowBox[{"OutputPython", "=", 
+      RowBox[{"StringInsert", "[", 
+       RowBox[{"OutputPython", ",", 
+        RowBox[{"StringJoin", "[", 
+         RowBox[{"\"\<[\>\"", ",", 
+          RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<]\>\""}], "]"}], ",", 
+        RowBox[{
+         RowBox[{"StringPosition", "[", 
+          RowBox[{"OutputPython", ",", "\"\<integrals \>\"", ",", "1"}], 
+          "]"}], "[", 
+         RowBox[{"[", 
+          RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";"}]}], 
+   "\[IndentingNewLine]", "]"}], ";"}]}], "Input",
+ CellChangeTimes->{{3.949136193200716*^9, 3.9491362003357296`*^9}, {
+   3.9491363547839527`*^9, 3.9491364909843864`*^9}, {3.9491366685904922`*^9, 
+   3.9491367658762417`*^9}, {3.9491370016732807`*^9, 3.94913702236961*^9}, {
+   3.9491371511448517`*^9, 3.9491372038174877`*^9}, {3.949137240542322*^9, 
+   3.949137312167961*^9}, {3.949137482829281*^9, 3.9491375192103176`*^9}, {
+   3.9491376012124863`*^9, 3.949137637885414*^9}, {3.949137736539116*^9, 
+   3.94913775931122*^9}, {3.949137790829378*^9, 3.949137811487137*^9}, {
+   3.9491378584996777`*^9, 3.9491378953882465`*^9}, {3.9491379592857304`*^9, 
+   3.9491379921919346`*^9}, {3.949138081892023*^9, 3.949138087454193*^9}, {
+   3.9491381294980984`*^9, 3.9491382137164173`*^9}, {3.9491432764119205`*^9, 
+   3.9491432780362015`*^9}, {3.949144169529028*^9, 3.949144179798792*^9}, {
+   3.9493795289608192`*^9, 3.9493795568805256`*^9}, {3.9493795888632183`*^9, 
+   3.9493795970474224`*^9}, {3.949379632317583*^9, 3.9493796388251953`*^9}, 
+   3.9493798664942036`*^9, {3.9493799528272457`*^9, 3.949380003625101*^9}, {
+   3.949380033967119*^9, 3.9493800810314007`*^9}, {3.9493801111141376`*^9, 
+   3.9493801350369473`*^9}, {3.949380167458948*^9, 3.9493802108705235`*^9}, {
+   3.9493802501271477`*^9, 3.949380260827133*^9}, {3.949381360274189*^9, 
+   3.9493813613150253`*^9}, {3.9493885695150814`*^9, 3.9493885716380424`*^9}},
+ CellLabel->
+  "In[191]:=",ExpressionUUID->"87bdd8cb-0ff4-f34f-8696-7c233280c38e"],
 
-Cell[BoxData[
- RowBox[{"a", "-", 
-  RowBox[{"4", " ", 
-   SuperscriptBox["a", "2"]}], "+", 
-  RowBox[{"6", " ", 
-   SuperscriptBox["a", "3"]}], "-", 
-  RowBox[{"3", " ", 
-   SuperscriptBox["a", "4"]}]}]], "Output",
- CellChangeTimes->{{3.949135009947199*^9, 3.949135031094305*^9}, {
-   3.949135082123579*^9, 3.9491350897900105`*^9}, 3.949135345806284*^9},
- CellLabel->"Out[86]=",ExpressionUUID->"5ec9bb36-d69d-514b-b8e7-beb3c46143d4"]
-}, Open  ]],
+Cell[TextData[StyleBox["Double integral",
+ FontSize->18,
+ FontColor->RGBColor[0, 0, 1]]], "Text",
+ CellChangeTimes->{{3.949379577021902*^9, 
+  3.9493795809858704`*^9}},ExpressionUUID->"3e00fbb1-858d-c542-97f8-\
+51dba3574a9f"],
 
 Cell[CellGroupData[{
 
 Cell[BoxData[{
  RowBox[{
-  RowBox[{"order", "=", " ", "7"}], ";"}], "\[IndentingNewLine]", 
- RowBox[{
-  RowBox[{"NumberOfEntries", "=", 
+  RowBox[{"NumberOfEntriesDouble", "=", 
    RowBox[{"order", "*", 
     FractionBox[
      RowBox[{"(", 
@@ -1716,7 +1012,7 @@ Cell[BoxData[{
    RowBox[{"ConstantArray", "[", 
     RowBox[{"0", ",", 
      RowBox[{"{", 
-      RowBox[{"NumberOfEntries", ",", "1"}], "}"}]}], "]"}]}], 
+      RowBox[{"NumberOfEntriesDouble", ",", "1"}], "}"}]}], "]"}]}], 
   ";"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"k", "=", "1"}], ";"}], "\[IndentingNewLine]", 
@@ -1729,7 +1025,7 @@ Cell[BoxData[{
     RowBox[{"For", "[", 
      RowBox[{
       RowBox[{"j", "=", "1"}], ",", 
-      RowBox[{"j", "<", "i"}], ",", 
+      RowBox[{"j", "<=", "i"}], ",", 
       RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
       RowBox[{
        RowBox[{
@@ -1737,18 +1033,9 @@ Cell[BoxData[{
          RowBox[{"[", 
           RowBox[{
            RowBox[{"k", "++"}], ",", "1"}], "]"}], "]"}], "=", 
-        RowBox[{"integrandValues1", "[", 
+        RowBox[{"integralValuesDouble", "[", 
          RowBox[{"[", 
-          RowBox[{"i", ",", "j"}], "]"}], "]"}]}], ";"}]}], "]"}], ";", 
-    "\[IndentingNewLine]", 
-    RowBox[{
-     RowBox[{"OutputPythonElements", "[", 
-      RowBox[{"[", 
-       RowBox[{
-        RowBox[{"k", "++"}], ",", "1"}], "]"}], "]"}], "=", 
-     RowBox[{"integrandValues1", "[", 
-      RowBox[{"[", 
-       RowBox[{"i", ",", "i"}], "]"}], "]"}]}], ";"}]}], 
+          RowBox[{"i", ",", "j"}], "]"}], "]"}]}], ";"}]}], "]"}], ";"}]}], 
   "\[IndentingNewLine]", "]"}], "\[IndentingNewLine]", 
  RowBox[{
   RowBox[{"OutputPython", " ", "=", " ", 
@@ -1798,7 +1085,7 @@ Cell[BoxData[{
            RowBox[{"OutputPython", ",", 
             RowBox[{"StringJoin", "[", 
              RowBox[{
-              RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<][\>\"", ",", 
+              RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
               RowBox[{"ToString", "[", "j", "]"}]}], "]"}], ",", 
             RowBox[{
              RowBox[{"StringPosition", "[", 
@@ -1812,7 +1099,7 @@ Cell[BoxData[{
            RowBox[{"OutputPython", ",", 
             RowBox[{"StringJoin", "[", 
              RowBox[{
-              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<][\>\"", ",", 
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
               RowBox[{"ToString", "[", "i", "]"}]}], "]"}], ",", 
             RowBox[{
              RowBox[{"StringPosition", "[", 
@@ -1832,7 +1119,7 @@ Cell[BoxData[{
         RowBox[{"OutputPython", ",", 
          RowBox[{"StringJoin", "[", 
           RowBox[{
-           RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<][\>\"", ",", 
+           RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
            RowBox[{"ToString", "[", "i", "]"}]}], "]"}], ",", 
          RowBox[{
           RowBox[{"StringPosition", "[", 
@@ -1843,116 +1130,1180 @@ Cell[BoxData[{
     "\[IndentingNewLine]", "]"}], ";"}], 
   "\[IndentingNewLine]"}], "\[IndentingNewLine]", "OutputPython"}], "Input",
  CellChangeTimes->{{3.949136193200716*^9, 3.9491362003357296`*^9}, {
-  3.9491363547839527`*^9, 3.9491364909843864`*^9}, {3.9491366685904922`*^9, 
-  3.9491367658762417`*^9}, {3.9491370016732807`*^9, 3.94913702236961*^9}, {
-  3.9491371511448517`*^9, 3.9491372038174877`*^9}, {3.949137240542322*^9, 
-  3.949137312167961*^9}, {3.949137482829281*^9, 3.9491375192103176`*^9}, {
-  3.9491376012124863`*^9, 3.949137637885414*^9}, {3.949137736539116*^9, 
-  3.94913775931122*^9}, {3.949137790829378*^9, 3.949137811487137*^9}, {
-  3.9491378584996777`*^9, 3.9491378953882465`*^9}, {3.9491379592857304`*^9, 
-  3.9491379921919346`*^9}, {3.949138081892023*^9, 3.949138087454193*^9}, {
-  3.9491381294980984`*^9, 3.9491382137164173`*^9}, {3.9491432764119205`*^9, 
-  3.9491432780362015`*^9}, {3.949144169529028*^9, 3.949144179798792*^9}},
+   3.9491363547839527`*^9, 3.9491364909843864`*^9}, {3.9491366685904922`*^9, 
+   3.9491367658762417`*^9}, {3.9491370016732807`*^9, 3.94913702236961*^9}, {
+   3.9491371511448517`*^9, 3.9491372038174877`*^9}, {3.949137240542322*^9, 
+   3.949137312167961*^9}, {3.949137482829281*^9, 3.9491375192103176`*^9}, {
+   3.9491376012124863`*^9, 3.949137637885414*^9}, {3.949137736539116*^9, 
+   3.94913775931122*^9}, {3.949137790829378*^9, 3.949137811487137*^9}, {
+   3.9491378584996777`*^9, 3.9491378953882465`*^9}, {3.9491379592857304`*^9, 
+   3.9491379921919346`*^9}, {3.949138081892023*^9, 3.949138087454193*^9}, {
+   3.9491381294980984`*^9, 3.9491382137164173`*^9}, {3.9491432764119205`*^9, 
+   3.9491432780362015`*^9}, {3.949144169529028*^9, 3.949144179798792*^9}, {
+   3.9493795289608192`*^9, 3.9493795568805256`*^9}, {3.9493795888632183`*^9, 
+   3.9493795970474224`*^9}, {3.949379632317583*^9, 3.9493796388251953`*^9}, 
+   3.9493798664942036`*^9, 3.9493813671644382`*^9, 3.949382648867647*^9, {
+   3.949383628850483*^9, 3.9493836860359077`*^9}, 3.949383919982193*^9, {
+   3.949384229945322*^9, 3.949384269930805*^9}, {3.9493885764529896`*^9, 
+   3.9493885781825714`*^9}, 3.949390443828083*^9},
  CellLabel->
-  "In[384]:=",ExpressionUUID->"2a39f711-ed76-524f-a96b-71552582be7e"],
+  "In[249]:=",ExpressionUUID->"2a39f711-ed76-524f-a96b-71552582be7e"],
 
-Cell[BoxData["\<\"integrals[0][0] = h_r - 2*h_r**2 + \
-(4*h_r**3)/3.\\nintegrals[1][0] = integrals[0][1] = h_r - 4*h_r**2 + 6*h_r**3 \
-- 3*h_r**4\\nintegrals[1][1] = h_r - 6*h_r**2 + 16*h_r**3 - 18*h_r**4 + \
-(36*h_r**5)/5.\\nintegrals[2][0] = integrals[0][2] = h_r - 7*h_r**2 + \
-18*h_r**3 - 20*h_r**4 + 8*h_r**5\\nintegrals[2][1] = integrals[1][2] = h_r - \
-9*h_r**2 + 36*h_r**3 - 68*h_r**4 + 60*h_r**5 - 20*h_r**6\\nintegrals[2][2] = \
-h_r - 12*h_r**2 + 68*h_r**3 - 190*h_r**4 + 276*h_r**5 - 200*h_r**6 + \
-(400*h_r**7)/7.\\nintegrals[3][0] = integrals[0][3] = h_r - 11*h_r**2 + \
-(130*h_r**3)/3. - 80*h_r**4 + 70*h_r**5 - (70*h_r**6)/3.\\nintegrals[3][1] = \
-integrals[1][3] = h_r - 13*h_r**2 + 72*h_r**3 - 200*h_r**4 + 290*h_r**5 - \
-210*h_r**6 + 60*h_r**7\\nintegrals[3][2] = integrals[2][3] = h_r - 16*h_r**2 \
-+ 120*h_r**3 - 460*h_r**4 + 970*h_r**5 - 1140*h_r**6 + 700*h_r**7 - \
-175*h_r**8\\nintegrals[3][3] = h_r - 20*h_r**2 + (580*h_r**3)/3. - 970*h_r**4 \
+Cell[BoxData["\<\"integrals[0,0] = h_r - 2*h_r**2 + \
+(4*h_r**3)/3.\\nintegrals[1,0] = integrals[0,1] = h_r - 4*h_r**2 + 6*h_r**3 - \
+3*h_r**4\\nintegrals[1,1] = h_r - 6*h_r**2 + 16*h_r**3 - 18*h_r**4 + \
+(36*h_r**5)/5.\\nintegrals[2,0] = integrals[0,2] = h_r - 7*h_r**2 + 18*h_r**3 \
+- 20*h_r**4 + 8*h_r**5\\nintegrals[2,1] = integrals[1,2] = h_r - 9*h_r**2 + \
+36*h_r**3 - 68*h_r**4 + 60*h_r**5 - 20*h_r**6\\nintegrals[2,2] = h_r - \
+12*h_r**2 + 68*h_r**3 - 190*h_r**4 + 276*h_r**5 - 200*h_r**6 + \
+(400*h_r**7)/7.\\nintegrals[3,0] = integrals[0,3] = h_r - 11*h_r**2 + \
+(130*h_r**3)/3. - 80*h_r**4 + 70*h_r**5 - (70*h_r**6)/3.\\nintegrals[3,1] = \
+integrals[1,3] = h_r - 13*h_r**2 + 72*h_r**3 - 200*h_r**4 + 290*h_r**5 - \
+210*h_r**6 + 60*h_r**7\\nintegrals[3,2] = integrals[2,3] = h_r - 16*h_r**2 + \
+120*h_r**3 - 460*h_r**4 + 970*h_r**5 - 1140*h_r**6 + 700*h_r**7 - \
+175*h_r**8\\nintegrals[3,3] = h_r - 20*h_r**2 + (580*h_r**3)/3. - 970*h_r**4 \
 + 2768*h_r**5 - (14000*h_r**6)/3. + 4600*h_r**7 - 2450*h_r**8 + \
-(4900*h_r**9)/9.\\nintegrals[4][0] = integrals[0][4] = h_r - 16*h_r**2 + \
-90*h_r**3 - 245*h_r**4 + 350*h_r**5 - 252*h_r**6 + \
-72*h_r**7\\nintegrals[4][1] = integrals[1][4] = h_r - 18*h_r**2 + 132*h_r**3 \
-- 500*h_r**4 + 1050*h_r**5 - 1232*h_r**6 + 756*h_r**7 - \
-189*h_r**8\\nintegrals[4][2] = integrals[2][4] = h_r - 21*h_r**2 + 200*h_r**3 \
-- 1000*h_r**4 + 2850*h_r**5 - 4802*h_r**6 + 4732*h_r**7 - 2520*h_r**8 + \
-560*h_r**9\\nintegrals[4][3] = integrals[3][4] = h_r - 25*h_r**2 + 300*h_r**3 \
-- 1900*h_r**4 + 7000*h_r**5 - 15792*h_r**6 + 22120*h_r**7 - 18760*h_r**8 + \
-8820*h_r**9 - 1764*h_r**10\\nintegrals[4][4] = h_r - 30*h_r**2 + 440*h_r**3 - \
-3430*h_r**4 + 15792*h_r**5 - 45584*h_r**6 + 84760*h_r**7 - 101430*h_r**8 + \
-75460*h_r**9 - 31752*h_r**10 + (63504*h_r**11)/11.\\nintegrals[5][0] = \
-integrals[0][5] = h_r - 22*h_r**2 + 168*h_r**3 - 630*h_r**4 + 1302*h_r**5 - \
-1512*h_r**6 + 924*h_r**7 - 231*h_r**8\\nintegrals[5][1] = integrals[1][5] = \
-h_r - 24*h_r**2 + 226*h_r**3 - 1113*h_r**4 + 3150*h_r**5 - 5292*h_r**6 + \
-5208*h_r**7 - 2772*h_r**8 + 616*h_r**9\\nintegrals[5][2] = integrals[2][5] = \
-h_r - 27*h_r**2 + 318*h_r**3 - 2000*h_r**4 + 7350*h_r**5 - 16562*h_r**6 + \
-23184*h_r**7 - 19656*h_r**8 + 9240*h_r**9 - 1848*h_r**10\\nintegrals[5][3] = \
-integrals[3][5] = h_r - 31*h_r**2 + 450*h_r**3 - 3500*h_r**4 + 16100*h_r**5 - \
-46452*h_r**6 + 86352*h_r**7 - 103320*h_r**8 + 76860*h_r**9 - 32340*h_r**10 + \
-5880*h_r**11\\nintegrals[5][4] = integrals[4][5] = h_r - 36*h_r**2 + \
-630*h_r**3 - 5915*h_r**4 + 33180*h_r**5 - 118664*h_r**6 + 280224*h_r**7 - \
-442260*h_r**8 + 461580*h_r**9 - 305760*h_r**10 + 116424*h_r**11 - \
-19404*h_r**12\\nintegrals[5][5] = h_r - 42*h_r**2 + 868*h_r**3 - 9660*h_r**4 \
-+ 64764*h_r**5 - 280224*h_r**6 + 814728*h_r**7 - 1623762*h_r**8 + \
-2223620*h_r**9 - 2056824*h_r**10 + 1227744*h_r**11 - 426888*h_r**12 + \
-(853776*h_r**13)/13.\\nintegrals[6][0] = integrals[0][6] = h_r - 29*h_r**2 + \
-(868*h_r**3)/3. - 1428*h_r**4 + 3990*h_r**5 - 6622*h_r**6 + 6468*h_r**7 - \
-3432*h_r**8 + (2288*h_r**9)/3.\\nintegrals[6][1] = integrals[1][6] = h_r - \
-31*h_r**2 + 366*h_r**3 - 2268*h_r**4 + (41286*h_r**5)/5. - 18522*h_r**6 + \
-25872*h_r**7 - 21912*h_r**8 + 10296*h_r**9 - \
-(10296*h_r**10)/5.\\nintegrals[6][2] = integrals[2][6] = h_r - 34*h_r**2 + \
-486*h_r**3 - 3743*h_r**4 + 17150*h_r**5 - 49392*h_r**6 + 91728*h_r**7 - \
-109692*h_r**8 + 81576*h_r**9 - 34320*h_r**10 + 6240*h_r**11\\nintegrals[6][3] \
-= integrals[3][6] = h_r - 38*h_r**2 + (1966*h_r**3)/3. - 6125*h_r**4 + \
-34300*h_r**5 - (367696*h_r**6)/3. + 289296*h_r**7 - 456444*h_r**8 + \
-476300*h_r**9 - 315480*h_r**10 + 120120*h_r**11 - \
-20020*h_r**12\\nintegrals[6][4] = integrals[4][6] = h_r - 43*h_r**2 + \
-882*h_r**3 - 9800*h_r**4 + 65660*h_r**5 - 284004*h_r**6 + 825552*h_r**7 - \
-1645128*h_r**8 + 2252700*h_r**9 - 2083620*h_r**10 + 1243704*h_r**11 - \
-432432*h_r**12 + 66528*h_r**13\\nintegrals[6][5] = integrals[5][6] = h_r - \
-49*h_r**2 + 1176*h_r**3 - 15288*h_r**4 + 120540*h_r**5 - 619164*h_r**6 + \
-2165016*h_r**7 - 5284344*h_r**8 + 9094932*h_r**9 - 10990980*h_r**10 + \
-9125424*h_r**11 - 4956336*h_r**12 + 1585584*h_r**13 - \
-226512*h_r**14\\nintegrals[6][6] = h_r - 56*h_r**2 + (4648*h_r**3)/3. - \
-23268*h_r**4 + (1065036*h_r**5)/5. - 1279544*h_r**6 + 5284344*h_r**7 - \
-15439974*h_r**8 + (97219276*h_r**9)/3. - (245144592*h_r**10)/5. + \
-52993584*h_r**11 - 39903864*h_r**12 + 19880784*h_r**13 - 5889312*h_r**14 + \
-(3926208*h_r**15)/5.))\"\>"], "Output",
- CellChangeTimes->{
-  3.949136208286253*^9, 3.949136405464775*^9, {3.9491364803820095`*^9, 
-   3.949136492080467*^9}, {3.9491366739077244`*^9, 3.9491366865595856`*^9}, {
-   3.9491367234630985`*^9, 3.949136766696512*^9}, 3.9491370229088135`*^9, {
-   3.9491372679957085`*^9, 3.9491372763064423`*^9}, 3.949137317725561*^9, 
-   3.9491375197363625`*^9, 3.949137604562271*^9, 3.94913766681336*^9, 
-   3.9491378129666233`*^9, {3.9491378615427456`*^9, 3.949137896726679*^9}, {
-   3.94913796317441*^9, 3.949137992765005*^9}, 3.9491380884778233`*^9, {
-   3.9491381351465645`*^9, 3.949138179879257*^9}, 3.9491382154884567`*^9, 
-   3.949143279258301*^9, 3.9491441814076424`*^9},
+(4900*h_r**9)/9.))\"\>"], "Output",
+ CellChangeTimes->{3.9493904454524307`*^9},
  CellLabel->
-  "Out[391]=",ExpressionUUID->"57b80a41-1d05-7e4b-a53f-65b8a1956598"]
+  "Out[255]=",ExpressionUUID->"28432bc2-8461-6641-bee0-0715df47ebd6"]
 }, Open  ]],
 
-Cell[BoxData[""], "Input",
- CellChangeTimes->{{3.9491369586969376`*^9, 
-  3.94913698901585*^9}},ExpressionUUID->"f5d373a8-b293-eb47-a768-\
-0c69eaa7b2af"],
+Cell[TextData[StyleBox["Triple integral",
+ FontSize->18,
+ FontColor->RGBColor[0, 0, 1]]], "Text",
+ CellChangeTimes->{{3.949379577021902*^9, 3.9493795809858704`*^9}, {
+  3.949382663254589*^9, 
+  3.9493826654135094`*^9}},ExpressionUUID->"7df060a3-facc-cd40-9e1e-\
+c3e3dc6aab6f"],
 
 Cell[CellGroupData[{
 
-Cell[BoxData[
- SuperscriptBox["0.7", "10"]], "Input",
- CellChangeTimes->{{3.9491442152181873`*^9, 3.949144225193266*^9}},
- CellLabel->
-  "In[392]:=",ExpressionUUID->"35da1d96-9763-e94c-bf17-1cbeb02b6c93"],
+Cell[BoxData[{
+ RowBox[{
+  RowBox[{"NumberOfEntriesTriple", "=", 
+   FractionBox[
+    RowBox[{
+     RowBox[{"(", 
+      RowBox[{"order", "+", "2"}], ")"}], "*", 
+     RowBox[{"(", 
+      RowBox[{"order", "+", "1"}], ")"}], "*", "order"}], "6"]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"OutputPythonElements", "=", 
+   RowBox[{"ConstantArray", "[", 
+    RowBox[{"0", ",", 
+     RowBox[{"{", 
+      RowBox[{"NumberOfEntriesTriple", ",", "1"}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"k", "=", "1"}], ";"}], "\[IndentingNewLine]", 
+ RowBox[{"For", "[", 
+  RowBox[{
+   RowBox[{"i", "=", "1"}], ",", 
+   RowBox[{"i", "<=", "order"}], ",", 
+   RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+   RowBox[{
+    RowBox[{"For", "[", 
+     RowBox[{
+      RowBox[{"j", "=", "1"}], ",", 
+      RowBox[{"j", "<=", "i"}], ",", 
+      RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
+      RowBox[{
+       RowBox[{"For", "[", 
+        RowBox[{
+         RowBox[{"m", "=", "1"}], ",", 
+         RowBox[{"m", "<=", "j"}], ",", 
+         RowBox[{"m", "++"}], ",", "\[IndentingNewLine]", 
+         RowBox[{
+          RowBox[{
+           RowBox[{"OutputPythonElements", "[", 
+            RowBox[{"[", 
+             RowBox[{
+              RowBox[{"k", "++"}], ",", "1"}], "]"}], "]"}], "=", 
+           RowBox[{"integralValuesTriple", "[", 
+            RowBox[{"[", 
+             RowBox[{"i", ",", "j", ",", "m"}], "]"}], "]"}]}], ";"}]}], 
+        "\[IndentingNewLine]", "]"}], ";"}]}], "\[IndentingNewLine]", "]"}], 
+    ";"}]}], "\[IndentingNewLine]", "]"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{"OutputPython", " ", "=", " ", 
+   RowBox[{"StringReplace", "[", 
+    RowBox[{
+     RowBox[{"ToString", "[", 
+      RowBox[{"CForm", "[", "OutputPythonElements", "]"}], "]"}], ",", 
+     RowBox[{"{", 
+      RowBox[{
+       RowBox[{"\"\<a\>\"", "->", "\"\<h_v\>\""}], ",", 
+       RowBox[{"\"\<Power(a,2)\>\"", "->", "\"\<h_v**2\>\""}], ",", 
+       RowBox[{"\"\<Power(a,3)\>\"", "->", "\"\<h_v**3\>\""}], ",", 
+       RowBox[{"\"\<Power(a,4)\>\"", "->", "\"\<h_v**4\>\""}], ",", 
+       RowBox[{"\"\<Power(a,5)\>\"", "->", "\"\<h_v**5\>\""}], ",", 
+       RowBox[{"\"\<Power(a,6)\>\"", "->", "\"\<h_v**6\>\""}], ",", 
+       RowBox[{"\"\<Power(a,7)\>\"", "->", "\"\<h_v**7\>\""}], ",", 
+       RowBox[{"\"\<Power(a,8)\>\"", "->", "\"\<h_v**8\>\""}], ",", 
+       RowBox[{"\"\<Power(a,9)\>\"", "->", "\"\<h_v**9\>\""}], ",", 
+       RowBox[{"\"\<Power(a,10)\>\"", "->", "\"\<h_v**10\>\""}], ",", 
+       RowBox[{"\"\<Power(a,11)\>\"", "->", "\"\<h_v**11\>\""}], ",", 
+       RowBox[{"\"\<Power(a,12)\>\"", "->", "\"\<h_v**12\>\""}], ",", 
+       RowBox[{"\"\<Power(a,13)\>\"", "->", "\"\<h_v**13\>\""}], ",", 
+       RowBox[{"\"\<Power(a,14)\>\"", "->", "\"\<h_v**14\>\""}], ",", 
+       RowBox[{"\"\<Power(a,15)\>\"", "->", "\"\<h_v**15\>\""}], ",", 
+       RowBox[{"\"\<Power(a,16)\>\"", "->", "\"\<h_v**16\>\""}], ",", 
+       RowBox[{"\"\<Power(a,17)\>\"", "->", "\"\<h_v**17\>\""}], ",", 
+       RowBox[{"\"\<Power(a,18)\>\"", "->", "\"\<h_v**18\>\""}], ",", 
+       RowBox[{"\"\<Power(a,19)\>\"", "->", "\"\<h_v**19\>\""}], ",", 
+       RowBox[{"\"\<Power(a,20)\>\"", "->", "\"\<h_v**20\>\""}], ",", 
+       RowBox[{"\"\<Power(a,21)\>\"", "->", "\"\<h_v**21\>\""}], ",", 
+       RowBox[{"\"\<Power(a,22)\>\"", "->", "\"\<h_v**22\>\""}], ",", 
+       RowBox[{
+       "\"\<List(List(\>\"", "->", 
+        "\"\<integrals[] = integrals[] = integrals[] = integrals[] = \
+integrals[] = integrals[] = \>\""}], ",", 
+       RowBox[{
+       "\"\<),List(\>\"", "->", 
+        "\"\<\\nintegrals[] = integrals[] = integrals[] = integrals[] = \
+integrals[] = integrals[] = \>\""}]}], "}"}]}], "]"}]}], 
+  ";"}], "\[IndentingNewLine]", 
+ RowBox[{
+  RowBox[{
+   RowBox[{"For", "[", 
+    RowBox[{
+     RowBox[{"i", "=", "0"}], ",", 
+     RowBox[{"i", " ", "<", "order"}], ",", 
+     RowBox[{"i", "++"}], ",", "\[IndentingNewLine]", 
+     RowBox[{
+      RowBox[{"For", "[", 
+       RowBox[{
+        RowBox[{"j", "=", "0"}], ",", 
+        RowBox[{"j", "<", "i"}], ",", 
+        RowBox[{"j", "++"}], ",", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"For", "[", 
+          RowBox[{
+           RowBox[{"m", "=", "0"}], ",", 
+           RowBox[{"m", "<", "j"}], ",", 
+           RowBox[{"m", "++"}], ",", "\[IndentingNewLine]", 
+           RowBox[{
+            RowBox[{"OutputPython", "=", 
+             RowBox[{"StringInsert", "[", 
+              RowBox[{"OutputPython", ",", 
+               RowBox[{"StringJoin", "[", 
+                RowBox[{
+                 RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
+                 RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+                 RowBox[{"ToString", "[", "m", "]"}]}], "]"}], ",", 
+               RowBox[{
+                RowBox[{"StringPosition", "[", 
+                 RowBox[{
+                 "OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+                 "]"}], "[", 
+                RowBox[{"[", 
+                 RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"OutputPython", "=", 
+             RowBox[{"StringInsert", "[", 
+              RowBox[{"OutputPython", ",", 
+               RowBox[{"StringJoin", "[", 
+                RowBox[{
+                 RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
+                 RowBox[{"ToString", "[", "m", "]"}], ",", "\"\<,\>\"", ",", 
+                 " ", 
+                 RowBox[{"ToString", "[", "j", "]"}]}], "]"}], ",", 
+               RowBox[{
+                RowBox[{"StringPosition", "[", 
+                 RowBox[{
+                 "OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+                 "]"}], "[", 
+                RowBox[{"[", 
+                 RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"OutputPython", "=", 
+             RowBox[{"StringInsert", "[", 
+              RowBox[{"OutputPython", ",", 
+               RowBox[{"StringJoin", "[", 
+                RowBox[{
+                 RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+                 RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
+                 " ", 
+                 RowBox[{"ToString", "[", "m", "]"}]}], "]"}], ",", 
+               RowBox[{
+                RowBox[{"StringPosition", "[", 
+                 RowBox[{
+                 "OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+                 "]"}], "[", 
+                RowBox[{"[", 
+                 RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"OutputPython", "=", 
+             RowBox[{"StringInsert", "[", 
+              RowBox[{"OutputPython", ",", 
+               RowBox[{"StringJoin", "[", 
+                RowBox[{
+                 RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+                 RowBox[{"ToString", "[", "m", "]"}], ",", "\"\<,\>\"", ",", 
+                 " ", 
+                 RowBox[{"ToString", "[", "i", "]"}]}], "]"}], ",", 
+               RowBox[{
+                RowBox[{"StringPosition", "[", 
+                 RowBox[{
+                 "OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+                 "]"}], "[", 
+                RowBox[{"[", 
+                 RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"OutputPython", "=", 
+             RowBox[{"StringInsert", "[", 
+              RowBox[{"OutputPython", ",", 
+               RowBox[{"StringJoin", "[", 
+                RowBox[{
+                 RowBox[{"ToString", "[", "m", "]"}], ",", "\"\<,\>\"", ",", 
+                 RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
+                 " ", 
+                 RowBox[{"ToString", "[", "j", "]"}]}], "]"}], ",", 
+               RowBox[{
+                RowBox[{"StringPosition", "[", 
+                 RowBox[{
+                 "OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+                 "]"}], "[", 
+                RowBox[{"[", 
+                 RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+            "\[IndentingNewLine]", 
+            RowBox[{"OutputPython", "=", 
+             RowBox[{"StringInsert", "[", 
+              RowBox[{"OutputPython", ",", 
+               RowBox[{"StringJoin", "[", 
+                RowBox[{
+                 RowBox[{"ToString", "[", "m", "]"}], ",", "\"\<,\>\"", ",", 
+                 RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+                 " ", 
+                 RowBox[{"ToString", "[", "i", "]"}]}], "]"}], ",", 
+               RowBox[{
+                RowBox[{"StringPosition", "[", 
+                 RowBox[{
+                 "OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+                 "]"}], "[", 
+                RowBox[{"[", 
+                 RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";"}]}], 
+          "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringReplace", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"{", 
+             RowBox[{"\"\<integrals[] = \>\"", "->", "\"\<\>\""}], "}"}], ",",
+             "3"}], "]"}]}], ";", "\[IndentingNewLine]", 
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringInsert", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"StringJoin", "[", 
+             RowBox[{
+              RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "j", "]"}]}], "]"}], ",", 
+            RowBox[{
+             RowBox[{"StringPosition", "[", 
+              RowBox[{"OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+              "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringInsert", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"StringJoin", "[", 
+             RowBox[{
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", " ", 
+              RowBox[{"ToString", "[", "j", "]"}]}], "]"}], ",", 
+            RowBox[{
+             RowBox[{"StringPosition", "[", 
+              RowBox[{"OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+              "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringInsert", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"StringJoin", "[", 
+             RowBox[{
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", " ", 
+              RowBox[{"ToString", "[", "i", "]"}]}], "]"}], ",", 
+            RowBox[{
+             RowBox[{"StringPosition", "[", 
+              RowBox[{"OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+              "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";"}]}], 
+       "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"For", "[", 
+       RowBox[{
+        RowBox[{"m", "=", "0"}], ",", 
+        RowBox[{"m", "<", "j"}], ",", 
+        RowBox[{"m", "++"}], ",", "\[IndentingNewLine]", 
+        RowBox[{
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringReplace", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"{", 
+             RowBox[{"\"\<integrals[] = \>\"", "->", "\"\<\>\""}], "}"}], ",",
+             "3"}], "]"}]}], ";", "\[IndentingNewLine]", 
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringInsert", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"StringJoin", "[", 
+             RowBox[{
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "m", "]"}]}], "]"}], ",", 
+            RowBox[{
+             RowBox[{"StringPosition", "[", 
+              RowBox[{"OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+              "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringInsert", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"StringJoin", "[", 
+             RowBox[{
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "m", "]"}], ",", "\"\<,\>\"", ",", " ", 
+              RowBox[{"ToString", "[", "j", "]"}]}], "]"}], ",", 
+            RowBox[{
+             RowBox[{"StringPosition", "[", 
+              RowBox[{"OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+              "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";", 
+         "\[IndentingNewLine]", 
+         RowBox[{"OutputPython", "=", 
+          RowBox[{"StringInsert", "[", 
+           RowBox[{"OutputPython", ",", 
+            RowBox[{"StringJoin", "[", 
+             RowBox[{
+              RowBox[{"ToString", "[", "m", "]"}], ",", "\"\<,\>\"", ",", 
+              RowBox[{"ToString", "[", "j", "]"}], ",", "\"\<,\>\"", ",", " ", 
+              RowBox[{"ToString", "[", "j", "]"}]}], "]"}], ",", 
+            RowBox[{
+             RowBox[{"StringPosition", "[", 
+              RowBox[{"OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+              "]"}], "[", 
+             RowBox[{"[", 
+              RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";"}]}], 
+       "\[IndentingNewLine]", "]"}], ";", "\[IndentingNewLine]", 
+      "\[IndentingNewLine]", 
+      RowBox[{"OutputPython", "=", 
+       RowBox[{"StringReplace", "[", 
+        RowBox[{"OutputPython", ",", 
+         RowBox[{"{", 
+          RowBox[{"\"\<integrals[] = \>\"", "->", "\"\<\>\""}], "}"}], ",", 
+         "5"}], "]"}]}], ";", "\[IndentingNewLine]", 
+      RowBox[{"OutputPython", "=", 
+       RowBox[{"StringInsert", "[", 
+        RowBox[{"OutputPython", ",", 
+         RowBox[{"StringJoin", "[", 
+          RowBox[{
+           RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
+           RowBox[{"ToString", "[", "i", "]"}], ",", "\"\<,\>\"", ",", 
+           RowBox[{"ToString", "[", "i", "]"}]}], "]"}], ",", 
+         RowBox[{
+          RowBox[{"StringPosition", "[", 
+           RowBox[{"OutputPython", ",", "\"\<integrals[]\>\"", ",", "1"}], 
+           "]"}], "[", 
+          RowBox[{"[", 
+           RowBox[{"1", ",", "2"}], "]"}], "]"}]}], "]"}]}], ";"}]}], 
+    "\[IndentingNewLine]", "]"}], ";"}], 
+  "\[IndentingNewLine]"}], "\[IndentingNewLine]", "OutputPython"}], "Input",
+ CellChangeTimes->{{3.949136193200716*^9, 3.9491362003357296`*^9}, {
+   3.9491363547839527`*^9, 3.9491364909843864`*^9}, {3.9491366685904922`*^9, 
+   3.9491367658762417`*^9}, {3.9491370016732807`*^9, 3.94913702236961*^9}, {
+   3.9491371511448517`*^9, 3.9491372038174877`*^9}, {3.949137240542322*^9, 
+   3.949137312167961*^9}, {3.949137482829281*^9, 3.9491375192103176`*^9}, {
+   3.9491376012124863`*^9, 3.949137637885414*^9}, {3.949137736539116*^9, 
+   3.94913775931122*^9}, {3.949137790829378*^9, 3.949137811487137*^9}, {
+   3.9491378584996777`*^9, 3.9491378953882465`*^9}, {3.9491379592857304`*^9, 
+   3.9491379921919346`*^9}, {3.949138081892023*^9, 3.949138087454193*^9}, {
+   3.9491381294980984`*^9, 3.9491382137164173`*^9}, {3.9491432764119205`*^9, 
+   3.9491432780362015`*^9}, {3.949144169529028*^9, 3.949144179798792*^9}, {
+   3.9493795289608192`*^9, 3.9493795568805256`*^9}, {3.9493795888632183`*^9, 
+   3.9493795970474224`*^9}, {3.949379632317583*^9, 3.9493796388251953`*^9}, 
+   3.9493798664942036`*^9, 3.9493813671644382`*^9, 3.949382648867647*^9, {
+   3.949383085127987*^9, 3.9493831041516457`*^9}, {3.9493831537258224`*^9, 
+   3.949383161158476*^9}, {3.9493833414171524`*^9, 3.9493833866412334`*^9}, {
+   3.9493835157550488`*^9, 3.9493835972061176`*^9}, {3.949383925531864*^9, 
+   3.949383942998522*^9}, {3.9493839980232925`*^9, 3.9493840805672665`*^9}, {
+   3.9493842788715115`*^9, 3.9493843114368877`*^9}, {3.9493843942989006`*^9, 
+   3.949384458763857*^9}, {3.9493844889375286`*^9, 3.9493845416865463`*^9}, {
+   3.949388331613182*^9, 3.9493883388322487`*^9}, {3.9493884027203064`*^9, 
+   3.949388429663452*^9}, {3.9493884749409676`*^9, 3.9493885105402164`*^9}, {
+   3.9493885834812107`*^9, 3.949388584333809*^9}, {3.94938885865699*^9, 
+   3.949388863025236*^9}, {3.9493898939162025`*^9, 3.9493899324247227`*^9}, {
+   3.9493899934713173`*^9, 3.949390025664263*^9}, {3.949390410522156*^9, 
+   3.949390429274843*^9}, {3.9493905704981575`*^9, 3.949390605338915*^9}, {
+   3.949390637953495*^9, 3.949390658976736*^9}, {3.949390859689085*^9, 
+   3.9493910136944637`*^9}, {3.949391387111923*^9, 3.949391390726692*^9}, {
+   3.9493936070970497`*^9, 3.9493936072640457`*^9}, {3.94939381282366*^9, 
+   3.9493938216538982`*^9}, {3.949393865137808*^9, 3.9493938982591457`*^9}},
+ CellLabel->"In[19]:=",ExpressionUUID->"dd468d40-39ae-6649-8003-d61aad8d2da8"],
 
-Cell[BoxData["0.02824752489999998`"], "Output",
- CellChangeTimes->{3.9491442259300632`*^9},
- CellLabel->
-  "Out[392]=",ExpressionUUID->"055a04f9-eee2-7644-ab61-0dd69be13cf4"]
+Cell[BoxData["\<\"integrals[0,0,0] = h_v - 3*h_v**2 + 4*h_v**3 - \
+2*h_v**4\\nintegrals[1,0,0] = integrals[0,1,0] = integrals[0,0,1] = h_v - \
+5*h_v**2 + (34*h_v**3)/3. - 12*h_v**4 + (24*h_v**5)/5.\\nintegrals[1,1,0] = \
+integrals[1,0,1] = integrals[0,1,1] = h_v - 7*h_v**2 + 24*h_v**3 - 42*h_v**4 \
++ 36*h_v**5 - 12*h_v**6\\nintegrals[1,1,1] = h_v - 9*h_v**2 + 42*h_v**3 - \
+108*h_v**4 + (756*h_v**5)/5. - 108*h_v**6 + \
+(216*h_v**7)/7.\\nintegrals[2,0,0] = integrals[0,2,0] = integrals[0,0,2] = \
+h_v - 8*h_v**2 + (82*h_v**3)/3. - 47*h_v**4 + 40*h_v**5 - \
+(40*h_v**6)/3.\\nintegrals[2,1,0] = integrals[2,0,1] = integrals[1,2,0] = \
+integrals[1,0,2] = integrals[0,2,1] = integrals[0,1,2] = h_v - 10*h_v**2 + \
+48*h_v**3 - 122*h_v**4 + (844*h_v**5)/5. - 120*h_v**6 + \
+(240*h_v**7)/7.\\nintegrals[2,1,1] = integrals[1,2,1] = integrals[1,1,2] = \
+h_v - 12*h_v**2 + 74*h_v**3 - 257*h_v**4 + 516*h_v**5 - 592*h_v**6 + \
+360*h_v**7 - 90*h_v**8\\nintegrals[2,2,0] = integrals[2,0,2] = \
+integrals[0,2,2] = h_v - 13*h_v**2 + 84*h_v**3 - 292*h_v**4 + 580*h_v**5 - \
+660*h_v**6 + 400*h_v**7 - 100*h_v**8\\nintegrals[2,2,1] = integrals[2,1,2] = \
+integrals[1,2,2] = h_v - 15*h_v**2 + 118*h_v**3 - 532*h_v**4 + \
+(7164*h_v**5)/5. - 2340*h_v**6 + (15880*h_v**7)/7. - 1200*h_v**8 + \
+(800*h_v**9)/3.\\nintegrals[2,2,2] = h_v - 18*h_v**2 + 174*h_v**3 - \
+987*h_v**4 + 3420*h_v**5 - 7440*h_v**6 + 10200*h_v**7 - 8550*h_v**8 + \
+4000*h_v**9 - 800*h_v**10\\nintegrals[3,0,0] = integrals[0,3,0] = \
+integrals[0,0,3] = h_v - 12*h_v**2 + 58*h_v**3 - 145*h_v**4 + 198*h_v**5 - \
+140*h_v**6 + 40*h_v**7\\nintegrals[3,1,0] = integrals[3,0,1] = \
+integrals[1,3,0] = integrals[1,0,3] = integrals[0,3,1] = integrals[0,1,3] = \
+h_v - 14*h_v**2 + (268*h_v**3)/3. - 308*h_v**4 + 610*h_v**5 - \
+(2080*h_v**6)/3. + 420*h_v**7 - 105*h_v**8\\nintegrals[3,1,1] = \
+integrals[1,3,1] = integrals[1,1,3] = h_v - 16*h_v**2 + 126*h_v**3 - \
+563*h_v**4 + (7546*h_v**5)/5. - 2460*h_v**6 + (16680*h_v**7)/7. - 1260*h_v**8 \
++ 280*h_v**9\\nintegrals[3,2,0] = integrals[3,0,2] = integrals[2,3,0] = \
+integrals[2,0,3] = integrals[0,3,2] = integrals[0,2,3] = h_v - 17*h_v**2 + \
+(424*h_v**3)/3. - 640*h_v**4 + 1706*h_v**5 - (8270*h_v**6)/3. + \
+(18580*h_v**7)/7. - 1400*h_v**8 + (2800*h_v**9)/9.\\nintegrals[3,2,1] = \
+integrals[3,1,2] = integrals[2,3,1] = integrals[2,1,3] = integrals[1,3,2] = \
+integrals[1,2,3] = h_v - 19*h_v**2 + 186*h_v**3 - 1048*h_v**4 + 3610*h_v**5 - \
+7830*h_v**6 + 10720*h_v**7 - 8980*h_v**8 + 4200*h_v**9 - \
+840*h_v**10\\nintegrals[3,2,2] = integrals[2,3,2] = integrals[2,2,3] = h_v - \
+22*h_v**2 + 258*h_v**3 - 1785*h_v**4 + 7674*h_v**5 - 21240*h_v**6 + \
+(269280*h_v**7)/7. - 45300*h_v**8 + 33400*h_v**9 - 14000*h_v**10 + \
+(28000*h_v**11)/11.\\nintegrals[3,3,0] = integrals[3,0,3] = integrals[0,3,3] \
+= h_v - 21*h_v**2 + 220*h_v**3 - 1260*h_v**4 + 4320*h_v**5 - 9280*h_v**6 + \
+12600*h_v**7 - 10500*h_v**8 + 4900*h_v**9 - 980*h_v**10\\nintegrals[3,3,1] = \
+integrals[3,1,3] = integrals[1,3,3] = h_v - 23*h_v**2 + (826*h_v**3)/3. - \
+1900*h_v**4 + 8120*h_v**5 - (67160*h_v**6)/3. + (283240*h_v**7)/7. - \
+47600*h_v**8 + (315700*h_v**9)/9. - 14700*h_v**10 + \
+(29400*h_v**11)/11.\\nintegrals[3,3,2] = integrals[3,2,3] = integrals[2,3,3] \
+= h_v - 26*h_v**2 + (1090*h_v**3)/3. - 3015*h_v**4 + 15720*h_v**5 - \
+53680*h_v**6 + 123000*h_v**7 - 190350*h_v**8 + (588700*h_v**9)/3. - \
+129080*h_v**10 + 49000*h_v**11 - (24500*h_v**12)/3.\\nintegrals[3,3,3] = h_v \
+- 30*h_v**2 + 490*h_v**3 - 4805*h_v**4 + 29862*h_v**5 - 123000*h_v**6 + \
+(2421600*h_v**7)/7. - 674100*h_v**8 + 909300*h_v**9 - 833000*h_v**10 + \
+(5439000*h_v**11)/11. - 171500*h_v**12 + \
+(343000*h_v**13)/13.\\nintegrals[4,0,0] = integrals[0,4,0] = integrals[0,0,4] \
+= h_v - 17*h_v**2 + (334*h_v**3)/3. - 380*h_v**4 + 742*h_v**5 - \
+(2506*h_v**6)/3. + 504*h_v**7 - 126*h_v**8\\nintegrals[4,1,0] = \
+integrals[4,0,1] = integrals[1,4,0] = integrals[1,0,4] = integrals[0,4,1] = \
+integrals[0,1,4] = h_v - 19*h_v**2 + 156*h_v**3 - 698*h_v**4 + 1850*h_v**5 - \
+2982*h_v**6 + 2868*h_v**7 - 1512*h_v**8 + 336*h_v**9\\nintegrals[4,1,1] = \
+integrals[1,4,1] = integrals[1,1,4] = h_v - 21*h_v**2 + 206*h_v**3 - \
+1148*h_v**4 + (19626*h_v**5)/5. - 8482*h_v**6 + 11592*h_v**7 - 9702*h_v**8 + \
+4536*h_v**9 - (4536*h_v**10)/5.\\nintegrals[4,2,0] = integrals[4,0,2] = \
+integrals[2,4,0] = integrals[2,0,4] = integrals[0,4,2] = integrals[0,2,4] = \
+h_v - 22*h_v**2 + 228*h_v**3 - 1300*h_v**4 + 4450*h_v**5 - 9552*h_v**6 + \
+12964*h_v**7 - 10801*h_v**8 + 5040*h_v**9 - 1008*h_v**10\\nintegrals[4,2,1] = \
+integrals[4,1,2] = integrals[2,4,1] = integrals[2,1,4] = integrals[1,4,2] = \
+integrals[1,2,4] = h_v - 24*h_v**2 + 286*h_v**3 - 1963*h_v**4 + 8370*h_v**5 - \
+23052*h_v**6 + (291496*h_v**7)/7. - 48972*h_v**8 + (108248*h_v**9)/3. - \
+15120*h_v**10 + (30240*h_v**11)/11.\\nintegrals[4,2,2] = integrals[2,4,2] = \
+integrals[2,2,4] = h_v - 27*h_v**2 + 378*h_v**3 - 3120*h_v**4 + 16218*h_v**5 \
+- 55302*h_v**6 + 126624*h_v**7 - 195876*h_v**8 + 201880*h_v**9 - \
+132776*h_v**10 + 50400*h_v**11 - 8400*h_v**12\\nintegrals[4,3,0] = \
+integrals[4,0,3] = integrals[3,4,0] = integrals[3,0,4] = integrals[0,4,3] = \
+integrals[0,3,4] = h_v - 26*h_v**2 + (1000*h_v**3)/3. - 2350*h_v**4 + \
+10040*h_v**5 - (82376*h_v**6)/3. + 49192*h_v**7 - 57470*h_v**8 + \
+(379540*h_v**9)/9. - 17640*h_v**10 + (35280*h_v**11)/11.\\nintegrals[4,3,1] = \
+integrals[4,1,3] = integrals[3,4,1] = integrals[3,1,4] = integrals[1,4,3] = \
+integrals[1,3,4] = h_v - 28*h_v**2 + 402*h_v**3 - 3325*h_v**4 + 17200*h_v**5 \
+- 58392*h_v**6 + 133336*h_v**7 - 205954*h_v**8 + 212100*h_v**9 - \
+139440*h_v**10 + 52920*h_v**11 - 8820*h_v**12\\nintegrals[4,3,2] = \
+integrals[4,2,3] = integrals[3,4,2] = integrals[3,2,4] = integrals[2,4,3] = \
+integrals[2,3,4] = h_v - 31*h_v**2 + 510*h_v**3 - 4980*h_v**4 + 30840*h_v**5 \
+- 126792*h_v**6 + (2493864*h_v**7)/7. - 693840*h_v**8 + 935620*h_v**9 - \
+856940*h_v**10 + (5594680*h_v**11)/11. - 176400*h_v**12 + \
+(352800*h_v**13)/13.\\nintegrals[4,3,3] = integrals[3,4,3] = integrals[3,3,4] \
+= h_v - 35*h_v**2 + (1990*h_v**3)/3. - 7560*h_v**4 + 55014*h_v**5 - \
+268042*h_v**6 + 903840*h_v**7 - 2150820*h_v**8 + (10910620*h_v**9)/3. - \
+4342268*h_v**10 + 3577000*h_v**11 - (5801600*h_v**12)/3. + 617400*h_v**13 - \
+88200*h_v**14\\nintegrals[4,4,0] = integrals[4,0,4] = integrals[0,4,4] = h_v \
+- 31*h_v**2 + 480*h_v**3 - 4090*h_v**4 + 21280*h_v**5 - 71904*h_v**6 + \
+162904*h_v**7 - 249760*h_v**8 + 255780*h_v**9 - 167580*h_v**10 + \
+63504*h_v**11 - 10584*h_v**12\\nintegrals[4,4,1] = integrals[4,1,4] = \
+integrals[1,4,4] = h_v - 33*h_v**2 + 562*h_v**3 - 5500*h_v**4 + 33840*h_v**5 \
+- 138264*h_v**6 + 386872*h_v**7 - 751548*h_v**8 + (3035900*h_v**9)/3. - \
+926100*h_v**10 + (6043464*h_v**11)/11. - 190512*h_v**12 + \
+(381024*h_v**13)/13.\\nintegrals[4,4,2] = integrals[4,2,4] = integrals[2,4,4] \
+= h_v - 36*h_v**2 + 690*h_v**3 - 7845*h_v**4 + 56880*h_v**5 - 276504*h_v**6 + \
+931224*h_v**7 - 2214450*h_v**8 + 3742900*h_v**9 - 4467680*h_v**10 + \
+3679704*h_v**11 - 1989204*h_v**12 + 635040*h_v**13 - \
+90720*h_v**14\\nintegrals[4,4,3] = integrals[4,3,4] = integrals[3,4,4] = h_v \
+- 40*h_v**2 + 870*h_v**3 - 11415*h_v**4 + 96126*h_v**5 - 546084*h_v**6 + \
+2169000*h_v**7 - 6163500*h_v**8 + 12680500*h_v**9 - 18914000*h_v**10 + \
+(222670504*h_v**11)/11. - 15143940*h_v**12 + (97707960*h_v**13)/13. - \
+2222640*h_v**14 + 296352*h_v**15\\nintegrals[4,4,4] = h_v - 45*h_v**2 + \
+1110*h_v**3 - 16620*h_v**4 + 160398*h_v**5 - 1050126*h_v**6 + 4844280*h_v**7 \
+- 16155090*h_v**8 + 39553780*h_v**9 - 71555876*h_v**10 + 95393592*h_v**11 - \
+92468880*h_v**12 + 63345240*h_v**13 - 29053080*h_v**14 + 8001504*h_v**15 - \
+1000188*h_v**16\\nintegrals[5,0,0] = integrals[0,5,0] = integrals[0,0,5] = \
+h_v - 23*h_v**2 + (592*h_v**3)/3. - 882*h_v**4 + 2310*h_v**5 - 3682*h_v**6 + \
+3516*h_v**7 - 1848*h_v**8 + (1232*h_v**9)/3.\\nintegrals[5,1,0] = \
+integrals[5,0,1] = integrals[1,5,0] = integrals[1,0,5] = integrals[0,5,1] = \
+integrals[0,1,5] = h_v - 25*h_v**2 + 258*h_v**3 - 1452*h_v**4 + \
+(24654*h_v**5)/5. - 10542*h_v**6 + 14280*h_v**7 - 11886*h_v**8 + 5544*h_v**9 \
+- (5544*h_v**10)/5.\\nintegrals[5,1,1] = integrals[1,5,1] = integrals[1,1,5] \
+= h_v - 27*h_v**2 + 324*h_v**3 - 2202*h_v**4 + 9306*h_v**5 - 25494*h_v**6 + \
+45924*h_v**7 - 53928*h_v**8 + 39704*h_v**9 - 16632*h_v**10 + \
+3024*h_v**11\\nintegrals[5,2,0] = integrals[5,0,2] = integrals[2,5,0] = \
+integrals[2,0,5] = integrals[0,5,2] = integrals[0,2,5] = h_v - 28*h_v**2 + \
+354*h_v**3 - 2477*h_v**4 + 10550*h_v**5 - 28812*h_v**6 + 51576*h_v**7 - \
+60228*h_v**8 + 44184*h_v**9 - 18480*h_v**10 + 3360*h_v**11\\nintegrals[5,2,1] \
+= integrals[5,1,2] = integrals[2,5,1] = integrals[2,1,5] = integrals[1,5,2] = \
+integrals[1,2,5] = h_v - 30*h_v**2 + 428*h_v**3 - 3512*h_v**4 + \
+(90474*h_v**5)/5. - 61312*h_v**6 + 139860*h_v**7 - 215901*h_v**8 + \
+222264*h_v**9 - (730464*h_v**10)/5. + 55440*h_v**11 - \
+9240*h_v**12\\nintegrals[5,2,2] = integrals[2,5,2] = integrals[2,2,5] = h_v - \
+33*h_v**2 + 544*h_v**3 - 5272*h_v**4 + 32490*h_v**5 - 133242*h_v**6 + \
+(2617252*h_v**7)/7. - 727608*h_v**8 + (2942072*h_v**9)/3. - 897960*h_v**10 + \
+(5861520*h_v**11)/11. - 184800*h_v**12 + \
+(369600*h_v**13)/13.\\nintegrals[5,3,0] = integrals[5,0,3] = integrals[3,5,0] \
+= integrals[3,0,5] = integrals[0,5,3] = integrals[0,3,5] = h_v - 32*h_v**2 + \
+(1474*h_v**3)/3. - 4175*h_v**4 + 21700*h_v**5 - (219856*h_v**6)/3. + \
+165984*h_v**7 - 254436*h_v**8 + 260540*h_v**9 - 170688*h_v**10 + \
+64680*h_v**11 - 10780*h_v**12\\nintegrals[5,3,1] = integrals[5,1,3] = \
+integrals[3,5,1] = integrals[3,1,5] = integrals[1,5,3] = integrals[1,3,5] = \
+h_v - 34*h_v**2 + 576*h_v**3 - 5618*h_v**4 + 34520*h_v**5 - 140952*h_v**6 + \
+394248*h_v**7 - 765702*h_v**8 + 1030876*h_v**9 - 943320*h_v**10 + \
+(6155520*h_v**11)/11. - 194040*h_v**12 + \
+(388080*h_v**13)/13.\\nintegrals[5,3,2] = integrals[5,2,3] = integrals[3,5,2] \
+= integrals[3,2,5] = integrals[2,5,3] = integrals[2,3,5] = h_v - 37*h_v**2 + \
+708*h_v**3 - 8020*h_v**4 + 58048*h_v**5 - 281952*h_v**6 + 949144*h_v**7 - \
+2256436*h_v**8 + 3813180*h_v**9 - 4551036*h_v**10 + 3748080*h_v**11 - \
+2026080*h_v**12 + 646800*h_v**13 - 92400*h_v**14\\nintegrals[5,3,3] = \
+integrals[3,5,3] = integrals[3,3,5] = h_v - 41*h_v**2 + (2680*h_v**3)/3. - \
+11680*h_v**4 + 98150*h_v**5 - (1671026*h_v**6)/3. + 2211172*h_v**7 - \
+6281240*h_v**8 + (116279380*h_v**9)/9. - 19268340*h_v**10 + \
+(226820160*h_v**11)/11. - 15425200*h_v**12 + (99519000*h_v**13)/13. - \
+2263800*h_v**14 + 301840*h_v**15\\nintegrals[5,4,0] = integrals[5,0,4] = \
+integrals[4,5,0] = integrals[4,0,5] = integrals[0,5,4] = integrals[0,4,5] = \
+h_v - 37*h_v**2 + 678*h_v**3 - 6860*h_v**4 + 42644*h_v**5 - 173964*h_v**6 + \
+483648*h_v**7 - 932652*h_v**8 + 1247820*h_v**9 - 1136604*h_v**10 + \
+(7395864*h_v**11)/11. - 232848*h_v**12 + \
+(465696*h_v**13)/13.\\nintegrals[5,4,1] = integrals[5,1,4] = integrals[4,5,1] \
+= integrals[4,1,5] = integrals[1,5,4] = integrals[1,4,5] = h_v - 39*h_v**2 + \
+776*h_v**3 - 8858*h_v**4 + 63840*h_v**5 - 308224*h_v**6 + 1032696*h_v**7 - \
+2447424*h_v**8 + 4128012*h_v**9 - 4921140*h_v**10 + 4050144*h_v**11 - \
+2188536*h_v**12 + 698544*h_v**13 - 99792*h_v**14\\nintegrals[5,4,2] = \
+integrals[5,2,4] = integrals[4,5,2] = integrals[4,2,5] = integrals[2,5,4] = \
+integrals[2,4,5] = h_v - 42*h_v**2 + 928*h_v**3 - 12130*h_v**4 + \
+101592*h_v**5 - 575064*h_v**6 + 2279368*h_v**7 - 6469302*h_v**8 + \
+(39899300*h_v**9)/3. - 19828200*h_v**10 + (233360064*h_v**11)/11. - \
+15867768*h_v**12 + (102366096*h_v**13)/13. - 2328480*h_v**14 + 310464*h_v**15\
+\\nintegrals[5,4,3] = integrals[5,3,4] = integrals[4,5,3] = integrals[4,3,5] \
+= integrals[3,5,4] = integrals[3,4,5] = h_v - 46*h_v**2 + 1140*h_v**3 - \
+17020*h_v**4 + 163870*h_v**5 - 1071504*h_v**6 + 4939564*h_v**7 - \
+16466275*h_v**8 + 40305300*h_v**9 - 72902760*h_v**10 + 97177584*h_v**11 - \
+94190544*h_v**12 + 64521240*h_v**13 - 29591520*h_v**14 + 8149680*h_v**15 - \
+1018710*h_v**16\\nintegrals[5,4,4] = integrals[4,5,4] = integrals[4,4,5] = \
+h_v - 51*h_v**2 + 1420*h_v**3 - 24010*h_v**4 + 262710*h_v**5 - 1960266*h_v**6 \
++ 10374076*h_v**7 - 40023480*h_v**8 + (343805420*h_v**9)/3. - \
+245951580*h_v**10 + (4361927472*h_v**11)/11. - 477534792*h_v**12 + \
+(5496935640*h_v**13)/13. - 267087240*h_v**14 + 113848560*h_v**15 - \
+29338848*h_v**16 + (58677696*h_v**17)/17.\\nintegrals[5,5,0] = \
+integrals[5,0,5] = integrals[0,5,5] = h_v - 43*h_v**2 + 924*h_v**3 - \
+10962*h_v**4 + 80220*h_v**5 - 388164*h_v**6 + 1295112*h_v**7 - 3049536*h_v**8 \
++ 5110308*h_v**9 - 6059340*h_v**10 + 4967424*h_v**11 - 2677752*h_v**12 + \
+853776*h_v**13 - 121968*h_v**14\\nintegrals[5,5,1] = integrals[5,1,5] = \
+integrals[1,5,5] = h_v - 45*h_v**2 + 1038*h_v**3 - 13692*h_v**4 + \
+(571284*h_v**5)/5. - 642684*h_v**6 + 2533440*h_v**7 - 7162092*h_v**8 + \
+14685748*h_v**9 - (109292148*h_v**10)/5. + (256990104*h_v**11)/11. - \
+17463600*h_v**12 + (112620816*h_v**13)/13. - 2561328*h_v**14 + \
+(1707552*h_v**15)/5.\\nintegrals[5,5,2] = integrals[5,2,5] = integrals[2,5,5] \
+= h_v - 48*h_v**2 + 1214*h_v**3 - 18107*h_v**4 + 173460*h_v**5 - \
+1129744*h_v**6 + 5195232*h_v**7 - 17292996*h_v**8 + 42290388*h_v**9 - \
+76448400*h_v**10 + 101863944*h_v**11 - 98706972*h_v**12 + 67603536*h_v**13 - \
+31002048*h_v**14 + 8537760*h_v**15 - 1067220*h_v**16\\nintegrals[5,5,3] = \
+integrals[5,3,5] = integrals[3,5,5] = h_v - 52*h_v**2 + 1458*h_v**3 - \
+24605*h_v**4 + 268562*h_v**5 - 2000964*h_v**6 + 10580808*h_v**7 - \
+40801572*h_v**8 + 116794300*h_v**9 - 250605600*h_v**10 + \
+(4443832344*h_v**11)/11. - 486452988*h_v**12 + (5599207656*h_v**13)/13. - \
+272044080*h_v**14 + 115958304*h_v**15 - 29882160*h_v**16 + \
+(59764320*h_v**17)/17.\\nintegrals[5,5,4] = integrals[5,4,5] = \
+integrals[4,5,5] = h_v - 57*h_v**2 + 1778*h_v**3 - 33740*h_v**4 + \
+415506*h_v**5 - 3503626*h_v**6 + 21063672*h_v**7 - 92937978*h_v**8 + \
+306962460*h_v**9 - 768344892*h_v**10 + 1465845192*h_v**11 - \
+2129799504*h_v**12 + 2337712776*h_v**13 - 1904673960*h_v**14 + \
+1115962848*h_v**15 - 444293388*h_v**16 + 107575776*h_v**17 - 11952864*h_v**18\
+\\nintegrals[5,5,5] = h_v - 63*h_v**2 + 2184*h_v**3 - 46242*h_v**4 + \
+636930*h_v**5 - 6025446*h_v**6 + 40810788*h_v**7 - 203964264*h_v**8 + \
+768344892*h_v**9 - 2212770420*h_v**10 + (54030663792*h_v**11)/11. - \
+8426123496*h_v**12 + (144760659624*h_v**13)/13. - 11224554264*h_v**14 + \
+8467517520*h_v**15 - 4625758368*h_v**16 + (29368186848*h_v**17)/17. - \
+394444512*h_v**18 + (788889024*h_v**19)/19.\\nintegrals[6,0,0] = \
+integrals[0,6,0] = integrals[0,0,6] = h_v - 30*h_v**2 + 328*h_v**3 - \
+1862*h_v**4 + (31374*h_v**5)/5. - 13272*h_v**6 + 17820*h_v**7 - 14751*h_v**8 \
++ 6864*h_v**9 - (6864*h_v**10)/5.\\nintegrals[6,1,0] = integrals[6,0,1] = \
+integrals[1,6,0] = integrals[1,0,6] = integrals[0,6,1] = integrals[0,1,6] = \
+h_v - 32*h_v**2 + (1222*h_v**3)/3. - 2817*h_v**4 + 11886*h_v**5 - \
+32284*h_v**6 + 57624*h_v**7 - 67188*h_v**8 + (147752*h_v**9)/3. - \
+20592*h_v**10 + 3744*h_v**11\\nintegrals[6,1,1] = integrals[1,6,1] = \
+integrals[1,1,6] = h_v - 34*h_v**2 + 492*h_v**3 - 4008*h_v**4 + \
+(102306*h_v**5)/5. - 68880*h_v**6 + 156516*h_v**7 - 241089*h_v**8 + \
+247896*h_v**9 - (814176*h_v**10)/5. + 61776*h_v**11 - \
+10296*h_v**12\\nintegrals[6,2,0] = integrals[6,0,2] = integrals[2,6,0] = \
+integrals[2,0,6] = integrals[0,6,2] = integrals[0,2,6] = h_v - 35*h_v**2 + \
+(1594*h_v**3)/3. - 4472*h_v**4 + (115694*h_v**5)/5. - (233926*h_v**6)/3. + \
+176400*h_v**7 - 270216*h_v**8 + 276584*h_v**9 - (905784*h_v**10)/5. + \
+68640*h_v**11 - 11440*h_v**12\\nintegrals[6,2,1] = integrals[6,1,2] = \
+integrals[2,6,1] = integrals[2,1,6] = integrals[1,6,2] = integrals[1,2,6] = \
+h_v - 37*h_v**2 + 624*h_v**3 - 6032*h_v**4 + 36866*h_v**5 - 150114*h_v**6 + \
+419244*h_v**7 - 813528*h_v**8 + 1094664*h_v**9 - 1001352*h_v**10 + \
+593904*h_v**11 - 205920*h_v**12 + 31680*h_v**13\\nintegrals[6,2,2] = \
+integrals[2,6,2] = integrals[2,2,6] = h_v - 40*h_v**2 + 768*h_v**3 - \
+8632*h_v**4 + (310514*h_v**5)/5. - 300612*h_v**6 + (7070260*h_v**7)/7. - \
+2398531*h_v**8 + 4050504*h_v**9 - (24160704*h_v**10)/5. + 3978480*h_v**11 - \
+2150280*h_v**12 + 686400*h_v**13 - (686400*h_v**14)/7.\\nintegrals[6,3,0] = \
+integrals[6,0,3] = integrals[3,6,0] = integrals[3,0,6] = integrals[0,6,3] = \
+integrals[0,3,6] = h_v - 39*h_v**2 + 706*h_v**3 - 7108*h_v**4 + 44100*h_v**5 \
+- 179732*h_v**6 + 499408*h_v**7 - 962712*h_v**8 + 1287756*h_v**9 - \
+1172820*h_v**10 + 693720*h_v**11 - 240240*h_v**12 + \
+36960*h_v**13\\nintegrals[6,3,1] = integrals[6,1,3] = integrals[3,6,1] = \
+integrals[3,1,6] = integrals[1,6,3] = integrals[1,3,6] = h_v - 41*h_v**2 + \
+(2428*h_v**3)/3. - 9188*h_v**4 + (330296*h_v**5)/5. - (955696*h_v**6)/3. + \
+1066632*h_v**7 - 2526792*h_v**8 + 4260716*h_v**9 - (25392156*h_v**10)/5. + \
+4179120*h_v**11 - 2258080*h_v**12 + 720720*h_v**13 - \
+102960*h_v**14\\nintegrals[6,3,2] = integrals[6,2,3] = integrals[3,6,2] = \
+integrals[3,2,6] = integrals[2,6,3] = integrals[2,3,6] = h_v - 44*h_v**2 + \
+(2908*h_v**3)/3. - 12598*h_v**4 + 105200*h_v**5 - (1783856*h_v**6)/3. + \
+2354968*h_v**7 - 6680522*h_v**8 + (123565324*h_v**9)/9. - 20464320*h_v**10 + \
+(240810960*h_v**11)/11. - 16372840*h_v**12 + (105618480*h_v**13)/13. - \
+2402400*h_v**14 + 320320*h_v**15\\nintegrals[6,3,3] = integrals[3,6,3] = \
+integrals[3,3,6] = h_v - 48*h_v**2 + 1192*h_v**3 - 17700*h_v**4 + \
+169830*h_v**5 - 1108492*h_v**6 + 5105076*h_v**7 - 17007909*h_v**8 + \
+41614900*h_v**9 - 75251600*h_v**10 + 100290240*h_v**11 - 97195440*h_v**12 + \
+66574200*h_v**13 - 30531600*h_v**14 + 8408400*h_v**15 - \
+1051050*h_v**16\\nintegrals[6,4,0] = integrals[6,0,4] = integrals[4,6,0] = \
+integrals[4,0,6] = integrals[0,6,4] = integrals[0,4,6] = h_v - 44*h_v**2 + \
+(2818*h_v**3)/3. - 11123*h_v**4 + 81340*h_v**5 - (1180312*h_v**6)/3. + \
+1312416*h_v**7 - 3089844*h_v**8 + 5177372*h_v**9 - 6138480*h_v**10 + \
+5032104*h_v**11 - 2712556*h_v**12 + 864864*h_v**13 - \
+123552*h_v**14\\nintegrals[6,4,1] = integrals[6,1,4] = integrals[4,6,1] = \
+integrals[4,1,6] = integrals[1,6,4] = integrals[1,4,6] = h_v - 46*h_v**2 + \
+1056*h_v**3 - 13898*h_v**4 + (579376*h_v**5)/5. - 651504*h_v**6 + \
+2567544*h_v**7 - 7257294*h_v**8 + 14879292*h_v**9 - (110724072*h_v**10)/5. + \
+(260343744*h_v**11)/11. - 17690904*h_v**12 + (114084432*h_v**13)/13. - \
+2594592*h_v**14 + (1729728*h_v**15)/5.\\nintegrals[6,4,2] = integrals[6,2,4] \
+= integrals[4,6,2] = integrals[4,2,6] = integrals[2,6,4] = integrals[2,4,6] = \
+h_v - 49*h_v**2 + 1236*h_v**3 - 18388*h_v**4 + 175960*h_v**5 - 1145424*h_v**6 \
++ 5265736*h_v**7 - 17524264*h_v**8 + 42850332*h_v**9 - 77453580*h_v**10 + \
+103196784*h_v**11 - 99994176*h_v**12 + 68483184*h_v**13 - 31404912*h_v**14 + \
+8648640*h_v**15 - 1081080*h_v**16\\nintegrals[6,4,3] = integrals[6,3,4] = \
+integrals[4,6,3] = integrals[4,3,6] = integrals[3,6,4] = integrals[3,4,6] = \
+h_v - 53*h_v**2 + (4456*h_v**3)/3. - 25000*h_v**4 + 272510*h_v**5 - \
+(6087242*h_v**6)/3. + 10725652*h_v**7 - 41350808*h_v**8 + \
+(1065136900*h_v**9)/9. - 253913700*h_v**10 + (4502155584*h_v**11)/11. - \
+492811312*h_v**12 + (5672184504*h_v**13)/13. - 275583000*h_v**14 + \
+117465040*h_v**15 - 30270240*h_v**16 + \
+(60540480*h_v**17)/17.\\nintegrals[6,4,4] = integrals[4,6,4] = \
+integrals[4,4,6] = h_v - 58*h_v**2 + 1812*h_v**3 - 34300*h_v**4 + \
+421750*h_v**5 - 3553536*h_v**6 + 21354748*h_v**7 - 94197847*h_v**8 + \
+311069700*h_v**9 - 778531080*h_v**10 + 1485149232*h_v**11 - \
+2157711696*h_v**12 + 2368242744*h_v**13 - 1929487200*h_v**14 + \
+1130477040*h_v**15 - 450066078*h_v**16 + 108972864*h_v**17 - 12108096*h_v**18\
+\\nintegrals[6,5,0] = integrals[6,0,5] = integrals[5,6,0] = integrals[5,0,6] \
+= integrals[0,6,5] = integrals[0,5,6] = h_v - 50*h_v**2 + (3724*h_v**3)/3. - \
+17052*h_v**4 + (725004*h_v**5)/5. - 820064*h_v**6 + 3226440*h_v**7 - \
+9073122*h_v**8 + (55467964*h_v**9)/3. - (136809288*h_v**10)/5. + \
+29109024*h_v**11 - 21686280*h_v**12 + (139564656*h_v**13)/13. - \
+3171168*h_v**14 + (2114112*h_v**15)/5.\\nintegrals[6,5,1] = integrals[6,1,5] \
+= integrals[5,6,1] = integrals[5,1,6] = integrals[1,6,5] = integrals[1,5,6] = \
+h_v - 52*h_v**2 + 1374*h_v**3 - 20727*h_v**4 + 198156*h_v**5 - 1283016*h_v**6 \
++ 5865888*h_v**7 - 19436916*h_v**8 + 47381508*h_v**9 - 85468464*h_v**10 + \
+113724072*h_v**11 - 110101068*h_v**12 + 75365136*h_v**13 - 34550208*h_v**14 + \
+9513504*h_v**15 - 1189188*h_v**16\\nintegrals[6,5,2] = integrals[6,2,5] = \
+integrals[5,6,2] = integrals[5,2,6] = integrals[2,6,5] = integrals[2,5,6] = \
+h_v - 55*h_v**2 + 1578*h_v**3 - 26612*h_v**4 + (1444324*h_v**5)/5. - \
+2142084*h_v**6 + 11291280*h_v**7 - 43454952*h_v**8 + 124233828*h_v**9 - \
+(1331753628*h_v**10)/5. + (4720423944*h_v**11)/11. - 516534480*h_v**12 + \
+(5943910896*h_v**13)/13. - 288742608*h_v**14 + (615317472*h_v**15)/5. - \
+31711680*h_v**16 + (63423360*h_v**17)/17.\\nintegrals[6,5,3] = \
+integrals[6,3,5] = integrals[5,6,3] = integrals[5,3,6] = integrals[3,6,5] = \
+integrals[3,5,6] = h_v - 59*h_v**2 + (5578*h_v**3)/3. - 35168*h_v**4 + \
+431410*h_v**5 - (10886722*h_v**6)/3. + 21786576*h_v**7 - 96048024*h_v**8 + \
+317066252*h_v**9 - 793348980*h_v**10 + 1513163064*h_v**11 - \
+2198149856*h_v**12 + 2412421704*h_v**13 - 1965364632*h_v**14 + \
+1151451840*h_v**15 - 458405640*h_v**16 + 110990880*h_v**17 - 12332320*h_v**18\
+\\nintegrals[6,5,4] = integrals[6,4,5] = integrals[5,6,4] = integrals[5,4,6] \
+= integrals[4,6,5] = integrals[4,5,6] = h_v - 64*h_v**2 + 2226*h_v**3 - \
+47033*h_v**4 + 646730*h_v**5 - 6112596*h_v**6 + 41380584*h_v**7 - \
+206750196*h_v**8 + 778685868*h_v**9 - 2242242240*h_v**10 + \
+(54744852792*h_v**11)/11. - 8536880268*h_v**12 + (146655612936*h_v**13)/13. - \
+11371043376*h_v**14 + 8577787680*h_v**15 - 4685910768*h_v**16 + \
+(29749747104*h_v**17)/17. - 399567168*h_v**18 + \
+(799134336*h_v**19)/19.\\nintegrals[6,5,5] = integrals[5,6,5] = \
+integrals[5,5,6] = h_v - 70*h_v**2 + 2688*h_v**3 - 63042*h_v**4 + \
+(4820634*h_v**5)/5. - 10158456*h_v**6 + 76919940*h_v**7 - 431764713*h_v**8 + \
+1837221372*h_v**9 - (30096583272*h_v**10)/5. + 15337313712*h_v**11 - \
+30546749520*h_v**12 + 47565906696*h_v**13 - 57618912384*h_v**14 + \
+(268403191056*h_v**15)/5. - 37694976858*h_v**16 + 19286799840*h_v**17 - \
+6782396544*h_v**18 + 1465079616*h_v**19 - \
+(732539808*h_v**20)/5.\\nintegrals[6,6,0] = integrals[6,0,6] = \
+integrals[0,6,6] = h_v - 57*h_v**2 + 1624*h_v**3 - 25592*h_v**4 + \
+250236*h_v**5 - 1634556*h_v**6 + 7477848*h_v**7 - 24687576*h_v**8 + \
+59855268*h_v**9 - 107360484*h_v**10 + 142137072*h_v**11 - 137058768*h_v**12 + \
+93549456*h_v**13 - 42810768*h_v**14 + 11778624*h_v**15 - \
+1472328*h_v**16\\nintegrals[6,6,1] = integrals[6,1,6] = integrals[1,6,6] = \
+h_v - 59*h_v**2 + (5326*h_v**3)/3. - 30408*h_v**4 + (1651356*h_v**5)/5. - \
+2437652*h_v**6 + 12777744*h_v**7 - 48940728*h_v**8 + (418239676*h_v**9)/3. - \
+(1490677452*h_v**10)/5. + 479510136*h_v**11 - 576513168*h_v**12 + \
+(6629104944*h_v**13)/13. - 321873552*h_v**14 + (685727328*h_v**15)/5. - \
+35335872*h_v**16 + (70671744*h_v**17)/17.\\nintegrals[6,6,2] = \
+integrals[6,2,6] = integrals[2,6,6] = h_v - 62*h_v**2 + (6022*h_v**3)/3. - \
+38057*h_v**4 + 464716*h_v**5 - (11671408*h_v**6)/3. + 23275728*h_v**7 - \
+102377916*h_v**8 + 337461428*h_v**9 - 843558504*h_v**10 + 1607866392*h_v**11 \
+- 2334652628*h_v**12 + 2561405616*h_v**13 - 2086273728*h_v**14 + \
+1222107744*h_v**15 - 486491148*h_v**16 + 117786240*h_v**17 - 13087360*h_v**18\
+\\nintegrals[6,6,3] = integrals[6,3,6] = integrals[3,6,6] = h_v - 66*h_v**2 + \
+2326*h_v**3 - 49063*h_v**4 + (3360546*h_v**5)/5. - 6335504*h_v**6 + \
+42820624*h_v**7 - 213737724*h_v**8 + 804506652*h_v**9 - \
+(11578146312*h_v**10)/5. + (56520017064*h_v**11)/11. - 8811828564*h_v**12 + \
+(151355559432*h_v**13)/13. - 11734142112*h_v**14 + (44254951488*h_v**15)/5. - \
+4834898640*h_v**16 + (30694641120*h_v**17)/17. - 412251840*h_v**18 + \
+(824503680*h_v**19)/19.\\nintegrals[6,6,4] = integrals[6,4,6] = \
+integrals[4,6,6] = h_v - 71*h_v**2 + (8218*h_v**3)/3. - 64148*h_v**4 + \
+(4896626*h_v**5)/5. - (30923578*h_v**6)/3. + 78006096*h_v**7 - \
+437710536*h_v**8 + 1862103548*h_v**9 - (30499437108*h_v**10)/5. + \
+15540859992*h_v**11 - 30949574432*h_v**12 + 48190183272*h_v**13 - \
+58372437816*h_v**14 + (271904069184*h_v**15)/5. - 38185716888*h_v**16 + \
+19537566048*h_v**17 - 6870511648*h_v**18 + 1484106624*h_v**19 - \
+(742053312*h_v**20)/5.\\nintegrals[6,6,5] = integrals[6,5,6] = \
+integrals[5,6,6] = h_v - 77*h_v**2 + (9772*h_v**3)/3. - 84252*h_v**4 + \
+1423506*h_v**5 - 16610538*h_v**6 + 139723452*h_v**7 - 874624104*h_v**8 + \
+4170046412*h_v**9 - 15398377596*h_v**10 + (489969867744*h_v**11)/11. - \
+101632253184*h_v**12 + (2384184343464*h_v**13)/13. - 261313784424*h_v**14 + \
+292085787312*h_v**15 - 252912112992*h_v**16 + (2823570664992*h_v**17)/17. - \
+79910262432*h_v**18 + (504463063104*h_v**19)/19. - 5441724288*h_v**20 + \
+518259456*h_v**21\\nintegrals[6,6,6] = h_v - 84*h_v**2 + 3892*h_v**3 - \
+110558*h_v**4 + (10272906*h_v**5)/5. - 26418924*h_v**6 + 245506572*h_v**7 - \
+1703222667*h_v**8 + 9035930988*h_v**9 - (186541907328*h_v**10)/5. + \
+121395970080*h_v**11 - 313874746416*h_v**12 + 647745331464*h_v**13 - \
+1067802213456*h_v**14 + (7008603467184*h_v**15)/5. - 1454047747614*h_v**16 + \
+1175840553888*h_v**17 - 725157328896*h_v**18 + 329224319424*h_v**19 - \
+(518324238432*h_v**20)/5. + 20212118784*h_v**21 - 1837465344*h_v**22))\"\>"], \
+"Output",
+ CellChangeTimes->{3.94939389906312*^9},
+ CellLabel->"Out[25]=",ExpressionUUID->"7641040e-fc5d-4c43-85d5-22b2594f0f7d"]
+}, Open  ]],
+
+Cell[BoxData["\"\<integrals[0,0,0] = h_v - 3*h_v**2 + 4*h_v**3 - \
+2*h_v**4\\\\nintegrals[1,0,0] = integrals[0,1,0] = integrals[0,0,1] = h_v - \
+5*h_v**2 + (34*h_v**3)/3. - 12*h_v**4 + (24*h_v**5)/5.\\\\nintegrals[1,1,0] = \
+integrals[1,0,1] = integrals[0,1,1] = h_v - 7*h_v**2 + 24*h_v**3 - 42*h_v**4 \
++ 36*h_v**5 - 12*h_v**6\\\\nintegrals[1,1,1] = h_v - 9*h_v**2 + 42*h_v**3 - \
+108*h_v**4 + (756*h_v**5)/5. - 108*h_v**6 + \
+(216*h_v**7)/7.\\\\nintegrals[2,0,0] = integrals[0,2,0] = integrals[0,0,2] = \
+h_v - 8*h_v**2 + (82*h_v**3)/3. - 47*h_v**4 + 40*h_v**5 - \
+(40*h_v**6)/3.\\\\nintegrals[2,1,0] = integrals[2,0,1] = integrals[1,2,0] = \
+integrals[1,0,2] = integrals[0,2,1] = integrals[0,1,2] = h_v - 10*h_v**2 + \
+48*h_v**3 - 122*h_v**4 + (844*h_v**5)/5. - 120*h_v**6 + \
+(240*h_v**7)/7.\\\\nintegrals[2,1,1] = integrals[1,2,1] = integrals[1,1,2] = \
+h_v - 12*h_v**2 + 74*h_v**3 - 257*h_v**4 + 516*h_v**5 - 592*h_v**6 + \
+360*h_v**7 - 90*h_v**8\\\\nintegrals[2,2,0] = integrals[2,0,2] = \
+integrals[0,2,2] = h_v - 13*h_v**2 + 84*h_v**3 - 292*h_v**4 + 580*h_v**5 - \
+660*h_v**6 + 400*h_v**7 - 100*h_v**8\\\\nintegrals[2,2,1] = integrals[2,1,2] \
+= integrals[1,2,2] = h_v - 15*h_v**2 + 118*h_v**3 - 532*h_v**4 + \
+(7164*h_v**5)/5. - 2340*h_v**6 + (15880*h_v**7)/7. - 1200*h_v**8 + \
+(800*h_v**9)/3.\\\\nintegrals[2,2,2] = h_v - 18*h_v**2 + 174*h_v**3 - \
+987*h_v**4 + 3420*h_v**5 - 7440*h_v**6 + 10200*h_v**7 - 8550*h_v**8 + \
+4000*h_v**9 - 800*h_v**10\\\\nintegrals[3,0,0] = integrals[0,3,0] = \
+integrals[0,0,3] = h_v - 12*h_v**2 + 58*h_v**3 - 145*h_v**4 + 198*h_v**5 - \
+140*h_v**6 + 40*h_v**7\\\\nintegrals[3,1,0] = integrals[3,0,1] = \
+integrals[1,3,0] = integrals[1,0,3] = integrals[0,3,1] = integrals[0,1,3] = \
+h_v - 14*h_v**2 + (268*h_v**3)/3. - 308*h_v**4 + 610*h_v**5 - \
+(2080*h_v**6)/3. + 420*h_v**7 - 105*h_v**8\\\\nintegrals[3,1,1] = \
+integrals[1,3,1] = integrals[1,1,3] = h_v - 16*h_v**2 + 126*h_v**3 - \
+563*h_v**4 + (7546*h_v**5)/5. - 2460*h_v**6 + (16680*h_v**7)/7. - 1260*h_v**8 \
++ 280*h_v**9\\\\nintegrals[3,2,0] = integrals[3,0,2] = integrals[2,3,0] = \
+integrals[2,0,3] = integrals[0,3,2] = integrals[0,2,3] = h_v - 17*h_v**2 + \
+(424*h_v**3)/3. - 640*h_v**4 + 1706*h_v**5 - (8270*h_v**6)/3. + \
+(18580*h_v**7)/7. - 1400*h_v**8 + (2800*h_v**9)/9.\\\\nintegrals[3,2,1] = \
+integrals[3,1,2] = integrals[2,3,1] = integrals[2,1,3] = integrals[1,3,2] = \
+integrals[1,2,3] = h_v - 19*h_v**2 + 186*h_v**3 - 1048*h_v**4 + 3610*h_v**5 - \
+7830*h_v**6 + 10720*h_v**7 - 8980*h_v**8 + 4200*h_v**9 - \
+840*h_v**10\\\\nintegrals[3,2,2] = integrals[2,3,2] = integrals[2,2,3] = h_v \
+- 22*h_v**2 + 258*h_v**3 - 1785*h_v**4 + 7674*h_v**5 - 21240*h_v**6 + \
+(269280*h_v**7)/7. - 45300*h_v**8 + 33400*h_v**9 - 14000*h_v**10 + \
+(28000*h_v**11)/11.\\\\nintegrals[3,3,0] = integrals[3,0,3] = \
+integrals[0,3,3] = h_v - 21*h_v**2 + 220*h_v**3 - 1260*h_v**4 + 4320*h_v**5 - \
+9280*h_v**6 + 12600*h_v**7 - 10500*h_v**8 + 4900*h_v**9 - \
+980*h_v**10\\\\nintegrals[3,3,1] = integrals[3,1,3] = integrals[1,3,3] = h_v \
+- 23*h_v**2 + (826*h_v**3)/3. - 1900*h_v**4 + 8120*h_v**5 - (67160*h_v**6)/3. \
++ (283240*h_v**7)/7. - 47600*h_v**8 + (315700*h_v**9)/9. - 14700*h_v**10 + \
+(29400*h_v**11)/11.\\\\nintegrals[3,3,2] = integrals[3,2,3] = \
+integrals[2,3,3] = h_v - 26*h_v**2 + (1090*h_v**3)/3. - 3015*h_v**4 + \
+15720*h_v**5 - 53680*h_v**6 + 123000*h_v**7 - 190350*h_v**8 + \
+(588700*h_v**9)/3. - 129080*h_v**10 + 49000*h_v**11 - \
+(24500*h_v**12)/3.\\\\nintegrals[3,3,3] = h_v - 30*h_v**2 + 490*h_v**3 - \
+4805*h_v**4 + 29862*h_v**5 - 123000*h_v**6 + (2421600*h_v**7)/7. - \
+674100*h_v**8 + 909300*h_v**9 - 833000*h_v**10 + (5439000*h_v**11)/11. - \
+171500*h_v**12 + (343000*h_v**13)/13.\\\\nintegrals[4,0,0] = integrals[0,4,0] \
+= integrals[0,0,4] = h_v - 17*h_v**2 + (334*h_v**3)/3. - 380*h_v**4 + \
+742*h_v**5 - (2506*h_v**6)/3. + 504*h_v**7 - 126*h_v**8\\\\nintegrals[4,1,0] \
+= integrals[4,0,1] = integrals[1,4,0] = integrals[1,0,4] = integrals[0,4,1] = \
+integrals[0,1,4] = h_v - 19*h_v**2 + 156*h_v**3 - 698*h_v**4 + 1850*h_v**5 - \
+2982*h_v**6 + 2868*h_v**7 - 1512*h_v**8 + 336*h_v**9\\\\nintegrals[4,1,1] = \
+integrals[1,4,1] = integrals[1,1,4] = h_v - 21*h_v**2 + 206*h_v**3 - \
+1148*h_v**4 + (19626*h_v**5)/5. - 8482*h_v**6 + 11592*h_v**7 - 9702*h_v**8 + \
+4536*h_v**9 - (4536*h_v**10)/5.\\\\nintegrals[4,2,0] = integrals[4,0,2] = \
+integrals[2,4,0] = integrals[2,0,4] = integrals[0,4,2] = integrals[0,2,4] = \
+h_v - 22*h_v**2 + 228*h_v**3 - 1300*h_v**4 + 4450*h_v**5 - 9552*h_v**6 + \
+12964*h_v**7 - 10801*h_v**8 + 5040*h_v**9 - 1008*h_v**10\\\\nintegrals[4,2,1] \
+= integrals[4,1,2] = integrals[2,4,1] = integrals[2,1,4] = integrals[1,4,2] = \
+integrals[1,2,4] = h_v - 24*h_v**2 + 286*h_v**3 - 1963*h_v**4 + 8370*h_v**5 - \
+23052*h_v**6 + (291496*h_v**7)/7. - 48972*h_v**8 + (108248*h_v**9)/3. - \
+15120*h_v**10 + (30240*h_v**11)/11.\\\\nintegrals[4,2,2] = integrals[2,4,2] = \
+integrals[2,2,4] = h_v - 27*h_v**2 + 378*h_v**3 - 3120*h_v**4 + 16218*h_v**5 \
+- 55302*h_v**6 + 126624*h_v**7 - 195876*h_v**8 + 201880*h_v**9 - \
+132776*h_v**10 + 50400*h_v**11 - 8400*h_v**12\\\\nintegrals[4,3,0] = \
+integrals[4,0,3] = integrals[3,4,0] = integrals[3,0,4] = integrals[0,4,3] = \
+integrals[0,3,4] = h_v - 26*h_v**2 + (1000*h_v**3)/3. - 2350*h_v**4 + \
+10040*h_v**5 - (82376*h_v**6)/3. + 49192*h_v**7 - 57470*h_v**8 + \
+(379540*h_v**9)/9. - 17640*h_v**10 + (35280*h_v**11)/11.\\\\nintegrals[4,3,1] \
+= integrals[4,1,3] = integrals[3,4,1] = integrals[3,1,4] = integrals[1,4,3] = \
+integrals[1,3,4] = h_v - 28*h_v**2 + 402*h_v**3 - 3325*h_v**4 + 17200*h_v**5 \
+- 58392*h_v**6 + 133336*h_v**7 - 205954*h_v**8 + 212100*h_v**9 - \
+139440*h_v**10 + 52920*h_v**11 - 8820*h_v**12\\\\nintegrals[4,3,2] = \
+integrals[4,2,3] = integrals[3,4,2] = integrals[3,2,4] = integrals[2,4,3] = \
+integrals[2,3,4] = h_v - 31*h_v**2 + 510*h_v**3 - 4980*h_v**4 + 30840*h_v**5 \
+- 126792*h_v**6 + (2493864*h_v**7)/7. - 693840*h_v**8 + 935620*h_v**9 - \
+856940*h_v**10 + (5594680*h_v**11)/11. - 176400*h_v**12 + \
+(352800*h_v**13)/13.\\\\nintegrals[4,3,3] = integrals[3,4,3] = \
+integrals[3,3,4] = h_v - 35*h_v**2 + (1990*h_v**3)/3. - 7560*h_v**4 + \
+55014*h_v**5 - 268042*h_v**6 + 903840*h_v**7 - 2150820*h_v**8 + \
+(10910620*h_v**9)/3. - 4342268*h_v**10 + 3577000*h_v**11 - \
+(5801600*h_v**12)/3. + 617400*h_v**13 - 88200*h_v**14\\\\nintegrals[4,4,0] = \
+integrals[4,0,4] = integrals[0,4,4] = h_v - 31*h_v**2 + 480*h_v**3 - \
+4090*h_v**4 + 21280*h_v**5 - 71904*h_v**6 + 162904*h_v**7 - 249760*h_v**8 + \
+255780*h_v**9 - 167580*h_v**10 + 63504*h_v**11 - \
+10584*h_v**12\\\\nintegrals[4,4,1] = integrals[4,1,4] = integrals[1,4,4] = \
+h_v - 33*h_v**2 + 562*h_v**3 - 5500*h_v**4 + 33840*h_v**5 - 138264*h_v**6 + \
+386872*h_v**7 - 751548*h_v**8 + (3035900*h_v**9)/3. - 926100*h_v**10 + \
+(6043464*h_v**11)/11. - 190512*h_v**12 + \
+(381024*h_v**13)/13.\\\\nintegrals[4,4,2] = integrals[4,2,4] = \
+integrals[2,4,4] = h_v - 36*h_v**2 + 690*h_v**3 - 7845*h_v**4 + 56880*h_v**5 \
+- 276504*h_v**6 + 931224*h_v**7 - 2214450*h_v**8 + 3742900*h_v**9 - \
+4467680*h_v**10 + 3679704*h_v**11 - 1989204*h_v**12 + 635040*h_v**13 - \
+90720*h_v**14\\\\nintegrals[4,4,3] = integrals[4,3,4] = integrals[3,4,4] = \
+h_v - 40*h_v**2 + 870*h_v**3 - 11415*h_v**4 + 96126*h_v**5 - 546084*h_v**6 + \
+2169000*h_v**7 - 6163500*h_v**8 + 12680500*h_v**9 - 18914000*h_v**10 + \
+(222670504*h_v**11)/11. - 15143940*h_v**12 + (97707960*h_v**13)/13. - \
+2222640*h_v**14 + 296352*h_v**15\\\\nintegrals[4,4,4] = h_v - 45*h_v**2 + \
+1110*h_v**3 - 16620*h_v**4 + 160398*h_v**5 - 1050126*h_v**6 + 4844280*h_v**7 \
+- 16155090*h_v**8 + 39553780*h_v**9 - 71555876*h_v**10 + 95393592*h_v**11 - \
+92468880*h_v**12 + 63345240*h_v**13 - 29053080*h_v**14 + 8001504*h_v**15 - \
+1000188*h_v**16\\\\nintegrals[5,0,0] = integrals[0,5,0] = integrals[0,0,5] = \
+h_v - 23*h_v**2 + (592*h_v**3)/3. - 882*h_v**4 + 2310*h_v**5 - 3682*h_v**6 + \
+3516*h_v**7 - 1848*h_v**8 + (1232*h_v**9)/3.\\\\nintegrals[5,1,0] = \
+integrals[5,0,1] = integrals[1,5,0] = integrals[1,0,5] = integrals[0,5,1] = \
+integrals[0,1,5] = h_v - 25*h_v**2 + 258*h_v**3 - 1452*h_v**4 + \
+(24654*h_v**5)/5. - 10542*h_v**6 + 14280*h_v**7 - 11886*h_v**8 + 5544*h_v**9 \
+- (5544*h_v**10)/5.\\\\nintegrals[5,1,1] = integrals[1,5,1] = \
+integrals[1,1,5] = h_v - 27*h_v**2 + 324*h_v**3 - 2202*h_v**4 + 9306*h_v**5 - \
+25494*h_v**6 + 45924*h_v**7 - 53928*h_v**8 + 39704*h_v**9 - 16632*h_v**10 + \
+3024*h_v**11\\\\nintegrals[5,2,0] = integrals[5,0,2] = integrals[2,5,0] = \
+integrals[2,0,5] = integrals[0,5,2] = integrals[0,2,5] = h_v - 28*h_v**2 + \
+354*h_v**3 - 2477*h_v**4 + 10550*h_v**5 - 28812*h_v**6 + 51576*h_v**7 - \
+60228*h_v**8 + 44184*h_v**9 - 18480*h_v**10 + \
+3360*h_v**11\\\\nintegrals[5,2,1] = integrals[5,1,2] = integrals[2,5,1] = \
+integrals[2,1,5] = integrals[1,5,2] = integrals[1,2,5] = h_v - 30*h_v**2 + \
+428*h_v**3 - 3512*h_v**4 + (90474*h_v**5)/5. - 61312*h_v**6 + 139860*h_v**7 - \
+215901*h_v**8 + 222264*h_v**9 - (730464*h_v**10)/5. + 55440*h_v**11 - \
+9240*h_v**12\\\\nintegrals[5,2,2] = integrals[2,5,2] = integrals[2,2,5] = h_v \
+- 33*h_v**2 + 544*h_v**3 - 5272*h_v**4 + 32490*h_v**5 - 133242*h_v**6 + \
+(2617252*h_v**7)/7. - 727608*h_v**8 + (2942072*h_v**9)/3. - 897960*h_v**10 + \
+(5861520*h_v**11)/11. - 184800*h_v**12 + \
+(369600*h_v**13)/13.\\\\nintegrals[5,3,0] = integrals[5,0,3] = \
+integrals[3,5,0] = integrals[3,0,5] = integrals[0,5,3] = integrals[0,3,5] = \
+h_v - 32*h_v**2 + (1474*h_v**3)/3. - 4175*h_v**4 + 21700*h_v**5 - \
+(219856*h_v**6)/3. + 165984*h_v**7 - 254436*h_v**8 + 260540*h_v**9 - \
+170688*h_v**10 + 64680*h_v**11 - 10780*h_v**12\\\\nintegrals[5,3,1] = \
+integrals[5,1,3] = integrals[3,5,1] = integrals[3,1,5] = integrals[1,5,3] = \
+integrals[1,3,5] = h_v - 34*h_v**2 + 576*h_v**3 - 5618*h_v**4 + 34520*h_v**5 \
+- 140952*h_v**6 + 394248*h_v**7 - 765702*h_v**8 + 1030876*h_v**9 - \
+943320*h_v**10 + (6155520*h_v**11)/11. - 194040*h_v**12 + \
+(388080*h_v**13)/13.\\\\nintegrals[5,3,2] = integrals[5,2,3] = \
+integrals[3,5,2] = integrals[3,2,5] = integrals[2,5,3] = integrals[2,3,5] = \
+h_v - 37*h_v**2 + 708*h_v**3 - 8020*h_v**4 + 58048*h_v**5 - 281952*h_v**6 + \
+949144*h_v**7 - 2256436*h_v**8 + 3813180*h_v**9 - 4551036*h_v**10 + \
+3748080*h_v**11 - 2026080*h_v**12 + 646800*h_v**13 - \
+92400*h_v**14\\\\nintegrals[5,3,3] = integrals[3,5,3] = integrals[3,3,5] = \
+h_v - 41*h_v**2 + (2680*h_v**3)/3. - 11680*h_v**4 + 98150*h_v**5 - \
+(1671026*h_v**6)/3. + 2211172*h_v**7 - 6281240*h_v**8 + (116279380*h_v**9)/9. \
+- 19268340*h_v**10 + (226820160*h_v**11)/11. - 15425200*h_v**12 + \
+(99519000*h_v**13)/13. - 2263800*h_v**14 + \
+301840*h_v**15\\\\nintegrals[5,4,0] = integrals[5,0,4] = integrals[4,5,0] = \
+integrals[4,0,5] = integrals[0,5,4] = integrals[0,4,5] = h_v - 37*h_v**2 + \
+678*h_v**3 - 6860*h_v**4 + 42644*h_v**5 - 173964*h_v**6 + 483648*h_v**7 - \
+932652*h_v**8 + 1247820*h_v**9 - 1136604*h_v**10 + (7395864*h_v**11)/11. - \
+232848*h_v**12 + (465696*h_v**13)/13.\\\\nintegrals[5,4,1] = integrals[5,1,4] \
+= integrals[4,5,1] = integrals[4,1,5] = integrals[1,5,4] = integrals[1,4,5] = \
+h_v - 39*h_v**2 + 776*h_v**3 - 8858*h_v**4 + 63840*h_v**5 - 308224*h_v**6 + \
+1032696*h_v**7 - 2447424*h_v**8 + 4128012*h_v**9 - 4921140*h_v**10 + \
+4050144*h_v**11 - 2188536*h_v**12 + 698544*h_v**13 - \
+99792*h_v**14\\\\nintegrals[5,4,2] = integrals[5,2,4] = integrals[4,5,2] = \
+integrals[4,2,5] = integrals[2,5,4] = integrals[2,4,5] = h_v - 42*h_v**2 + \
+928*h_v**3 - 12130*h_v**4 + 101592*h_v**5 - 575064*h_v**6 + 2279368*h_v**7 - \
+6469302*h_v**8 + (39899300*h_v**9)/3. - 19828200*h_v**10 + \
+(233360064*h_v**11)/11. - 15867768*h_v**12 + (102366096*h_v**13)/13. - \
+2328480*h_v**14 + 310464*h_v**15\\\\nintegrals[5,4,3] = integrals[5,3,4] = \
+integrals[4,5,3] = integrals[4,3,5] = integrals[3,5,4] = integrals[3,4,5] = \
+h_v - 46*h_v**2 + 1140*h_v**3 - 17020*h_v**4 + 163870*h_v**5 - 1071504*h_v**6 \
++ 4939564*h_v**7 - 16466275*h_v**8 + 40305300*h_v**9 - 72902760*h_v**10 + \
+97177584*h_v**11 - 94190544*h_v**12 + 64521240*h_v**13 - 29591520*h_v**14 + \
+8149680*h_v**15 - 1018710*h_v**16\\\\nintegrals[5,4,4] = integrals[4,5,4] = \
+integrals[4,4,5] = h_v - 51*h_v**2 + 1420*h_v**3 - 24010*h_v**4 + \
+262710*h_v**5 - 1960266*h_v**6 + 10374076*h_v**7 - 40023480*h_v**8 + \
+(343805420*h_v**9)/3. - 245951580*h_v**10 + (4361927472*h_v**11)/11. - \
+477534792*h_v**12 + (5496935640*h_v**13)/13. - 267087240*h_v**14 + \
+113848560*h_v**15 - 29338848*h_v**16 + \
+(58677696*h_v**17)/17.\\\\nintegrals[5,5,0] = integrals[5,0,5] = \
+integrals[0,5,5] = h_v - 43*h_v**2 + 924*h_v**3 - 10962*h_v**4 + 80220*h_v**5 \
+- 388164*h_v**6 + 1295112*h_v**7 - 3049536*h_v**8 + 5110308*h_v**9 - \
+6059340*h_v**10 + 4967424*h_v**11 - 2677752*h_v**12 + 853776*h_v**13 - \
+121968*h_v**14\\\\nintegrals[5,5,1] = integrals[5,1,5] = integrals[1,5,5] = \
+h_v - 45*h_v**2 + 1038*h_v**3 - 13692*h_v**4 + (571284*h_v**5)/5. - \
+642684*h_v**6 + 2533440*h_v**7 - 7162092*h_v**8 + 14685748*h_v**9 - \
+(109292148*h_v**10)/5. + (256990104*h_v**11)/11. - 17463600*h_v**12 + \
+(112620816*h_v**13)/13. - 2561328*h_v**14 + \
+(1707552*h_v**15)/5.\\\\nintegrals[5,5,2] = integrals[5,2,5] = \
+integrals[2,5,5] = h_v - 48*h_v**2 + 1214*h_v**3 - 18107*h_v**4 + \
+173460*h_v**5 - 1129744*h_v**6 + 5195232*h_v**7 - 17292996*h_v**8 + \
+42290388*h_v**9 - 76448400*h_v**10 + 101863944*h_v**11 - 98706972*h_v**12 + \
+67603536*h_v**13 - 31002048*h_v**14 + 8537760*h_v**15 - \
+1067220*h_v**16\\\\nintegrals[5,5,3] = integrals[5,3,5] = integrals[3,5,5] = \
+h_v - 52*h_v**2 + 1458*h_v**3 - 24605*h_v**4 + 268562*h_v**5 - 2000964*h_v**6 \
++ 10580808*h_v**7 - 40801572*h_v**8 + 116794300*h_v**9 - 250605600*h_v**10 + \
+(4443832344*h_v**11)/11. - 486452988*h_v**12 + (5599207656*h_v**13)/13. - \
+272044080*h_v**14 + 115958304*h_v**15 - 29882160*h_v**16 + \
+(59764320*h_v**17)/17.\\\\nintegrals[5,5,4] = integrals[5,4,5] = \
+integrals[4,5,5] = h_v - 57*h_v**2 + 1778*h_v**3 - 33740*h_v**4 + \
+415506*h_v**5 - 3503626*h_v**6 + 21063672*h_v**7 - 92937978*h_v**8 + \
+306962460*h_v**9 - 768344892*h_v**10 + 1465845192*h_v**11 - \
+2129799504*h_v**12 + 2337712776*h_v**13 - 1904673960*h_v**14 + \
+1115962848*h_v**15 - 444293388*h_v**16 + 107575776*h_v**17 - 11952864*h_v**18\
+\\\\nintegrals[5,5,5] = h_v - 63*h_v**2 + 2184*h_v**3 - 46242*h_v**4 + \
+636930*h_v**5 - 6025446*h_v**6 + 40810788*h_v**7 - 203964264*h_v**8 + \
+768344892*h_v**9 - 2212770420*h_v**10 + (54030663792*h_v**11)/11. - \
+8426123496*h_v**12 + (144760659624*h_v**13)/13. - 11224554264*h_v**14 + \
+8467517520*h_v**15 - 4625758368*h_v**16 + (29368186848*h_v**17)/17. - \
+394444512*h_v**18 + (788889024*h_v**19)/19.\\\\nintegrals[6,0,0] = \
+integrals[0,6,0] = integrals[0,0,6] = h_v - 30*h_v**2 + 328*h_v**3 - \
+1862*h_v**4 + (31374*h_v**5)/5. - 13272*h_v**6 + 17820*h_v**7 - 14751*h_v**8 \
++ 6864*h_v**9 - (6864*h_v**10)/5.\\\\nintegrals[6,1,0] = integrals[6,0,1] = \
+integrals[1,6,0] = integrals[1,0,6] = integrals[0,6,1] = integrals[0,1,6] = \
+h_v - 32*h_v**2 + (1222*h_v**3)/3. - 2817*h_v**4 + 11886*h_v**5 - \
+32284*h_v**6 + 57624*h_v**7 - 67188*h_v**8 + (147752*h_v**9)/3. - \
+20592*h_v**10 + 3744*h_v**11\\\\nintegrals[6,1,1] = integrals[1,6,1] = \
+integrals[1,1,6] = h_v - 34*h_v**2 + 492*h_v**3 - 4008*h_v**4 + \
+(102306*h_v**5)/5. - 68880*h_v**6 + 156516*h_v**7 - 241089*h_v**8 + \
+247896*h_v**9 - (814176*h_v**10)/5. + 61776*h_v**11 - \
+10296*h_v**12\\\\nintegrals[6,2,0] = integrals[6,0,2] = integrals[2,6,0] = \
+integrals[2,0,6] = integrals[0,6,2] = integrals[0,2,6] = h_v - 35*h_v**2 + \
+(1594*h_v**3)/3. - 4472*h_v**4 + (115694*h_v**5)/5. - (233926*h_v**6)/3. + \
+176400*h_v**7 - 270216*h_v**8 + 276584*h_v**9 - (905784*h_v**10)/5. + \
+68640*h_v**11 - 11440*h_v**12\\\\nintegrals[6,2,1] = integrals[6,1,2] = \
+integrals[2,6,1] = integrals[2,1,6] = integrals[1,6,2] = integrals[1,2,6] = \
+h_v - 37*h_v**2 + 624*h_v**3 - 6032*h_v**4 + 36866*h_v**5 - 150114*h_v**6 + \
+419244*h_v**7 - 813528*h_v**8 + 1094664*h_v**9 - 1001352*h_v**10 + \
+593904*h_v**11 - 205920*h_v**12 + 31680*h_v**13\\\\nintegrals[6,2,2] = \
+integrals[2,6,2] = integrals[2,2,6] = h_v - 40*h_v**2 + 768*h_v**3 - \
+8632*h_v**4 + (310514*h_v**5)/5. - 300612*h_v**6 + (7070260*h_v**7)/7. - \
+2398531*h_v**8 + 4050504*h_v**9 - (24160704*h_v**10)/5. + 3978480*h_v**11 - \
+2150280*h_v**12 + 686400*h_v**13 - (686400*h_v**14)/7.\\\\nintegrals[6,3,0] = \
+integrals[6,0,3] = integrals[3,6,0] = integrals[3,0,6] = integrals[0,6,3] = \
+integrals[0,3,6] = h_v - 39*h_v**2 + 706*h_v**3 - 7108*h_v**4 + 44100*h_v**5 \
+- 179732*h_v**6 + 499408*h_v**7 - 962712*h_v**8 + 1287756*h_v**9 - \
+1172820*h_v**10 + 693720*h_v**11 - 240240*h_v**12 + \
+36960*h_v**13\\\\nintegrals[6,3,1] = integrals[6,1,3] = integrals[3,6,1] = \
+integrals[3,1,6] = integrals[1,6,3] = integrals[1,3,6] = h_v - 41*h_v**2 + \
+(2428*h_v**3)/3. - 9188*h_v**4 + (330296*h_v**5)/5. - (955696*h_v**6)/3. + \
+1066632*h_v**7 - 2526792*h_v**8 + 4260716*h_v**9 - (25392156*h_v**10)/5. + \
+4179120*h_v**11 - 2258080*h_v**12 + 720720*h_v**13 - \
+102960*h_v**14\\\\nintegrals[6,3,2] = integrals[6,2,3] = integrals[3,6,2] = \
+integrals[3,2,6] = integrals[2,6,3] = integrals[2,3,6] = h_v - 44*h_v**2 + \
+(2908*h_v**3)/3. - 12598*h_v**4 + 105200*h_v**5 - (1783856*h_v**6)/3. + \
+2354968*h_v**7 - 6680522*h_v**8 + (123565324*h_v**9)/9. - 20464320*h_v**10 + \
+(240810960*h_v**11)/11. - 16372840*h_v**12 + (105618480*h_v**13)/13. - \
+2402400*h_v**14 + 320320*h_v**15\\\\nintegrals[6,3,3] = integrals[3,6,3] = \
+integrals[3,3,6] = h_v - 48*h_v**2 + 1192*h_v**3 - 17700*h_v**4 + \
+169830*h_v**5 - 1108492*h_v**6 + 5105076*h_v**7 - 17007909*h_v**8 + \
+41614900*h_v**9 - 75251600*h_v**10 + 100290240*h_v**11 - 97195440*h_v**12 + \
+66574200*h_v**13 - 30531600*h_v**14 + 8408400*h_v**15 - \
+1051050*h_v**16\\\\nintegrals[6,4,0] = integrals[6,0,4] = integrals[4,6,0] = \
+integrals[4,0,6] = integrals[0,6,4] = integrals[0,4,6] = h_v - 44*h_v**2 + \
+(2818*h_v**3)/3. - 11123*h_v**4 + 81340*h_v**5 - (1180312*h_v**6)/3. + \
+1312416*h_v**7 - 3089844*h_v**8 + 5177372*h_v**9 - 6138480*h_v**10 + \
+5032104*h_v**11 - 2712556*h_v**12 + 864864*h_v**13 - \
+123552*h_v**14\\\\nintegrals[6,4,1] = integrals[6,1,4] = integrals[4,6,1] = \
+integrals[4,1,6] = integrals[1,6,4] = integrals[1,4,6] = h_v - 46*h_v**2 + \
+1056*h_v**3 - 13898*h_v**4 + (579376*h_v**5)/5. - 651504*h_v**6 + \
+2567544*h_v**7 - 7257294*h_v**8 + 14879292*h_v**9 - (110724072*h_v**10)/5. + \
+(260343744*h_v**11)/11. - 17690904*h_v**12 + (114084432*h_v**13)/13. - \
+2594592*h_v**14 + (1729728*h_v**15)/5.\\\\nintegrals[6,4,2] = \
+integrals[6,2,4] = integrals[4,6,2] = integrals[4,2,6] = integrals[2,6,4] = \
+integrals[2,4,6] = h_v - 49*h_v**2 + 1236*h_v**3 - 18388*h_v**4 + \
+175960*h_v**5 - 1145424*h_v**6 + 5265736*h_v**7 - 17524264*h_v**8 + \
+42850332*h_v**9 - 77453580*h_v**10 + 103196784*h_v**11 - 99994176*h_v**12 + \
+68483184*h_v**13 - 31404912*h_v**14 + 8648640*h_v**15 - \
+1081080*h_v**16\\\\nintegrals[6,4,3] = integrals[6,3,4] = integrals[4,6,3] = \
+integrals[4,3,6] = integrals[3,6,4] = integrals[3,4,6] = h_v - 53*h_v**2 + \
+(4456*h_v**3)/3. - 25000*h_v**4 + 272510*h_v**5 - (6087242*h_v**6)/3. + \
+10725652*h_v**7 - 41350808*h_v**8 + (1065136900*h_v**9)/9. - \
+253913700*h_v**10 + (4502155584*h_v**11)/11. - 492811312*h_v**12 + \
+(5672184504*h_v**13)/13. - 275583000*h_v**14 + 117465040*h_v**15 - \
+30270240*h_v**16 + (60540480*h_v**17)/17.\\\\nintegrals[6,4,4] = \
+integrals[4,6,4] = integrals[4,4,6] = h_v - 58*h_v**2 + 1812*h_v**3 - \
+34300*h_v**4 + 421750*h_v**5 - 3553536*h_v**6 + 21354748*h_v**7 - \
+94197847*h_v**8 + 311069700*h_v**9 - 778531080*h_v**10 + 1485149232*h_v**11 - \
+2157711696*h_v**12 + 2368242744*h_v**13 - 1929487200*h_v**14 + \
+1130477040*h_v**15 - 450066078*h_v**16 + 108972864*h_v**17 - 12108096*h_v**18\
+\\\\nintegrals[6,5,0] = integrals[6,0,5] = integrals[5,6,0] = \
+integrals[5,0,6] = integrals[0,6,5] = integrals[0,5,6] = h_v - 50*h_v**2 + \
+(3724*h_v**3)/3. - 17052*h_v**4 + (725004*h_v**5)/5. - 820064*h_v**6 + \
+3226440*h_v**7 - 9073122*h_v**8 + (55467964*h_v**9)/3. - \
+(136809288*h_v**10)/5. + 29109024*h_v**11 - 21686280*h_v**12 + \
+(139564656*h_v**13)/13. - 3171168*h_v**14 + \
+(2114112*h_v**15)/5.\\\\nintegrals[6,5,1] = integrals[6,1,5] = \
+integrals[5,6,1] = integrals[5,1,6] = integrals[1,6,5] = integrals[1,5,6] = \
+h_v - 52*h_v**2 + 1374*h_v**3 - 20727*h_v**4 + 198156*h_v**5 - 1283016*h_v**6 \
++ 5865888*h_v**7 - 19436916*h_v**8 + 47381508*h_v**9 - 85468464*h_v**10 + \
+113724072*h_v**11 - 110101068*h_v**12 + 75365136*h_v**13 - 34550208*h_v**14 + \
+9513504*h_v**15 - 1189188*h_v**16\\\\nintegrals[6,5,2] = integrals[6,2,5] = \
+integrals[5,6,2] = integrals[5,2,6] = integrals[2,6,5] = integrals[2,5,6] = \
+h_v - 55*h_v**2 + 1578*h_v**3 - 26612*h_v**4 + (1444324*h_v**5)/5. - \
+2142084*h_v**6 + 11291280*h_v**7 - 43454952*h_v**8 + 124233828*h_v**9 - \
+(1331753628*h_v**10)/5. + (4720423944*h_v**11)/11. - 516534480*h_v**12 + \
+(5943910896*h_v**13)/13. - 288742608*h_v**14 + (615317472*h_v**15)/5. - \
+31711680*h_v**16 + (63423360*h_v**17)/17.\\\\nintegrals[6,5,3] = \
+integrals[6,3,5] = integrals[5,6,3] = integrals[5,3,6] = integrals[3,6,5] = \
+integrals[3,5,6] = h_v - 59*h_v**2 + (5578*h_v**3)/3. - 35168*h_v**4 + \
+431410*h_v**5 - (10886722*h_v**6)/3. + 21786576*h_v**7 - 96048024*h_v**8 + \
+317066252*h_v**9 - 793348980*h_v**10 + 1513163064*h_v**11 - \
+2198149856*h_v**12 + 2412421704*h_v**13 - 1965364632*h_v**14 + \
+1151451840*h_v**15 - 458405640*h_v**16 + 110990880*h_v**17 - 12332320*h_v**18\
+\\\\nintegrals[6,5,4] = integrals[6,4,5] = integrals[5,6,4] = \
+integrals[5,4,6] = integrals[4,6,5] = integrals[4,5,6] = h_v - 64*h_v**2 + \
+2226*h_v**3 - 47033*h_v**4 + 646730*h_v**5 - 6112596*h_v**6 + 41380584*h_v**7 \
+- 206750196*h_v**8 + 778685868*h_v**9 - 2242242240*h_v**10 + \
+(54744852792*h_v**11)/11. - 8536880268*h_v**12 + (146655612936*h_v**13)/13. - \
+11371043376*h_v**14 + 8577787680*h_v**15 - 4685910768*h_v**16 + \
+(29749747104*h_v**17)/17. - 399567168*h_v**18 + \
+(799134336*h_v**19)/19.\\\\nintegrals[6,5,5] = integrals[5,6,5] = \
+integrals[5,5,6] = h_v - 70*h_v**2 + 2688*h_v**3 - 63042*h_v**4 + \
+(4820634*h_v**5)/5. - 10158456*h_v**6 + 76919940*h_v**7 - 431764713*h_v**8 + \
+1837221372*h_v**9 - (30096583272*h_v**10)/5. + 15337313712*h_v**11 - \
+30546749520*h_v**12 + 47565906696*h_v**13 - 57618912384*h_v**14 + \
+(268403191056*h_v**15)/5. - 37694976858*h_v**16 + 19286799840*h_v**17 - \
+6782396544*h_v**18 + 1465079616*h_v**19 - \
+(732539808*Power(h_v,20))/5.\\\\nintegrals[6,6,0] = integrals[6,0,6] = \
+integrals[0,6,6] = h_v - 57*h_v**2 + 1624*h_v**3 - 25592*h_v**4 + \
+250236*h_v**5 - 1634556*h_v**6 + 7477848*h_v**7 - 24687576*h_v**8 + \
+59855268*h_v**9 - 107360484*h_v**10 + 142137072*h_v**11 - 137058768*h_v**12 + \
+93549456*h_v**13 - 42810768*h_v**14 + 11778624*h_v**15 - \
+1472328*h_v**16\\\\nintegrals[6,6,1] = integrals[6,1,6] = integrals[1,6,6] = \
+h_v - 59*h_v**2 + (5326*h_v**3)/3. - 30408*h_v**4 + (1651356*h_v**5)/5. - \
+2437652*h_v**6 + 12777744*h_v**7 - 48940728*h_v**8 + (418239676*h_v**9)/3. - \
+(1490677452*h_v**10)/5. + 479510136*h_v**11 - 576513168*h_v**12 + \
+(6629104944*h_v**13)/13. - 321873552*h_v**14 + (685727328*h_v**15)/5. - \
+35335872*h_v**16 + (70671744*h_v**17)/17.\\\\nintegrals[6,6,2] = \
+integrals[6,2,6] = integrals[2,6,6] = h_v - 62*h_v**2 + (6022*h_v**3)/3. - \
+38057*h_v**4 + 464716*h_v**5 - (11671408*h_v**6)/3. + 23275728*h_v**7 - \
+102377916*h_v**8 + 337461428*h_v**9 - 843558504*h_v**10 + 1607866392*h_v**11 \
+- 2334652628*h_v**12 + 2561405616*h_v**13 - 2086273728*h_v**14 + \
+1222107744*h_v**15 - 486491148*h_v**16 + 117786240*h_v**17 - 13087360*h_v**18\
+\\\\nintegrals[6,6,3] = integrals[6,3,6] = integrals[3,6,6] = h_v - 66*h_v**2 \
++ 2326*h_v**3 - 49063*h_v**4 + (3360546*h_v**5)/5. - 6335504*h_v**6 + \
+42820624*h_v**7 - 213737724*h_v**8 + 804506652*h_v**9 - \
+(11578146312*h_v**10)/5. + (56520017064*h_v**11)/11. - 8811828564*h_v**12 + \
+(151355559432*h_v**13)/13. - 11734142112*h_v**14 + (44254951488*h_v**15)/5. - \
+4834898640*h_v**16 + (30694641120*h_v**17)/17. - 412251840*h_v**18 + \
+(824503680*h_v**19)/19.\\\\nintegrals[6,6,4] = integrals[6,4,6] = \
+integrals[4,6,6] = h_v - 71*h_v**2 + (8218*h_v**3)/3. - 64148*h_v**4 + \
+(4896626*h_v**5)/5. - (30923578*h_v**6)/3. + 78006096*h_v**7 - \
+437710536*h_v**8 + 1862103548*h_v**9 - (30499437108*h_v**10)/5. + \
+15540859992*h_v**11 - 30949574432*h_v**12 + 48190183272*h_v**13 - \
+58372437816*h_v**14 + (271904069184*h_v**15)/5. - 38185716888*h_v**16 + \
+19537566048*h_v**17 - 6870511648*h_v**18 + 1484106624*h_v**19 - \
+(742053312*Power(h_v,20))/5.\\\\nintegrals[6,6,5] = integrals[6,5,6] = \
+integrals[5,6,6] = h_v - 77*h_v**2 + (9772*h_v**3)/3. - 84252*h_v**4 + \
+1423506*h_v**5 - 16610538*h_v**6 + 139723452*h_v**7 - 874624104*h_v**8 + \
+4170046412*h_v**9 - 15398377596*h_v**10 + (489969867744*h_v**11)/11. - \
+101632253184*h_v**12 + (2384184343464*h_v**13)/13. - 261313784424*h_v**14 + \
+292085787312*h_v**15 - 252912112992*h_v**16 + (2823570664992*h_v**17)/17. - \
+79910262432*h_v**18 + (504463063104*h_v**19)/19. - 5441724288*Power(h_v,20) + \
+518259456*Power(h_v,21)\\\\nintegrals[6,6,6] = h_v - 84*h_v**2 + 3892*h_v**3 \
+- 110558*h_v**4 + (10272906*h_v**5)/5. - 26418924*h_v**6 + 245506572*h_v**7 - \
+1703222667*h_v**8 + 9035930988*h_v**9 - (186541907328*h_v**10)/5. + \
+121395970080*h_v**11 - 313874746416*h_v**12 + 647745331464*h_v**13 - \
+1067802213456*h_v**14 + (7008603467184*h_v**15)/5. - 1454047747614*h_v**16 + \
+1175840553888*h_v**17 - 725157328896*h_v**18 + 329224319424*h_v**19 - \
+(518324238432*Power(h_v,20))/5. + 20212118784*Power(h_v,21) - \
+1837465344*Power(h_v,22)))\>\""], "Input",
+ CellChangeTimes->{{3.9493936072830486`*^9, 
+  3.949393636341503*^9}},ExpressionUUID->"1c03f8e7-3c44-1349-a1ea-\
+44037e908695"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"integralValuesTriple", "[", 
+   RowBox[{"[", 
+    RowBox[{"4", ",", "1", ",", "4"}], "]"}], "]"}], "/.", 
+  RowBox[{"{", 
+   RowBox[{"a", "->", "h_v"}], "}"}]}]], "Input",
+ CellChangeTimes->{{3.9493911084971485`*^9, 3.949391155375725*^9}, {
+   3.9493912009627056`*^9, 3.94939127244561*^9}, {3.9493914098659306`*^9, 
+   3.9493914101545963`*^9}, {3.9493915847592163`*^9, 3.9493915883162785`*^9}, 
+   3.9493936363504677`*^9},ExpressionUUID->"233bc48d-a575-264a-bafc-\
+55d06a9b4546"],
+
+Cell[BoxData[
+ RowBox[{"h_v", "-", 
+  RowBox[{"21", " ", 
+   SuperscriptBox["h_v", "2"]}], "+", 
+  RowBox[{"220", " ", 
+   SuperscriptBox["h_v", "3"]}], "-", 
+  RowBox[{"1260", " ", 
+   SuperscriptBox["h_v", "4"]}], "+", 
+  RowBox[{"4320", " ", 
+   SuperscriptBox["h_v", "5"]}], "-", 
+  RowBox[{"9280", " ", 
+   SuperscriptBox["h_v", "6"]}], "+", 
+  RowBox[{"12600", " ", 
+   SuperscriptBox["h_v", "7"]}], "-", 
+  RowBox[{"10500", " ", 
+   SuperscriptBox["h_v", "8"]}], "+", 
+  RowBox[{"4900", " ", 
+   SuperscriptBox["h_v", "9"]}], "-", 
+  RowBox[{"980", " ", 
+   SuperscriptBox["h_v", "10"]}]}]], "Input",
+ CellChangeTimes->{{3.9493936363544655`*^9, 
+  3.949393636396471*^9}},ExpressionUUID->"746cdf3d-3107-e44a-a2bc-\
+c4250215f433"]
 }, Open  ]]
 },
-WindowSize->{1440, 741.75},
-WindowMargins->{{1074, Automatic}, {Automatic, -6}},
+WindowSize->{1070.25, 602.625},
+WindowMargins->{{0, Automatic}, {Automatic, 0}},
+Magnification:>0.7 Inherited,
 FrontEndVersion->"14.1 for Microsoft Windows (64-bit) (July 16, 2024)",
 StyleDefinitions->"Default.nb",
 ExpressionUUID->"354d4623-b158-0041-a89b-7a9f2066e4f3"
@@ -1969,34 +2320,40 @@ CellTagsIndex->{}
 (*NotebookFileOutline
 Notebook[{
 Cell[CellGroupData[{
-Cell[576, 22, 1693, 57, 104, "Input",ExpressionUUID->"4eaeb39a-4a87-a84f-b3dd-373dabc2cc78"],
-Cell[2272, 81, 33735, 598, 230, "Output",ExpressionUUID->"216d8def-09de-2f4d-a6ce-0cbe5e2f4d60"]
+Cell[576, 22, 188, 3, 30, "Subsubsection",ExpressionUUID->"55a4a2c8-7b8f-ca4b-8836-b9fc764e3dd1"],
+Cell[CellGroupData[{
+Cell[789, 29, 2067, 64, 86, "Input",ExpressionUUID->"4eaeb39a-4a87-a84f-b3dd-373dabc2cc78"],
+Cell[2859, 95, 33724, 598, 161, "Output",ExpressionUUID->"216d8def-09de-2f4d-a6ce-0cbe5e2f4d60"]
+}, Open  ]]
+}, Closed]],
+Cell[CellGroupData[{
+Cell[36632, 699, 178, 3, 26, "Subsubsection",ExpressionUUID->"62a91770-83fb-9b43-8b8b-1d4e3f53447e"],
+Cell[36813, 704, 465, 8, 21, "Input",ExpressionUUID->"ad5cdf1e-0116-4e4a-a698-24ab87685396"],
+Cell[37281, 714, 4921, 128, 126, "Input",ExpressionUUID->"b512ddae-9bd7-4642-9a7b-7ae91e8a60b3"],
+Cell[CellGroupData[{
+Cell[42227, 846, 469, 10, 21, "Input",ExpressionUUID->"1c83f652-cd4d-3d46-bbdb-8085906b75f6"],
+Cell[42699, 858, 961, 28, 33, "Output",ExpressionUUID->"855a1141-04c8-a049-953a-1a7860889170"]
+}, Open  ]]
 }, Open  ]],
 Cell[CellGroupData[{
-Cell[36044, 684, 605, 12, 28, "Input",ExpressionUUID->"563eead3-8dac-dd4a-aa0e-3b8ba4e8546f"],
-Cell[36652, 698, 551, 13, 32, "Output",ExpressionUUID->"809be582-a888-eb40-b34f-2e1266886018"]
-}, Open  ]],
-Cell[37218, 714, 1920, 52, 53, "Input",ExpressionUUID->"b512ddae-9bd7-4642-9a7b-7ae91e8a60b3"],
+Cell[43709, 892, 168, 3, 30, "Subsubsection",ExpressionUUID->"d4ed9ee1-a9ea-d547-89f3-7b96ace2c5f6"],
+Cell[43880, 897, 276, 6, 26, "Text",ExpressionUUID->"77fb9cd4-013a-ec46-b122-c9de328be7bf"],
+Cell[44159, 905, 4060, 85, 152, "Input",ExpressionUUID->"87bdd8cb-0ff4-f34f-8696-7c233280c38e"],
+Cell[48222, 992, 225, 5, 26, "Text",ExpressionUUID->"3e00fbb1-858d-c542-97f8-51dba3574a9f"],
 Cell[CellGroupData[{
-Cell[39163, 770, 450, 8, 28, "Input",ExpressionUUID->"5101aa9e-4cbe-f746-973a-b3dc8c75677b"],
-Cell[39616, 780, 31511, 889, 223, "Output",ExpressionUUID->"f2c10328-18b0-9e4a-ae77-e91e61a81000"]
+Cell[48472, 1001, 6712, 148, 286, "Input",ExpressionUUID->"2a39f711-ed76-524f-a96b-71552582be7e"],
+Cell[55187, 1151, 1180, 17, 142, "Output",ExpressionUUID->"28432bc2-8461-6641-bee0-0715df47ebd6"]
 }, Open  ]],
+Cell[56382, 1171, 276, 6, 26, "Text",ExpressionUUID->"7df060a3-facc-cd40-9e1e-c3e3dc6aab6f"],
 Cell[CellGroupData[{
-Cell[71164, 1674, 524, 12, 66, "Input",ExpressionUUID->"5cc2c164-a458-1643-8908-02eb57c446d0"],
-Cell[71691, 1688, 433, 10, 32, "Output",ExpressionUUID->"5ec9bb36-d69d-514b-b8e7-beb3c46143d4"]
+Cell[56683, 1181, 17600, 369, 606, "Input",ExpressionUUID->"dd468d40-39ae-6649-8003-d61aad8d2da8"],
+Cell[74286, 1552, 25394, 352, 2313, "Output",ExpressionUUID->"7641040e-fc5d-4c43-85d5-22b2594f0f7d"]
 }, Open  ]],
-Cell[CellGroupData[{
-Cell[72161, 1703, 6629, 153, 447, "Input",ExpressionUUID->"2a39f711-ed76-524f-a96b-71552582be7e"],
-Cell[78793, 1858, 5260, 73, 698, "Output",ExpressionUUID->"57b80a41-1d05-7e4b-a53f-65b8a1956598"]
-}, Open  ]],
-Cell[84068, 1934, 153, 3, 28, "Input",ExpressionUUID->"f5d373a8-b293-eb47-a768-0c69eaa7b2af"],
-Cell[CellGroupData[{
-Cell[84246, 1941, 204, 4, 28, "Input",ExpressionUUID->"35da1d96-9763-e94c-bf17-1cbeb02b6c93"],
-Cell[84453, 1947, 174, 3, 51, "Output",ExpressionUUID->"055a04f9-eee2-7644-ab61-0dd69be13cf4"]
+Cell[99695, 1907, 25615, 356, 2057, "Input",ExpressionUUID->"1c03f8e7-3c44-1349-a1ea-44037e908695"],
+Cell[125313, 2265, 514, 11, 21, "Input",ExpressionUUID->"233bc48d-a575-264a-bafc-55d06a9b4546"],
+Cell[125830, 2278, 735, 22, 21, "Input",ExpressionUUID->"746cdf3d-3107-e44a-a2bc-c4250215f433"]
 }, Open  ]]
 }
 ]
 *)
-
-(* End of internal cache information *)
 
