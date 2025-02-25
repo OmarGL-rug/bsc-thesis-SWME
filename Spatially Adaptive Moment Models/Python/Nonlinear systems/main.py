@@ -26,6 +26,14 @@ def main():
                           pde_information.getfloat('viscosity'),
                           pde_information.getfloat('slipLength'),
                           hyperbolic=True)
+    elif pde_information['pde_type'] == 'VegetationSWME1D':
+        _pde = pde.VegetationSWME1D(pde_information['initialCondition'],
+                                    pde_information.getfloat('viscosity'),
+                                    pde_information.getfloat('slipLength'),
+                                    False,
+                                    1,
+                                    1,
+                                    1)
     else:
         print('PDE_type is not implemented yet')
     
@@ -90,9 +98,9 @@ def main():
                                                                       data_array,
                                                                       z)
 
-        #plt.plot(velocity_profile[200,:], z)
+        plt.plot(velocity_profile[200,:], z)
 
-        plt.plot(_mesh.cell_center_positions, data_array[:,1])
+        #plt.plot(_mesh.cell_center_positions, data_array[:,1])
         #plt.plot(_mesh.cell_center_positions,_simulation.compute_all_breakdown_criteria(data_array)[:,1])
         plt.show()
     else:

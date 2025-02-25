@@ -8,7 +8,7 @@
 1D = True
 
 ### PDE type. Implemented: SWME1D, HSWME1D
-pde_type = SWME1D
+pde_type = VegetationSWME1D
     # SWME1D, HSWME1D #
     # Specify friction model. Implemented: Newton
 frictionModel = Newton
@@ -19,7 +19,7 @@ viscosity = 0.1
 
 # Specify initial conditions. Implemented: DamBreak
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity
-initialCondition = damBreak_noVelocity
+initialCondition = constantHeight_constantVelocity
 
 
 ###############################
@@ -51,7 +51,7 @@ y2boundary = 2
 t_end = 0.05
 
 # True: spatially adaptive simulation, False: classical simulation
-spatiallyAdaptive = True
+spatiallyAdaptive = False
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
 boundaryInterfaces = -1,1
@@ -59,7 +59,7 @@ boundaryInterfaces = -1,1
 orders = 1,5,1
     ### CLASSICAL ###
     # Order of the model
-order = 5
+order = 3
 
 
 # Finite volume method type. Implemented: PVM
