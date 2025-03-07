@@ -11,7 +11,7 @@ import timeit
 def main():
 
     config = configparser.ConfigParser()
-    config.read('config.txt')
+    config.read('Config-files/config.txt')
     pde_information = config['pde_information']
     grid_information = config['grid_information']
     numerical_method_information = config['numerical_method_information']
@@ -86,7 +86,7 @@ def main():
         stop = timeit.default_timer()
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
-        data_frame.to_csv('data.csv', index=False)
+        data_frame.to_csv('Data-processing/Test-files/data_init.csv', index=False)
 
         z = np.linspace(0,1,100)
         if numerical_method_information.getboolean('spatiallyAdaptive'):
@@ -98,9 +98,9 @@ def main():
                                                                       data_array,
                                                                       z)
 
-        plt.plot(velocity_profile[200,:], z)
+        #plt.plot(velocity_profile[200,:], z)
 
-        #plt.plot(_mesh.cell_center_positions, data_array[:,1])
+        plt.plot(_mesh.cell_center_positions, data_array[:,1])
         #plt.plot(_mesh.cell_center_positions,_simulation.compute_all_breakdown_criteria(data_array)[:,1])
         plt.show()
     else:

@@ -8,7 +8,7 @@
 1D = True
 
 ### PDE type. Implemented: SWME1D, HSWME1D
-pde_type = VegetationSWME1D
+pde_type = SWME1D
     # SWME1D, HSWME1D #
     # Specify friction model. Implemented: Newton
 frictionModel = Newton
@@ -18,8 +18,8 @@ slipLength = 0.1
 viscosity = 0.1
 
 # Specify initial conditions. Implemented: DamBreak
-# SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity
-initialCondition = constantHeight_constantVelocity
+# SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity, damBreak_constantVelocity
+initialCondition = damBreak_constantVelocity
 
 
 ###############################
@@ -48,15 +48,15 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 0.05
+t_end = 0.0
 
 # True: spatially adaptive simulation, False: classical simulation
-spatiallyAdaptive = False
+spatiallyAdaptive = True
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
 boundaryInterfaces = -1,1
     # List of the order of the method in each subdomain
-orders = 1,5,1
+orders = 4,5,4
     ### CLASSICAL ###
     # Order of the model
 order = 3

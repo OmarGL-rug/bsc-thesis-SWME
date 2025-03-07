@@ -5,4 +5,4 @@
 
 # add parameter breakdown_criterion to the simulation class (perhaps in the PDE class)
 
-# impement vegetation term to SWME
+# The VegetationSWME1D class needs a suitable boundary condition

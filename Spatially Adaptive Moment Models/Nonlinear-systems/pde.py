@@ -723,6 +723,38 @@ class SWME1D(PDE):
                     initial_values[6] = 0 
                 if order > 5:
                     initial_values[7] = 0
+        elif initial_condition == 'damBreak_constantVelocity':
+            x0 = 0
+            if position < x0:
+                initial_values[0] = 2
+                initial_values[1] = 0.25*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0
+                if order > 5:
+                    initial_values[7] = 0 
+            else:
+                initial_values[0] = 1
+                initial_values[1] = 0.25*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0 
+                if order > 5:
+                    initial_values[7] = 0
         elif initial_condition == 'linearHeight_noVelocity':
             initial_values[0] = 1 + 0.1*position
             initial_values[1] = 0*initial_values[0]

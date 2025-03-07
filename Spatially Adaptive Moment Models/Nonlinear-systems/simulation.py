@@ -770,5 +770,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
         data_array[:,2] = np.divide(values[1:-1,1],data_array[:,1])
         for j in range(self.max_order): #TODO: this is unnecessary routine here
             data_array[:,j+3] = np.divide(values[1:-1,j+2],data_array[:,1])
+
+        print(self.orders)
         
         return data_array
