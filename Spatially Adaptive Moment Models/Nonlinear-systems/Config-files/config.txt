@@ -18,8 +18,8 @@ slipLength = 0.1
 viscosity = 0.1
 
 # Specify initial conditions. Implemented: DamBreak
-# SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity, damBreak_constantVelocity
-initialCondition = damBreak_constantVelocity
+# SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave
+initialCondition = smooth_wave
 
 
 ###############################
@@ -36,8 +36,8 @@ structuredGrid = True
 resolutionX = 400
 resolutionY = 400
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
-x1boundary = -2
-x2boundary = 2
+x1boundary = -10
+x2boundary = 10
 y1boundary = -2
 y2boundary = 2
 
@@ -48,15 +48,15 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 0.0
+t_end = 1.0
 
 # True: spatially adaptive simulation, False: classical simulation
 spatiallyAdaptive = True
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
-boundaryInterfaces = -1,1
+boundaryInterfaces = -6.0,6.0
     # List of the order of the method in each subdomain
-orders = 4,5,4
+orders = 0,3,0
     ### CLASSICAL ###
     # Order of the model
 order = 3

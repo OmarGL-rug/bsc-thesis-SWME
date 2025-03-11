@@ -86,7 +86,7 @@ def main():
         stop = timeit.default_timer()
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
-        data_frame.to_csv('Data-processing/Test-files/data_init.csv', index=False)
+        #data_frame.to_csv('Data-processing/Results/smooth_adaptive.csv', index=False,header=False)
 
         z = np.linspace(0,1,100)
         if numerical_method_information.getboolean('spatiallyAdaptive'):
@@ -101,7 +101,7 @@ def main():
         #plt.plot(velocity_profile[200,:], z)
 
         plt.plot(_mesh.cell_center_positions, data_array[:,1])
-        #plt.plot(_mesh.cell_center_positions,_simulation.compute_all_breakdown_criteria(data_array)[:,1])
+       # plt.plot(_mesh.cell_center_positions,_pde.compute_all_breakdown_criteria(data_array,_mesh.resolution,max(_simulation.orders))[:,0])
         plt.show()
     else:
         print('2D not implemented yet')

@@ -6,3 +6,5 @@
 # add parameter breakdown_criterion to the simulation class (perhaps in the PDE class)
 
 # The VegetationSWME1D class needs a suitable boundary condition
+
+# When increasing the number of moments, a suitable initial value for the added moment should be chosen

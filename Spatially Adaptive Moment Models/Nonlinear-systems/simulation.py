@@ -397,6 +397,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
 
         CFL = 0.7
         
+        step_count = 0
         t = 0
 
         while t < t_end:
@@ -633,9 +634,11 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
                     delta_x) 
                 source_term_value = source_term_right(values[i,:n_variables_right]) 
                 values[i,:n_variables_right] = values[i,:n_variables_right] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
+            step_count += 1
             t+=delta_t
 
-            self._update_domain_decomposition(values, 0.01, 0.001)
+            #if step_count%10==0:
+            #    values = self._update_domain_decomposition(values)
 
         simulation_data = self._post_processing(values)
         return simulation_data
@@ -718,8 +721,8 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
 
     def _update_domain_decomposition(self,
                                      values,
-                                     tolerance_up = 0.01,
-                                     tolerance_down = 0.001):
+                                     tolerance_up = 0.005,
+                                     tolerance_down = 0.002):
         
         """
         updates the domain decomposition
@@ -747,6 +750,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
             if np.max(breakdown_criteria[interface_left:interface_right]) > tolerance_up:
                 self.orders[i] = min(self.orders[i]+1, 5)
                 self.numbers_of_variables[i] = self.pde_type.compute_number_of_variables(self.orders[i])
+                values[interface_left+1:interface_right+1,self.numbers_of_variables[i]-1] = np.zeros(interface_right-interface_left)
             elif np.max(breakdown_criteria[interface_left:interface_right]) < tolerance_down:
                 self.orders[i] = max(self.orders[i]-1, 0)
                 self.numbers_of_variables[i] = self.pde_type.compute_number_of_variables(self.orders[i])
@@ -755,10 +759,12 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
         if np.max(breakdown_criteria[interface_left:self.mesh.resolution]) > tolerance_up:
             self.orders[-1] = min(self.orders[-1]+1, 5)
             self.numbers_of_variables[-1] = self.pde_type.compute_number_of_variables(self.orders[-1])
+            values[interface_left+1:self.mesh.resolution+1,self.numbers_of_variables[-1]-1] = np.zeros(self.mesh.resolution-interface_left)
         elif np.max(breakdown_criteria[interface_left:self.mesh.resolution]) < tolerance_down:
             self.orders[-1] = max(self.orders[-1]-1, 0)
             self.numbers_of_variables[-1] = self.pde_type.compute_number_of_variables(self.orders[-1])
-    
+
+        return values
     def _post_processing(self,
                          values: list) -> np.array:
 
@@ -768,7 +774,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
             data_array[i,0] = self.mesh.cell_center_positions[i]
         data_array[:,1] = values[1:-1,0]
         data_array[:,2] = np.divide(values[1:-1,1],data_array[:,1])
-        for j in range(self.max_order): #TODO: this is unnecessary routine here
+        for j in range(self.max_order): 
             data_array[:,j+3] = np.divide(values[1:-1,j+2],data_array[:,1])
 
         print(self.orders)

@@ -232,7 +232,7 @@ class SWME1D(PDE):
     def compute_system_matrix(self,
                               order: int,
                               values: np.array,
-                              g = 9.81) -> np.array:
+                              g = 1) -> np.array:
         A=np.zeros((order+2,order+2)) 
         h = values[0]
         um = values[1]/values[0]
@@ -540,7 +540,7 @@ class SWME1D(PDE):
     def compute_source_term(self,
                             order: int,
                             values: np.array,
-                            g = 9.81) -> np.array:
+                            g = 1) -> np.array:
         
         S = np.zeros(order+2) 
         h = values[0]
@@ -770,6 +770,21 @@ class SWME1D(PDE):
                 initial_values[6] = 0 
             if order > 5:
                 initial_values[7] = 0
+        elif initial_condition == 'smooth_wave':
+            initial_values[0] = 3 + np.exp(-1.5*position**2)
+            initial_values[1] = 0*initial_values[0]
+            if order > 0:
+                initial_values[2] = 0 
+            if order > 1:
+                initial_values[3] = 0 
+            if order > 2:
+                initial_values[4] = 0 
+            if order > 3:
+                initial_values[5] = 0 
+            if order > 4:
+                initial_values[6] = 0 
+            if order > 5:
+                initial_values[7] = 0  
         return initial_values
     
     def compute_number_of_variables(self, order) -> int:
@@ -849,19 +864,19 @@ class SWME1D(PDE):
 
         for j in range(max_n_variables):
             for i in range(n-1):
-                if values[i,j+1] < 0.01:
-                    gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.01)
+                if values[i,j+1] < 0.001:
+                    gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.001)
                 else:
                     gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/values[i,j+1])
-            if values[i,j+1] < 0.01:
-                gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.01)
+            if values[i,j+1] < 0.001:
+                gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.001)
             else:
                 gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/values[i,j+1])  
 
         return gradients
     
     def compute_breakdown_criterion(self,
-                                   values: list,
+                                   values: np.array,
                                    breakdown_criterion: str,
                                    n) -> np.array:
 
@@ -869,10 +884,10 @@ class SWME1D(PDE):
         
         if breakdown_criterion == 'height_gradient':
             for i in range(n):
-                if values[i][0] < 0.01:
-                    breakdown_criterion_values[i] = np.abs((values[i+1][0] - values[i][0])/0.01)
+                if values[i,0] < 0.001:
+                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/0.001)
                 else:
-                    breakdown_criterion_values[i] = np.abs((values[i+1][0] - values[i][0])/values[i][0])
+                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/values[i,0])
         else:
             print('this criterion is not implemented yet')  
 
