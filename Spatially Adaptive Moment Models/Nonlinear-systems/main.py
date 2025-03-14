@@ -42,6 +42,8 @@ def main():
     if numerical_method_information['fvm_type'] == 'PVM':
         if numerical_method_information['pvm'] == 'PRICE':
             _spatialDiscretization = spatialDiscretization.PRICE()
+        elif numerical_method_information['pvm'] == 'LF':
+            _spatialDiscretization = spatialDiscretization.LF()
         else:
             print('this pvm method is not implemented yet')
     else:
@@ -86,7 +88,7 @@ def main():
         stop = timeit.default_timer()
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
-        #data_frame.to_csv('Data-processing/Results/smooth_adaptive.csv', index=False,header=False)
+        #data_frame.to_csv('Data-processing/Results/test_LF.csv', index=False,header=False)
 
         z = np.linspace(0,1,100)
         if numerical_method_information.getboolean('spatiallyAdaptive'):

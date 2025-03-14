@@ -174,13 +174,13 @@ class ClassicalSimulation1D(Simulation):
 
     def run_simulation(self,
                        t_end: float,
-                       g = 9.81) -> np.array:
+                       g = 1) -> np.array:
 
         delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 
         values = self._get_initial_conditions(self.mesh.cell_center_positions)
 
-        CFL = 0.7
+        CFL = 0.5
         t = 0
 
         def system_matrix(cell_values):
@@ -189,6 +189,7 @@ class ClassicalSimulation1D(Simulation):
         def source_term(cell_values):
             return self.pde_type.compute_source_term(self.order,cell_values)
 
+        step=0
 
         while t < t_end:
 
@@ -205,25 +206,29 @@ class ClassicalSimulation1D(Simulation):
 
             delta_t = CFL*delta_x/max_speed #TODO implement CFL condition
 
+            previous_values = np.copy(values)
+
             for i in range(1,self.mesh.resolution+1):
                 fluctuation_plus = self.spatial_discretization.compute_fluctuation(
-                    values[i-1,:],
-                    values[i,:],
+                    previous_values[i-1,:],
+                    previous_values[i,:],
                     system_matrix,
                     'positive',
                     delta_t,
                     delta_x) 
                 fluctuation_minus = self.spatial_discretization.compute_fluctuation(
-                    values[i,:],
-                    values[i+1,:],
+                    previous_values[i,:],
+                    previous_values[i+1,:],
                     system_matrix,
                     'negative',
                     delta_t,
                     delta_x) 
-                source_term_value = source_term(values[i,:]) 
-                values[i,:] = values[i,:] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
+                source_term_value = source_term(previous_values[i,:]) 
+                values[i,:] = previous_values[i,:] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_t*source_term_value # solve FVM equations
 
             t+=delta_t
+            step+=1
+
         simulation_data = self._post_processing(values)
         return simulation_data
 
@@ -385,7 +390,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
     
     def run_simulation(self,
                        t_end: float,
-                       g = 9.81) -> np.array:
+                       g = 1) -> np.array:
         
         delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
 

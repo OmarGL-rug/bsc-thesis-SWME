@@ -15,8 +15,8 @@ name4 = 'smooth_adaptive'; type4 = 'swme';
 [x4,h4,u4,alpha14,alpha24,alpha34,alpha44,alpha54] = readDataSWME1D(name4,type4);
 
 % plotting = 'all';
-% plotting = 'h';
- plotting = 'u';
+ plotting = 'h';
+% plotting = 'u';
 % plotting = 'alpha1';
 % plotting = 'alpha2';
 % plotting = 'alpha3';
@@ -49,55 +49,57 @@ if(strcmp(plotting,'all'))
 end
 
 if(strcmp(plotting,'h'))
-    plot1 = plot(x1,h1,x2,h2,x3,h3,x4,h4)
+    plot1 = plot(x1,h1,x2,h2,x3,h3)
 %     legend(name1,name2,name3,name4)
 
-    axis([-10.,10,2.8,3.5]);
+    axis([-10.,10,2.95,3.25]);
     xlabel('x')
     ylabel('h')
     
     linewidth1 = 2;
     set(plot1(1:3),'LineWidth',linewidth1);
-    set(plot1(2:4),'LineStyle','.');
-    set(plot1(2:4),'MarkerSize',linewidth1+12);
-    set(plot1(4),'LineStyle','.');
-    set(plot1(4),'MarkerSize',linewidth1+12);
+    %set(plot1(2:4),'LineStyle','.');
+    %set(plot1(2:4),'MarkerSize',linewidth1+12);
+    %set(plot1(4),'LineStyle','.');
+    %set(plot1(4),'MarkerSize',linewidth1+12);
 
     grey = [0.4,0.4,0.4];
-%     set(plot1(1),'Color','b');
-    set(plot1(2),'Color','k');
-    set(plot1(3),'Color','k');
-    set(plot1(4),'Color','k');
+    set(plot1(1:2),'LineStyle','-.');
+    set(plot1(3),'LineStyle','--');
+    set(plot1(1),'Color','r');
+    set(plot1(2),'Color','blue');
+    set(plot1(3),'Color','black');
     
 %     leg = legend('SWME','HSWME','\betaHSWME','reference','Location','southwest');
 %     leg = legend('SWME','reference','Location','southwest');
-    leg = legend('SWME','reference','Location','southwest');
+    leg = legend('Low order','High order','Adaptive','Location','northwest');
     set(leg,'FontSize',12); 
 end
 if(strcmp(plotting,'u'))
     plot1 = plot(x1,u1,x2,u2,x3,u3,x4,u4)
 %     legend(name1,name2,name3,name4)
 
-    axis([-10.,10.,-1.,1.]);
+    axis([-10.,10.,-0.15,0.15]);
     xlabel('x')
     ylabel('u_m')
     
     linewidth1 = 2;
     set(plot1(1:3),'LineWidth',linewidth1);
-    set(plot1(2:4),'LineStyle','.');
-    set(plot1(2:4),'MarkerSize',linewidth1+12);
-    set(plot1(4),'LineStyle','.');
-    set(plot1(4),'MarkerSize',linewidth1+12);
-    
+    %set(plot1(2:4),'LineStyle','.');
+    %set(plot1(2:4),'MarkerSize',linewidth1+12);
+    %set(plot1(4),'LineStyle','.');
+    %set(plot1(4),'MarkerSize',linewidth1+12);
+
     grey = [0.4,0.4,0.4];
-%     set(plot1(1),'Color','b');
-    set(plot1(2),'Color','k');
-    set(plot1(3),'Color','k');
-    set(plot1(4),'Color','k');
+    set(plot1(1:2),'LineStyle','-.');
+    set(plot1(3),'LineStyle','--');
+    set(plot1(1),'Color','r');
+    set(plot1(2),'Color','blue');
+    set(plot1(3),'Color','black');
     
-%     leg = legend('SWME','HSWME','\betaHSWME','reference','Location','northwest');
-%     leg = legend('SWME','reference','Location','northwest');
-    leg = legend('SWME','reference','Location','northwest');
+%     leg = legend('SWME','HSWME','\betaHSWME','reference','Location','southwest');
+%     leg = legend('SWME','reference','Location','southwest');
+    leg = legend('Low order','High order','Adaptive','Location','northwest');
     set(leg,'FontSize',12); 
 end
 if(strcmp(plotting,'alpha1'))
@@ -231,5 +233,5 @@ if(strcmp(plotting,'alpha5'))
     set(leg,'FontSize',12); 
 end
 
-% export_fig('models_unstable_tend0p05_a1.pdf', '-pdf','-transparent');
-% export_fig('SWME_unstable_tend0p05_h.pdf', '-pdf','-transparent');
+%addpath('C:\Users\rikve\Github\PhD-RUG\Spatially Adaptive Moment Models\Nonlinear-systems\Data-processing\Results\export_fig\', '-end')
+%export_fig('smooth_h.pdf', '-pdf','-transparent');

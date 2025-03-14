@@ -785,6 +785,39 @@ class SWME1D(PDE):
                 initial_values[6] = 0 
             if order > 5:
                 initial_values[7] = 0  
+        elif initial_condition == 'symmetric_damBreak':
+            x0 = -5
+            x1 = 5
+            if x0 < position < x1:
+                initial_values[0] = 2
+                initial_values[1] = 0.*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0
+                if order > 5:
+                    initial_values[7] = 0 
+            else:
+                initial_values[0] = 1
+                initial_values[1] = 0.*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0 
+                if order > 5:
+                    initial_values[7] = 0
         return initial_values
     
     def compute_number_of_variables(self, order) -> int:
