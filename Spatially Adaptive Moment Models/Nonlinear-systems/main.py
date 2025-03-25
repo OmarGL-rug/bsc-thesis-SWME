@@ -70,6 +70,7 @@ def main():
                 _mesh,
                 numerical_method_information['boundaryCondition'],
                 pde_information['initialCondition'],
+                pde_information['breakdown_criterion'],
                 _spatialDiscretization
             )
         
@@ -103,7 +104,7 @@ def main():
         #plt.plot(velocity_profile[200,:], z)
 
         plt.plot(_mesh.cell_center_positions, data_array[:,1])
-       # plt.plot(_mesh.cell_center_positions,_pde.compute_all_breakdown_criteria(data_array,_mesh.resolution,max(_simulation.orders))[:,0])
+        #plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array,'momentum_gradient',_mesh.resolution))
         plt.show()
     else:
         print('2D not implemented yet')

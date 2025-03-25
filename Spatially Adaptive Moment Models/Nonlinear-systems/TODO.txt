@@ -8,3 +8,11 @@
 # The VegetationSWME1D class needs a suitable boundary condition
 
 # When increasing the number of moments, a suitable initial value for the added moment should be chosen
+
+# Add other types of of boundary condition (periodic, wall)
+
+# Add breakdown criterion as a class field to simulation
+
+# Throw exceptions
+
+# Add plotting class such that it can be decoupled from main

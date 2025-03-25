@@ -818,6 +818,38 @@ class SWME1D(PDE):
                     initial_values[6] = 0 
                 if order > 5:
                     initial_values[7] = 0
+        elif initial_condition == 'smooth_plus_damBreak':
+            x0 = -3
+            if  position < x0:
+                initial_values[0] = 4
+                initial_values[1] = 0.*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0
+                if order > 5:
+                    initial_values[7] = 0 
+            else:
+                initial_values[0] = 3 + np.exp(-1.5*(position-3)**2)
+                initial_values[1] = 0*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0 
+                if order > 5:
+                    initial_values[7] = 0  
         return initial_values
     
     def compute_number_of_variables(self, order) -> int:
@@ -916,11 +948,17 @@ class SWME1D(PDE):
         breakdown_criterion_values = np.zeros(n)
         
         if breakdown_criterion == 'height_gradient':
-            for i in range(n):
-                if values[i,0] < 0.001:
+            for i in range(n-1): #TODO: change this to n again (I wrote n-1 for testing)
+                if np.abs(values[i,0]) < 0.001:
                     breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/0.001)
                 else:
                     breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/values[i,0])
+        elif breakdown_criterion == 'momentum_gradient':
+            for i in range(n-1): #TODO: change this to n again (I wrote n-1 for testing)
+                if np.abs(values[i,1]) < 0.001:
+                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/0.001)
+                else:
+                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/values[i,1])
         else:
             print('this criterion is not implemented yet')  
 
