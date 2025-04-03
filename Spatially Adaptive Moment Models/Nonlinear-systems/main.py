@@ -31,9 +31,9 @@ def main():
                                     pde_information.getfloat('viscosity'),
                                     pde_information.getfloat('slipLength'),
                                     False,
+                                    0.008,
                                     1,
-                                    1,
-                                    1)
+                                    264)
     else:
         print('PDE_type is not implemented yet')
     
@@ -96,15 +96,38 @@ def main():
             velocity_profile = _pde.compute_vertical_velocity_profile(np.max([int(order) for order in numerical_method_information['orders'].split(',')]),
                                                                       data_array,
                                                                       z)
+            number_of_variables = _simulation.max_number_of_variables
         else: 
             velocity_profile = _pde.compute_vertical_velocity_profile(numerical_method_information.getint('order'),
                                                                       data_array,
                                                                       z)
+            number_of_variables = _simulation.number_of_variables
 
-        #plt.plot(velocity_profile[200,:], z)
+        plt.figure()
+        plt.subplot(2,3,1)
+        plt.plot(velocity_profile[200,:], z)
+        plt.title('Velocity profile')
 
+        plt.subplot(2,3,2)
         plt.plot(_mesh.cell_center_positions, data_array[:,1])
-        #plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array,'momentum_gradient',_mesh.resolution))
+        plt.title('Height')
+
+        plt.subplot(2,3,3)
+        plt.plot(_mesh.cell_center_positions, data_array[:,2])
+        plt.title('Velocity')
+
+        plt.subplot(2,3,4)
+        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'height_gradient',_mesh.resolution))
+        plt.title('Height gradient')
+
+        plt.subplot(2,3,5)
+        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'momentum_gradient',_mesh.resolution))
+        plt.title('Velocity gradient')
+
+        plt.subplot(2,3,6)
+        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'last_moment',_mesh.resolution))
+        plt.title('Absolute value last moment')
+
         plt.show()
     else:
         print('2D not implemented yet')

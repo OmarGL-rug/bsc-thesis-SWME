@@ -663,8 +663,9 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
             step_count += 1
             t+=delta_t
 
-            if step_count%10==0:
-                values = self._update_domain_decomposition(values)
+            #if step_count%10==0:
+                #values = self._update_domain_decomposition(values)
+            values = self._update_domain_decomposition(values)
 
         simulation_data = self._post_processing(values)
         return simulation_data
@@ -780,7 +781,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
 
         """
 
-        breakdown_criteria = self.pde_type.compute_breakdown_criterion(values, self.breakdown_criterion,self.mesh.resolution)
+        breakdown_criteria = self.pde_type.compute_breakdown_criterion(values, self.max_number_of_variables,self.breakdown_criterion,self.mesh.resolution)
 
         interface_left = 0
         for i in range(len(self.boundary_interfaces_discretized)):
