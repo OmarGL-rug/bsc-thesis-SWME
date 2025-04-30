@@ -14,8 +14,8 @@ pde_type = SWME1D
 frictionModel = Newton
         # Newton #
         # Specify friction parameters
-slipLength = 0.1
-viscosity = 0.1
+slipLength = 0.01
+viscosity = 0.5
 
 # Specify initial conditions. 
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
@@ -39,7 +39,7 @@ structuredGrid = True
 
     # structuredGrid #
     # Number of grid points in x-direction and y-direction (if the simulation is 1D: only resolutionX is used)
-resolutionX = 800
+resolutionX = 400
 resolutionY = 400
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
 x1boundary = -10
@@ -54,7 +54,7 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 1.5
+t_end = 1.0
 
 # True: spatially adaptive simulation, False: classical simulation
 spatiallyAdaptive = False

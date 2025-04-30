@@ -903,7 +903,7 @@ class SWME1D(PDE):
         if order >= 5:
             for i in range(len(values)):
                 velocity_profile[i,:] += values[i,7]*(np.ones(len(z_points)) - 30*z_points + 210*np.square(z_points) - \
-                                                      560*np.power(z_points,3) + 630*np.power(z_points,4) - 252*np.power(z_points,4))        
+                                                      560*np.power(z_points,3) + 630*np.power(z_points,4) - 252*np.power(z_points,5))        
         return velocity_profile
     
     #TODO: delete the following method
