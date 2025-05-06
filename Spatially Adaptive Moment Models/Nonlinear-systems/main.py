@@ -117,15 +117,15 @@ def main():
         plt.title('Velocity')
 
         plt.subplot(2,3,4)
-        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'height_gradient',_mesh.resolution))
+        plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'height_gradient',_mesh.resolution-1))
         plt.title('Height gradient')
 
         plt.subplot(2,3,5)
-        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'momentum_gradient',_mesh.resolution))
+        plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'momentum_gradient',_mesh.resolution-1))
         plt.title('Velocity gradient')
 
         plt.subplot(2,3,6)
-        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'last_moment',_mesh.resolution))
+        plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'last_moment',_mesh.resolution-1))
         plt.title('Absolute value last moment')
 
         plt.show()

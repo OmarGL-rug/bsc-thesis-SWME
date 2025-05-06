@@ -23,7 +23,6 @@ viscosity = 0.1
                    #smooth_plus_damBreak
 initialCondition = smooth_plus_damBreak
 
-breakdown_criterion = height_gradient
 
 ###############################
 ###### GRID INFORMATION #######
@@ -51,13 +50,13 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 2.0
+t_end = 1.0
 
 # True: spatially adaptive simulation, False: classical simulation
 spatiallyAdaptive = True
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
-boundaryInterfaces = -7.5,-2.5,2.5,7.5
+boundaryInterfaces = -7.5.-2.5,2.5,7.5
     # List of the order of the method in each subdomain
 orders = 0,3,0,3,0
     ### CLASSICAL ###
