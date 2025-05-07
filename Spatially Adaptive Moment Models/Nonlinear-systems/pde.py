@@ -954,24 +954,40 @@ class SWME1D(PDE):
         breakdown_criterion_values = np.zeros(n)
         
         if breakdown_criterion == 'height_gradient':
-            for i in range(n-1): #TODO: change this to n again (I wrote n-1 for testing)
+            if np.abs(values[1,0]) < 0.001:
+                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))
+            else:
+                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))
+            for i in range(2,n-1): 
                 if np.abs(values[i,0]) < 0.001:
                     #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/0.001)
                     breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))
                 else:
                     #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/values[i,0])
                     breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))
+            if np.abs(values[n,0]) < 0.001:
+                breakdown_criterion_values[0] = np.abs((values[n,0] - values[n-1,0]))
+            else:
+                breakdown_criterion_values[0] = np.abs((values[n,0] - values[n-1,0]))
         elif breakdown_criterion == 'momentum_gradient':
-            for i in range(n-1): #TODO: change this to n again (I wrote n-1 for testing)
+            if np.abs(values[1,1]) < 0.001:
+                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))
+            else:
+                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))
+            for i in range(2,n-1): 
                 if np.abs(values[i,1]) < 0.001:
                     #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/0.001)
                     breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))
                 else:
                     #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/values[i,1])
                     breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))
+            if np.abs(values[n,1]) < 0.001:
+                breakdown_criterion_values[0] = np.abs((values[n,1] - values[n-1,1]))
+            else:
+                breakdown_criterion_values[0] = np.abs((values[n,1] - values[n-1,1]))
         elif breakdown_criterion == 'last_moment':
-            for i in range(n-1): #TODO: change this to n again (I wrote n-1 for testing)
-                breakdown_criterion_values[i] = np.abs(values[i,number_of_variables-1])     
+            for i in range(1,n): 
+                breakdown_criterion_values[i-1] = np.abs(values[i,number_of_variables-1])     
         else:
             print('this criterion is not implemented yet')  
 

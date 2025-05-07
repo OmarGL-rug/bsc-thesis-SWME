@@ -14,8 +14,8 @@ pde_type = SWME1D
 frictionModel = Newton
         # Newton #
         # Specify friction parameters
-slipLength = 0.01
-viscosity = 0.5
+slipLength = 0.1
+viscosity = 0.1
 
 # Specify initial conditions. 
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
@@ -54,21 +54,25 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 1.0
+t_end = 2
 
-# True: spatially adaptive simulation, False: classical simulation
-spatiallyAdaptive = False
+method = classical
+
+#method = micro_macro
 
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
-boundaryInterfaces = -8.0,-6.0,-4.0,-2.0,0.0,2.0,4.0,6.0,8.0
+#boundaryInterfaces = -8.0,-6.0,-4.0,-2.0,0.0,2.0,4.0,6.0,8.0
     # List of the order of the method in each subdomain
-orders = 3,3,3,3,3,3,3,3,3,3
+#orders = 3,3,3,3,3,3,3,3,3,3
 
     ### CLASSICAL ###
     # Order of the model
-order = 5
+order = 4
 
+    ## MICRO MACRO ##
+    # Order of the micro and macro models
+orders = 5, 0
 
 # Finite volume method type. Implemented: PVM
 fvm_type = PVM
