@@ -2,6 +2,7 @@ import simulation
 import pde
 import mesh
 import spatialDiscretization
+import timeIntegration
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -49,6 +50,10 @@ def main():
     else:
         print('this finite volume type is not implemented yet')
 
+    if numerical_method_information['timeIntegrator'] == 'ImplicitEuler':
+        _time_integration = timeIntegration.ImplicitEuler()
+    elif numerical_method_information['timeIntegrator'] == 'ExplicitEuler':
+        _time_integration = timeIntegration.ExplicitEuler()
 
     #########################################################################
 
@@ -82,7 +87,8 @@ def main():
                 _mesh,
                 numerical_method_information['boundaryCondition'],
                 pde_information['initialCondition'],
-                _spatialDiscretization)
+                _spatialDiscretization,
+                _time_integration)
 
         start = timeit.default_timer()
         data_array = _simulation.run_simulation(numerical_method_information.getfloat('t_end'))

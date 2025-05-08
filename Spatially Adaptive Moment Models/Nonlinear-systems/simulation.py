@@ -3,6 +3,7 @@ import numpy as np
 import pde
 import mesh
 import spatialDiscretization
+import timeIntegration
 
 class Simulation(ABC):
 
@@ -120,8 +121,10 @@ class ClassicalSimulation1D(Simulation):
         the used boundary condition
     initial_condition: str
         the initial condition for the simulation
-    spatial_discretization: spatial_discretization
+    spatial_discretization: SpatialDiscretization
         the numerical method for the spatial discretization
+    time_integration: TimeIntegration
+        the time integration method for the right-hand side source term
 
     
     Implemented methods from interface Simulation
@@ -142,7 +145,8 @@ class ClassicalSimulation1D(Simulation):
                  mesh: mesh.RectangularMesh,
                  boundary_condition: str,
                  initial_condition: str,
-                 spatial_discretization: spatialDiscretization.SpatialDiscretization):
+                 spatial_discretization: spatialDiscretization.SpatialDiscretization,
+                 time_integration: timeIntegration.TimeIntegration):
         """
         Constructs all the necessary attributes for the ClassicalSimulation1D object.
 
@@ -162,6 +166,8 @@ class ClassicalSimulation1D(Simulation):
             the initial condition for the simulation
         spatial_discretization: spatial_discretization
             the numerical method for the spatial discretization
+        time_integration: TimeIntegration
+            the time integration method for the right-hand side source term
 
         """
         self.order = order
@@ -171,6 +177,7 @@ class ClassicalSimulation1D(Simulation):
         self.boundary_condition = boundary_condition
         self.initial_condition = initial_condition
         self.spatial_discretization = spatial_discretization
+        self.time_integration = time_integration
 
     def run_simulation(self,
                        t_end: float,
@@ -200,8 +207,8 @@ class ClassicalSimulation1D(Simulation):
             wave_speed_sqrt = values[:,0]*int(g)
             for i in range(self.order):
                 wave_speed_sqrt += np.divide(values[:,i+2]*values[:,i+2],values[:,0]*values[:,0])
-            max_wave_speed_plus = np.max(np.abs(np.divide(values[:,1],values[:,0])+wave_speed_sqrt))
-            max_wave_speed_min = np.max(np.abs(np.divide(values[:,1],values[:,0])-wave_speed_sqrt))
+            max_wave_speed_plus = np.max(np.abs(np.divide(values[:,1],values[:,0])+np.sqrt(wave_speed_sqrt)))
+            max_wave_speed_min = np.max(np.abs(np.divide(values[:,1],values[:,0])-np.sqrt(wave_speed_sqrt)))
             max_speed = max(max_wave_speed_plus,max_wave_speed_min)
 
             delta_t = CFL*delta_x/max_speed #TODO implement CFL condition
@@ -224,7 +231,8 @@ class ClassicalSimulation1D(Simulation):
                     delta_t,
                     delta_x) 
                 source_term_value = source_term(previous_values[i,:]) 
-                values[i,:] = previous_values[i,:] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + delta_x*delta_t*source_term_value # solve FVM equations
+                values[i,:] = previous_values[i,:] - delta_t/delta_x*(fluctuation_plus+fluctuation_minus)
+                values[i,:] = self.time_integration.integrate(values[i,:],source_term,delta_t)
 
             t+=delta_t
             step+=1
