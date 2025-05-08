@@ -53,7 +53,7 @@ y2boundary = 2
 [numerical_method_information]
 # End time
 
-t_end = 2
+t_end = 2.0
 
 method = classical
 
