@@ -2,6 +2,7 @@ import simulation
 import pde
 import mesh
 import spatialDiscretization
+import timeIntegration
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -49,6 +50,10 @@ def main():
     else:
         print('this finite volume type is not implemented yet')
 
+    if numerical_method_information['timeIntegrator'] == 'ImplicitEuler':
+        _time_integration = timeIntegration.ImplicitEuler()
+    elif numerical_method_information['timeIntegrator'] == 'ExplicitEuler':
+        _time_integration = timeIntegration.ExplicitEuler()
 
     #########################################################################
 
@@ -81,7 +86,8 @@ def main():
                 _mesh,
                 numerical_method_information['boundaryCondition'],
                 pde_information['initialCondition'],
-                _spatialDiscretization)
+                _spatialDiscretization,
+                _time_integration)
             
         elif numerical_method_information['method'] == 'micro_macro':
             _simulation = simulation.Micro_macro(
@@ -90,8 +96,8 @@ def main():
                 _mesh,
                 numerical_method_information['boundaryCondition'],
                 pde_information['initialCondition'],
-                _spatialDiscretization)
-
+                _spatialDiscretization,
+                _time_integration)
 
         start = timeit.default_timer()
         data_array = _simulation.run_simulation(numerical_method_information.getfloat('t_end'))
@@ -126,15 +132,15 @@ def main():
         plt.title('Velocity')
 
         plt.subplot(2,3,4)
-        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'height_gradient',_mesh.resolution))
+        plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'height_gradient',_mesh.resolution-1))
         plt.title('Height gradient')
 
         plt.subplot(2,3,5)
-        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'momentum_gradient',_mesh.resolution))
+        plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'momentum_gradient',_mesh.resolution-1))
         plt.title('Velocity gradient')
 
         plt.subplot(2,3,6)
-        plt.plot(_mesh.cell_center_positions,_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'last_moment',_mesh.resolution))
+        plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],number_of_variables,'last_moment',_mesh.resolution-1))
         plt.title('Absolute value last moment')
 
         plt.show()

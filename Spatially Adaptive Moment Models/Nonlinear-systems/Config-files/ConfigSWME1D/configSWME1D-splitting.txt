@@ -15,7 +15,6 @@ frictionModel = Newton
         # Newton #
         # Specify friction parameters
 slipLength = 0.1
-
 viscosity = 1.5
 
 # Specify initial conditions. 
@@ -52,26 +51,19 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
+t_end = 2.0
 
-t_end = 2
-
-method = classical
-
-#method = micro_macro
-
+# True: spatially adaptive simulation, False: classical simulation
+spatiallyAdaptive = False
     ### SPATIALLYADAPTIVE ###
     # List of the physical position of the boundary interfaces
-#boundaryInterfaces = -8.0,-6.0,-4.0,-2.0,0.0,2.0,4.0,6.0,8.0
+boundaryInterfaces = -7.5,-2.5,2.5,7.5
     # List of the order of the method in each subdomain
-#orders = 3,3,3,3,3,3,3,3,3,3
-
+orders = 0,3,0,3,0
     ### CLASSICAL ###
     # Order of the model
-order = 4
+order = 5
 
-    ## MICRO MACRO ##
-    # Order of the micro and macro models
-orders = 5, 0
 
 # Finite volume method type. Implemented: PVM
 fvm_type = PVM
