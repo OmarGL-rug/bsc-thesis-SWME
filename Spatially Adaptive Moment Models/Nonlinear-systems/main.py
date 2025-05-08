@@ -12,7 +12,7 @@ import timeit
 def main():
 
     config = configparser.ConfigParser()
-    config.read('Config-files/config.txt')
+    config.read('Spatially Adaptive Moment Models/Nonlinear-systems/Config-files/config.txt')
     pde_information = config['pde_information']
     grid_information = config['grid_information']
     numerical_method_information = config['numerical_method_information']
@@ -62,7 +62,7 @@ def main():
         _mesh = mesh.UniformRectangularMesh1D([grid_information.getfloat('x1boundary'),grid_information.getfloat('x2boundary')],
                                                grid_information.getint('resolutionX')) #TODO: Implement different grids
 
-        if numerical_method_information.getboolean('spatiallyAdaptive'):
+        if numerical_method_information['method'] == 'spatially_adaptive':
             boundaryInterfaces = numerical_method_information['boundaryInterfaces']
             boundaryInterfaces = [float(boundaryInterface) for boundaryInterface in boundaryInterfaces.split(',')]
             orders = numerical_method_information['orders']
@@ -79,10 +79,19 @@ def main():
                 _spatialDiscretization
             )
         
-        else:
-
+        elif numerical_method_information['method'] == 'classical':
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
+                _pde,
+                _mesh,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
+                _spatialDiscretization,
+                _time_integration)
+            
+        elif numerical_method_information['method'] == 'micro_macro':
+            _simulation = simulation.Micro_macro(
+                [int(order) for order in numerical_method_information['orders'].split(',')],
                 _pde,
                 _mesh,
                 numerical_method_information['boundaryCondition'],
