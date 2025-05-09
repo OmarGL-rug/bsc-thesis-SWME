@@ -963,7 +963,8 @@ class Micro_macro(Simulation):
                  mesh: mesh.RectangularMesh,
                  boundary_condition: str,
                  initial_condition: str,
-                 spatial_discretization: spatialDiscretization.SpatialDiscretization):
+                 spatial_discretization: spatialDiscretization.SpatialDiscretization,
+                 time_integration: timeIntegration.TimeIntegration):
  
         self.micro_order = orders[0]
         self.macro_order = orders[1]
@@ -973,6 +974,7 @@ class Micro_macro(Simulation):
         self.boundary_condition = boundary_condition
         self.initial_condition = initial_condition
         self.spatial_discretization = spatial_discretization
+        self.time_integration = time_integration
 
     def run_simulation(self,
                        t_end: float,
@@ -1032,10 +1034,9 @@ class Micro_macro(Simulation):
                     'negative',
                     micro_delta_t,
                     delta_x) 
-                source_term_value = micro_source_term(previous_values[i,:]) 
-                micro_moments[i,:] = (previous_values[i,:] - 
-                                      micro_delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + 
-                                      delta_x * micro_delta_t * source_term_value) # solve FVM equations
+                
+                micro_moments[i,:] = previous_values[i,:] - micro_delta_t/delta_x*(fluctuation_plus+fluctuation_minus)
+                micro_moments[i,:] = self.time_integration.integrate(micro_moments[i,:],micro_source_term,micro_delta_t)
 
             t += micro_delta_t
 
@@ -1072,11 +1073,10 @@ class Micro_macro(Simulation):
                     'negative',
                     macro_delta_t,
                     delta_x) 
-                source_term_value = macro_source_term(previous_values[i,:]) 
-                macro_moments[i,:] = (previous_values[i,:] - 
-                                      macro_delta_t/delta_x*(fluctuation_plus+fluctuation_minus) + 
-                                      delta_x * macro_delta_t * source_term_value) # solve FVM equations
-            
+
+                macro_moments[i,:] = previous_values[i,:] - macro_delta_t/delta_x*(fluctuation_plus+fluctuation_minus)
+                macro_moments[i,:] = self.time_integration.integrate(macro_moments[i,:],macro_source_term,macro_delta_t)
+
             t += macro_delta_t
 
             # MATCHING

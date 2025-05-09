@@ -81,7 +81,7 @@ class Implicit(TimeIntegration):
 
         """
         
-        end_values = spopt.newton(self._compute_residual(initial_value,rhs_f,delta_t),initial_value)
+        end_values = spopt.newton(self._compute_residual(initial_value,rhs_f,delta_t),initial_value, maxiter=100)
 
         return end_values
     
