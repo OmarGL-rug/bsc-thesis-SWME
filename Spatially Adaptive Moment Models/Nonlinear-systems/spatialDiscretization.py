@@ -45,7 +45,8 @@ class PVM(SpatialDiscretization):
     -------------
     def compute_fluctuation(self,value_left,value_right,system_matrix,direction,delta_t,delta_x):
         computes the fluctuation between two cells with values value_left and value_right
-
+    def quadrature(self,integrand,s_0,s_1):
+        numerically approximates the integral of integrand between s_0 and s_1
             
     Abstract methods    
     -----------------

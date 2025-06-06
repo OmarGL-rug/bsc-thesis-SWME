@@ -63,22 +63,31 @@ def main():
                                                grid_information.getint('resolutionX')) #TODO: Implement different grids
 
         if numerical_method_information['method'] == 'spatially_adaptive':
-            boundaryInterfaces = numerical_method_information['boundaryInterfaces']
-            boundaryInterfaces = [float(boundaryInterface) for boundaryInterface in boundaryInterfaces.split(',')]
-            orders = numerical_method_information['orders']
-            orders = [int(order) for order in orders.split(',')]
+            start_order = int(numerical_method_information['start_order'])
 
-            _simulation = simulation.SpatiallyAdaptiveSimulation1D(
-                [float(boundaryInterface) for boundaryInterface in numerical_method_information['boundaryInterfaces'].split(',')],
-                [int(order) for order in numerical_method_information['orders'].split(',')],
-                _pde,
-                _mesh,
-                numerical_method_information['boundaryCondition'],
-                pde_information['initialCondition'],
-                pde_information['breakdown_criterion'],
-                _spatialDiscretization
-            )
-        
+            if numerical_method_information['coupling'] == 'nonconservative':
+                _simulation = simulation.NonConservativeAdaptiveSimulation1D(
+                    start_order,
+                    _pde,
+                    _mesh,
+                    numerical_method_information['boundaryCondition'],
+                    pde_information['initialCondition'],
+                    pde_information['breakdown_criterion'],
+                    _spatialDiscretization,
+                    _time_integration
+                )
+            elif numerical_method_information['coupling'] == 'conservative':
+                _simulation = simulation.ConservativeAdaptiveSimulation1D(
+                    start_order,
+                    _pde,
+                    _mesh,
+                    numerical_method_information['boundaryCondition'],
+                    pde_information['initialCondition'],
+                    pde_information['breakdown_criterion'],
+                    _spatialDiscretization,
+                    _time_integration
+                )
+
         elif numerical_method_information['method'] == 'classical':
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
@@ -107,11 +116,11 @@ def main():
         #data_frame.to_csv('Data-processing/Results/test_LF.csv', index=False,header=False)
 
         z = np.linspace(0,1,100)
-        if numerical_method_information.getboolean('spatiallyAdaptive'):
-            velocity_profile = _pde.compute_vertical_velocity_profile(np.max([int(order) for order in numerical_method_information['orders'].split(',')]),
+        if numerical_method_information['method'] == 'spatially_adaptive':
+            velocity_profile = _pde.compute_vertical_velocity_profile(_simulation.max_order,
                                                                       data_array,
                                                                       z)
-            number_of_variables = _simulation.max_number_of_variables
+            number_of_variables = _simulation.numbers_of_variables_cellwise
         else: 
             velocity_profile = _pde.compute_vertical_velocity_profile(numerical_method_information.getint('order'),
                                                                       data_array,
@@ -120,7 +129,7 @@ def main():
 
         plt.figure()
         plt.subplot(2,3,1)
-        plt.plot(velocity_profile[200,:], z)
+        plt.plot(velocity_profile[np.floor_divide(_mesh.resolution,2),:], z)
         plt.title('Velocity profile')
 
         plt.subplot(2,3,2)

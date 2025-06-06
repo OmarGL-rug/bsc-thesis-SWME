@@ -170,6 +170,19 @@ class PDE(ABC):
         """
 
         pass
+    
+    @abstractmethod
+    def compute_all_breakdown_criteria(self,
+                                   values: np.array,
+                                   number_of_variables: list,
+                                   n,
+                                   tolerance_up_height_gradient,
+                                   tolerance_down_height_gradient,
+                                   tolerance_up_momentum_gradient,
+                                   tolerance_down_momentum_gradient,
+                                   tolerance_up_last_moment,
+                                   tolerance_down_last_moment) -> np.array:
+        pass
 
 class SWME1D(PDE):
 
@@ -775,6 +788,8 @@ class SWME1D(PDE):
                 initial_values[6] = 0 
             if order > 5:
                 initial_values[7] = 0
+            if order > 6:
+                initial_values[8] = 0
         elif initial_condition == 'smooth_wave':
             initial_values[0] = 3 + np.exp(-1.5*position**2)
             initial_values[1] = 0*initial_values[0]
@@ -911,11 +926,16 @@ class SWME1D(PDE):
                                                         2772*np.power(z_points,5) + 924*np.power(z_points,6))         
         return velocity_profile
     
-    #TODO: delete the following method
     def compute_all_breakdown_criteria(self,
                                    values: np.array,
-                                   n: int,
-                                   max_n_variables) -> np.array:
+                                   number_of_variables: list,
+                                   n,
+                                   tolerance_up_height_gradient = 0.04,
+                                   tolerance_down_height_gradient = 0.01,
+                                   tolerance_up_momentum_gradient = 0.02,
+                                   tolerance_down_momentum_gradient = 0.005,
+                                   tolerance_up_last_moment = 0.01,
+                                   tolerance_down_last_moment = 0.001) -> np.array:
 
         """
         Compute ALL breakdown criteria for quantifying the required modelling complexity
@@ -931,31 +951,35 @@ class SWME1D(PDE):
             modelling complexity quantities in each mesh cell
 
         """
-        relative_value_last_moment = np.zeros(n)
-        for i in range(n):
-            relative_value_last_moment[i] = np.abs(values[i,-1])/np.sum(np.abs(values[i,0:]))
+        breakdown_criterion_flags = np.zeros(n)
+        
+        if (np.abs((values[2,0] - values[1,0])) > tolerance_up_height_gradient \
+            or np.abs((values[2,1] - values[1,1])) > tolerance_up_momentum_gradient \
+            or np.abs(values[1,number_of_variables[1]-1]) > tolerance_up_last_moment):
+            breakdown_criterion_flags[0] = 1
+        elif (breakdown_criterion_flags[0] != 1 and\
+              (np.abs((values[2,0] - values[1,0])) < tolerance_down_height_gradient \
+            or np.abs((values[2,1] - values[1,1])) < tolerance_down_momentum_gradient \
+            or np.abs(values[1,number_of_variables[1]-1]) < tolerance_down_last_moment)):
+            breakdown_criterion_flags[0] = -1
+        for i in range(1,n): 
+            if (np.abs((values[i+1,0] - values[i,0])) > tolerance_up_height_gradient \
+                or np.abs((values[i+1,1] - values[1,1])) > tolerance_up_momentum_gradient \
+                or np.abs(values[i+1,number_of_variables[i+1]-1]) > tolerance_up_last_moment):
+                breakdown_criterion_flags[i] = 1
+            elif (breakdown_criterion_flags[i] != 1 and\
+                (np.abs((values[i+1,0] - values[i,0])) < tolerance_down_height_gradient \
+                or np.abs((values[i+1,1] - values[i,1])) < tolerance_down_momentum_gradient \
+                or np.abs(values[i+1,number_of_variables[i+1]-1]) < tolerance_down_last_moment)):
+                breakdown_criterion_flags[i] = -1
 
-        gradients = np.zeros((n,max_n_variables)) #TODO: rewrite this such that it is generalizable
-
-        for j in range(max_n_variables):
-            for i in range(n-1):
-                if values[i,j+1] < 0.001:
-                    gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.001)
-                else:
-                    gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/values[i,j+1])
-            if values[i,j+1] < 0.001:
-                gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/0.001)
-            else:
-                gradients[i,j] = np.abs((values[i+1,j+1] - values[i,j+1])/values[i,j+1])  
-
-        return gradients
+        return breakdown_criterion_flags
     
     def compute_breakdown_criterion(self,
                                    values: np.array,
-                                   number_of_variables: int,
+                                   number_of_variables: list,
                                    breakdown_criterion: str,
                                    n) -> np.array:
-
         breakdown_criterion_values = np.zeros(n)
         
         if breakdown_criterion == 'height_gradient':
@@ -963,7 +987,7 @@ class SWME1D(PDE):
                 breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))
             else:
                 breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))
-            for i in range(2,n-1): 
+            for i in range(2,n): 
                 if np.abs(values[i,0]) < 0.001:
                     #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/0.001)
                     breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))
@@ -971,15 +995,15 @@ class SWME1D(PDE):
                     #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/values[i,0])
                     breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))
             if np.abs(values[n,0]) < 0.001:
-                breakdown_criterion_values[0] = np.abs((values[n,0] - values[n-1,0]))
+                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))
             else:
-                breakdown_criterion_values[0] = np.abs((values[n,0] - values[n-1,0]))
+                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))
         elif breakdown_criterion == 'momentum_gradient':
             if np.abs(values[1,1]) < 0.001:
                 breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))
             else:
                 breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))
-            for i in range(2,n-1): 
+            for i in range(2,n): 
                 if np.abs(values[i,1]) < 0.001:
                     #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/0.001)
                     breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))
@@ -987,12 +1011,13 @@ class SWME1D(PDE):
                     #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/values[i,1])
                     breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))
             if np.abs(values[n,1]) < 0.001:
-                breakdown_criterion_values[0] = np.abs((values[n,1] - values[n-1,1]))
+                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))
             else:
-                breakdown_criterion_values[0] = np.abs((values[n,1] - values[n-1,1]))
+                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))
         elif breakdown_criterion == 'last_moment':
-            for i in range(1,n): 
-                breakdown_criterion_values[i-1] = np.abs(values[i,number_of_variables-1])     
+            for i in range(1,n+1): 
+                breakdown_criterion_values[i-1] = np.abs(values[i,number_of_variables[i]-1]) 
+                # If the order is 0, there are no moments and the above value is never used     
         else:
             print('this criterion is not implemented yet')  
 
