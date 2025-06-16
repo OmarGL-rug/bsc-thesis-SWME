@@ -1080,6 +1080,8 @@ class Micro_macro(Simulation):
             t += macro_delta_t
 
             # MATCHING
+            for idx in range(self.mesh.resolution+2):
+                micro_moments[idx, self.macro_order+2:] = np.multiply(micro_moments[idx, self.macro_order+2:],(macro_moments[idx, 0]/micro_moments[idx, 0]))
             micro_moments[:, :self.macro_order+2] = macro_moments
 
             step += 1
