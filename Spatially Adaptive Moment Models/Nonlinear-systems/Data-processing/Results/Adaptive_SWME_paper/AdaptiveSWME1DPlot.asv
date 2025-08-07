@@ -30,11 +30,10 @@ format long
 % % name4 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
 % name4 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveConservative_grouped_t5'; type4 = 'swmeAdaptive';
 
-name1 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order2_t5'; type1 = 'swme';
+% name1 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order2_t5'; type1 = 'swme';
 % name2 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order5_t5'; type2 = 'swme';
-name2 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order2_t5_500'; type2 = 'swme';
-name3 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
-name4 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
+% name3 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
+% name4 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
  
 % name1 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order2_t5'; type1 = 'swme';
 % name2 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order5_t5'; type2 = 'swme';

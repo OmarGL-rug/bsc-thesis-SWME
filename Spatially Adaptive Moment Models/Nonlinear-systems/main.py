@@ -121,7 +121,7 @@ def main():
         stop = timeit.default_timer()
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
-        # data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveConservativeTest_t5.csv', index=False,header=False)
+        data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/damBreak-and-smooth_linear_lambda0.1_nu0.1_order1_t5_500.csv', index=False,header=False)
         # data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/test.csv', index=False,header=False)
 
         z = np.linspace(0,1,100)

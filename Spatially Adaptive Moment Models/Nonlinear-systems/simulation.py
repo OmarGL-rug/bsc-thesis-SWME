@@ -1570,42 +1570,95 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         values = simulation_data = self._post_processing(values)
         return simulation_data  
 
+    # def _resontruct_subdomains(self,
+    #                            values: np.array,
+    #                            delta_x: float,
+    #                            delta_t: float) -> np.array:
+        
+
+    #     super()._update_domain_decomposition_pointwise(values,delta_x,delta_t)
+
+    #     orders_out = []
+    #     number_of_variables_out = []
+    #     boundary_interfaces = []
+
+    #     orders_out.append(int(self.orders_cellwise[0]))
+    #     number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[0])))
+    #     for i in range(1,self.mesh.resolution+1):
+    #         if self.orders_cellwise[i] != self.orders_cellwise[i+1]:
+    #             orders_out.append(int(self.orders_cellwise[i+1]))
+    #             number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[i+1])))
+    #             boundary_interfaces.append(int(i))
+
+    #     # Set undefined moments and padded moments to zero
+    #     right_boundary = -1
+    #     for m in range(len(self.boundary_interfaces_discretized)):
+    #         left_boundary = right_boundary+1
+    #         right_boundary = self.boundary_interfaces_discretized[m]
+    #         values[left_boundary:right_boundary+1,self.numbers_of_variables[m]:self.max_number_of_variables]=0
+    #     values[right_boundary+1:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables]=0 
+
+    #     self.orders = orders_out
+    #     self.boundary_interfaces_discretized = boundary_interfaces
+    #     self.numbers_of_variables = number_of_variables_out
+    #     if len(self.boundary_interfaces_discretized) == 0:
+    #         self.orders.append(self.orders[0])
+    #         self.numbers_of_variables.append(self.numbers_of_variables[0])
+    #         self.boundary_interfaces_discretized.append(np.floor_divide(self.mesh.resolution,2))
+        
+    #     return values
+
     def _resontruct_subdomains(self,
                                values: np.array,
                                delta_x: float,
                                delta_t: float) -> np.array:
-        
+
+        boundary_interfaces = []
+        orders_merged = []
+        number_of_variables_merged = []
+        orders_out = []
+        number_of_variables_out = []
 
         super()._update_domain_decomposition_pointwise(values,delta_x,delta_t)
 
-        orders_out = []
-        number_of_variables_out = []
-        boundary_interfaces = []
+        for i in range(1,self.mesh.resolution-3,4):
+            local_order = max(self.orders_cellwise[i:i+4])
+            orders_merged.append(local_order)
+            number_of_variables_merged.append(self.pde_type.compute_number_of_variables(local_order))
 
-        orders_out.append(int(self.orders_cellwise[0]))
-        number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[0])))
-        for i in range(1,self.mesh.resolution+1):
-            if self.orders_cellwise[i] != self.orders_cellwise[i+1]:
-                orders_out.append(int(self.orders_cellwise[i+1]))
-                number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[i+1])))
-                boundary_interfaces.append(int(i))
+        orders_merged[-1] = max(self.orders_cellwise[i:-1])
+        number_of_variables_merged[-1] = self.pde_type.compute_number_of_variables(orders_merged[-1])
 
-        # Set undefined moments and padded moments to zero
-        right_boundary = -1
-        for m in range(len(self.boundary_interfaces_discretized)):
-            left_boundary = right_boundary+1
-            right_boundary = self.boundary_interfaces_discretized[m]
-            values[left_boundary:right_boundary+1,self.numbers_of_variables[m]:self.max_number_of_variables]=0
-        values[right_boundary+1:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables]=0 
+        orders_out.append(orders_merged[0])
+        number_of_variables_out.append(number_of_variables_merged[0])
+        for i in range(len(orders_merged)-1):
+            if orders_merged[i] > orders_merged[i+1]:
+                orders_out.append(orders_merged[i+1])
+                number_of_variables_out.append(number_of_variables_merged[i+1])
+                boundary_interfaces.append(4*(i+1)+1)
+            elif orders_merged[i] < orders_merged[i+1]:
+                orders_out.append(orders_merged[i+1])
+                number_of_variables_out.append(number_of_variables_merged[i+1])
+                boundary_interfaces.append(4*(i+1)+1)
+            # else:
+            #     values[4*i+1:4*(i+1)+1,number_of_variables_merged[i]:self.max_number_of_variables] = 0
 
         self.orders = orders_out
         self.boundary_interfaces_discretized = boundary_interfaces
         self.numbers_of_variables = number_of_variables_out
         if len(self.boundary_interfaces_discretized) == 0:
             self.orders.append(self.orders[0])
-            self.numbers_of_variables.append(self.numbers_of_variables[0])
+            self.numbers_of_variables.append(int(self.numbers_of_variables[0]))
             self.boundary_interfaces_discretized.append(np.floor_divide(self.mesh.resolution,2))
-        
+
+        # Set undefined moments to zero
+        left_boundary = 0
+        for m in range(len(self.boundary_interfaces_discretized)):
+            right_boundary = self.boundary_interfaces_discretized[m]+1
+            values[left_boundary:right_boundary,self.numbers_of_variables[m]:self.max_number_of_variables]=0
+            left_boundary = right_boundary+1
+        values[left_boundary:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables]=0 
+
         return values
 
 class Micro_macro(Simulation):
