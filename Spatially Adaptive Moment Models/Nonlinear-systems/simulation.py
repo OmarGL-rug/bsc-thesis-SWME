@@ -580,16 +580,16 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
                                    n,
                                    delta_x,
                                    delta_t,
-                                   tolerance_up_source=0.001,
-                                   tolerance_up_height_gradient=0.001,
-                                   tolerance_up_momentum_gradient=0.001,
-                                   tolerance_up_moment_gradient=0.001,
+                                   tolerance_up_source=0.1,
+                                   tolerance_up_height_gradient=0.15,
+                                   tolerance_up_momentum_gradient=0.15,
+                                   tolerance_up_moment_gradient=0.15,
                                    tolerance_down_height_gradient = 0.001,
                                    tolerance_down_momentum_gradient = 0.001,
                                    tolerance_down_moment_gradient = 0.001,
                                    tolerance_down_last_moment = 0.001,
-                                   tolerance_down_res1=0.0001,
-                                   tolerance_down_res2=0.0001) -> np.array:        
+                                   tolerance_down_res1=0.001,
+                                   tolerance_down_res2=0.01) -> np.array:        
         """
         TODO
 
@@ -613,18 +613,18 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
         breakdown_criterion_flags = np.zeros(n)
 
         for i in range(n):
-            self.breakdown_estimators[i,0] = delta_t*np.abs(self.pde_type.compute_source_term_lastentry(self.orders_cellwise[i+1],values[i+1,:self.numbers_of_variables_cellwise[i+1]],True))
+            self.breakdown_estimators[i,0] = 1*np.abs(self.pde_type.compute_source_term_lastentry(self.orders_cellwise[i+1],values[i+1,:self.numbers_of_variables_cellwise[i+1]],True))
             self.breakdown_estimators[i,1] = np.abs(values[i+1,self.numbers_of_variables_cellwise[i+1]-1]/values[i+1,0])
-            self.breakdown_estimators[i,2] = delta_t*np.abs((values[i+2,0] - values[i,0]))/(2*delta_x)
-            self.breakdown_estimators[i,3] = delta_t*np.abs((values[i+2,1] - values[i,1]))/(2*delta_x)
+            self.breakdown_estimators[i,2] = 1*np.abs((values[i+2,0] - values[i,0]))/(2*delta_x)
+            self.breakdown_estimators[i,3] = 1*np.abs((values[i+2,1] - values[i,1]))/(2*delta_x)
             for j in range(self.orders_cellwise[i+1]):
-                self.breakdown_estimators[i,4+j] = delta_t*np.abs((values[i+2,2+j])-values[i,2+j])/(2*delta_x)
-        self.breakdown_estimators[0,0] = delta_t*np.abs(self.pde_type.compute_source_term_lastentry(self.orders_cellwise[1],values[1,:self.numbers_of_variables_cellwise[1]],True))
+                self.breakdown_estimators[i,4+j] = 1*np.abs((values[i+2,2+j])-values[i,2+j])/(2*delta_x)
+        self.breakdown_estimators[0,0] = 1*np.abs(self.pde_type.compute_source_term_lastentry(self.orders_cellwise[1],values[1,:self.numbers_of_variables_cellwise[1]],True))
         self.breakdown_estimators[0,1] = np.abs(values[1,self.numbers_of_variables_cellwise[1]-1])
-        self.breakdown_estimators[0,2] = delta_t*np.abs((values[2,0] - values[1,0]))/delta_x
-        self.breakdown_estimators[0,3] = delta_t*np.abs((values[2,1] - values[1,1]))/delta_x
+        self.breakdown_estimators[0,2] = 1*np.abs((values[2,0] - values[1,0]))/delta_x
+        self.breakdown_estimators[0,3] = 1*np.abs((values[2,1] - values[1,1]))/delta_x
         for j in range(self.orders_cellwise[i+1]):
-            self.breakdown_estimators[0,4+j] = delta_t*np.abs((values[2,2+j])-values[2,2+j])/delta_x    
+            self.breakdown_estimators[0,4+j] = 1*np.abs((values[2,2+j])-values[2,2+j])/delta_x    
 
         for i in range(n):
             if self.breakdown_estimators[i,0] > tolerance_up_source:
@@ -854,7 +854,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         values[i,:n_variables_left] = self.time_integration.integrate(values[i,:n_variables_left],source_term_left,delta_t)
                         self.dom_decomp_val_res1[i-1] \
                             = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[i,n_variables_left-1]-previous_values[i-1,n_variables_left-1])\
-                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]))
+                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]),np.inf)
                         self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_left-1]-previous_values[i,n_variables_left-1])
                     
                     # Evolution equation for the cell with index right_boundary_subdomain-2
@@ -882,7 +882,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         = self.time_integration.integrate(values[right_boundary_subdomain-2,:n_variables_left],source_term_left,delta_t)
                     self.dom_decomp_val_res1[right_boundary_subdomain-3] \
                         = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[right_boundary_subdomain-2,n_variables_left-1]-previous_values[right_boundary_subdomain-3,n_variables_left-1])\
-                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain-1,n_variables_left-1]-previous_values[right_boundary_subdomain-2,n_variables_left-1]))
+                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain-1,n_variables_left-1]-previous_values[right_boundary_subdomain-2,n_variables_left-1]),np.inf)
                     self.dom_decomp_val_res2[right_boundary_subdomain-3] = np.abs(values[right_boundary_subdomain-2,n_variables_left-1]-previous_values[right_boundary_subdomain-2,n_variables_left-1])                   
                     # Evolution equation for the cell with index right_boundary_subdomain-1
                     generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
@@ -909,7 +909,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         = self.time_integration.integrate(values[right_boundary_subdomain-1,:n_variables_left],source_term_left,delta_t)
                     self.dom_decomp_val_res1[right_boundary_subdomain-2] \
                         = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[right_boundary_subdomain-1,n_variables_left-1]-previous_values[right_boundary_subdomain-2,n_variables_left-1])\
-                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain,n_variables_left-1]-previous_values[right_boundary_subdomain-1,n_variables_left-1]))
+                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain,n_variables_left-1]-previous_values[right_boundary_subdomain-1,n_variables_left-1]),np.inf)
                     self.dom_decomp_val_res2[right_boundary_subdomain-2] = np.abs(values[right_boundary_subdomain-1,n_variables_left-1]-previous_values[right_boundary_subdomain-1,n_variables_left-1]) 
 
 
@@ -948,7 +948,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         = self.time_integration.integrate(values[right_boundary_subdomain,:n_variables_right],source_term_right,delta_t)
                     
                     self.dom_decomp_val_res1[right_boundary_subdomain-1] \
-                        = np.linalg.norm(generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_right-1]-previous_values[right_boundary_subdomain,n_variables_right-1]))
+                        = np.linalg.norm(generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_right-1]-previous_values[right_boundary_subdomain,n_variables_right-1]),np.inf)
                     self.dom_decomp_val_res2[right_boundary_subdomain-1] = np.abs(values[right_boundary_subdomain,n_variables_right-1]-previous_values[right_boundary_subdomain,n_variables_right-1]) 
                     
             
@@ -977,7 +977,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
                         self.dom_decomp_val_res1[i-1] \
                             = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[i,n_variables_left-1]-previous_values[i-1,n_variables_left-1])\
-                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]))
+                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]),np.inf)
                         self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_left-1]-previous_values[i,n_variables_left-1])
                     
                     # Evolution equation for the cell with index right_boundary_subdomain+1
@@ -1016,7 +1016,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         = self.time_integration.integrate(values[right_boundary_subdomain+1,:n_variables_left],source_term_left,delta_t)
                     
                     self.dom_decomp_val_res1[right_boundary_subdomain] \
-                        = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_left-1]-previous_values[right_boundary_subdomain,n_variables_left-1]))
+                        = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_left-1]-previous_values[right_boundary_subdomain,n_variables_left-1]),np.inf)
                     self.dom_decomp_val_res2[right_boundary_subdomain] = np.abs(values[right_boundary_subdomain+1,n_variables_left-1]-previous_values[right_boundary_subdomain+1,n_variables_left-1])
 
                     # Evolution equation for the cell with index right_boundary_subdomain+2
@@ -1044,7 +1044,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                     
                     self.dom_decomp_val_res1[right_boundary_subdomain+1] \
                         = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[right_boundary_subdomain+2,n_variables_right-1]-previous_values[right_boundary_subdomain+1,n_variables_right-1])\
-                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+3,n_variables_right-1]-previous_values[right_boundary_subdomain+2,n_variables_right-1]))
+                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+3,n_variables_right-1]-previous_values[right_boundary_subdomain+2,n_variables_right-1]),np.inf)
                     self.dom_decomp_val_res2[right_boundary_subdomain+1] = np.abs(values[right_boundary_subdomain+2,n_variables_right-1]-previous_values[right_boundary_subdomain+2,n_variables_right-1])
                     
                     # Evolution equation for the cell with index right_boundary_subdomain+3
@@ -1072,7 +1072,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
                     self.dom_decomp_val_res1[right_boundary_subdomain+2] \
                         = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[right_boundary_subdomain+3,n_variables_right-1]-previous_values[right_boundary_subdomain+2,n_variables_right-1])\
-                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+4,n_variables_right-1]-previous_values[right_boundary_subdomain+3,n_variables_right-1]))
+                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+4,n_variables_right-1]-previous_values[right_boundary_subdomain+3,n_variables_right-1]),np.inf)
                     self.dom_decomp_val_res2[right_boundary_subdomain+2] = np.abs(values[right_boundary_subdomain+3,n_variables_right-1]-previous_values[right_boundary_subdomain+3,n_variables_right-1])
 
                     right_boundary_subdomain += 3
@@ -1099,7 +1099,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             
                 self.dom_decomp_val_res1[i-1] \
                     = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[i,n_variables_right-1]-previous_values[i-1,n_variables_right-1])\
-                    + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_right-1]-previous_values[i,n_variables_right-1]))
+                    + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_right-1]-previous_values[i,n_variables_right-1]),np.inf)
                 self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_right-1]-previous_values[i,n_variables_right-1])
 
             step_count += 1
@@ -1337,7 +1337,8 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         values[i,:n_variables_left] = self.time_integration.integrate(values[i,:n_variables_left],source_term_left,delta_t)
                         self.dom_decomp_val_res1[i-1] \
                             = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[i,n_variables_left-1]-previous_values[i-1,n_variables_left-1])\
-                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]))
+                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]),np.inf)
+                        self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_left-1]-previous_values[i,n_variables_left-1])
 
                     values_boundary_help = previous_values[right_boundary_subdomain+1,:n_variables_right]
                     values_boundary_help[n_variables_left:n_variables_right] = 0
@@ -1387,7 +1388,9 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         = np.linalg.norm(generalized_roe_minus1[:-1,-1]*(values_boundary_help[n_variables_right-1]\
                                                                         -previous_values[right_boundary_subdomain,n_variables_right-1])\
                                         +generalized_roe_minus2[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_right-1]\
-                                                                        -values_boundary_help[n_variables_right-1]))
+                                                                        -values_boundary_help[n_variables_right-1]),np.inf)
+                    self.dom_decomp_val_res2[right_boundary_subdomain-1] \
+                        = np.abs(values[right_boundary_subdomain,n_variables_left-1]-previous_values[right_boundary_subdomain,n_variables_left-1])
 
                     # Evolution equation for the cell with index right_boundary_subdomain+1
                     generalized_roe_plus1 = self.spatial_discretization.compute_generalized_roe_and_viscosity(
@@ -1422,12 +1425,14 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                     -delta_t/delta_x*(fluctuation_plus+fluctuation_minus))
                     values[right_boundary_subdomain+1,:n_variables_right] \
                         = self.time_integration.integrate(values[right_boundary_subdomain+1,:n_variables_right],source_term_right,delta_t) 
-                    self.dom_decomp_val_res1[right_boundary_subdomain-1] \
+                    self.dom_decomp_val_res1[right_boundary_subdomain] \
                         = np.linalg.norm(generalized_roe_plus1[:-1,-1]*(values_boundary_help[n_variables_right-1]\
                                                              -previous_values[right_boundary_subdomain,n_variables_right-1]\
                                         +generalized_roe_plus2[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_right-1]\
                                                                 -values_boundary_help[n_variables_right-1]))\
-                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+2,n_variables_right-1]-previous_values[right_boundary_subdomain+1,n_variables_right-1]))
+                        + generalized_roe_minus[:-1,-1]*(previous_values[right_boundary_subdomain+2,n_variables_right-1]-previous_values[right_boundary_subdomain+1,n_variables_right-1]),np.inf)
+                    self.dom_decomp_val_res2[right_boundary_subdomain] \
+                        = np.abs(values[right_boundary_subdomain+1,n_variables_right-1]-previous_values[right_boundary_subdomain+1,n_variables_right-1])
 
                 else:
 
@@ -1456,7 +1461,8 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         values[i,:n_variables_left] = self.time_integration.integrate(values[i,:n_variables_left],source_term_left,delta_t)
                         self.dom_decomp_val_res1[i-1] \
                             = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[i,n_variables_left-1]-previous_values[i-1,n_variables_left-1])\
-                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]))
+                            + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_left-1]-previous_values[i,n_variables_left-1]),np.inf)
+                        self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_left-1]-previous_values[i,n_variables_left-1])
 
                     # Evolution equation for the cell with index right_boundary_subdomain
                     generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
@@ -1497,7 +1503,9 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                         + generalized_roe_minus1[:-1,-1]*(values_boundary_help[n_variables_left-1]\
                                                                -previous_values[right_boundary_subdomain,n_variables_left-1])\
                         + generalized_roe_minus2[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_left-1]\
-                                                                  -values_boundary_help[n_variables_left-1]))
+                                                                  -values_boundary_help[n_variables_left-1]),np.inf)
+                    self.dom_decomp_val_res2[right_boundary_subdomain-1] \
+                        = np.abs(values[right_boundary_subdomain,n_variables_left-1]-previous_values[right_boundary_subdomain,n_variables_left-1])
 
 
                     # Evolution equation for the cell with index right_boundary_subdomain+1
@@ -1533,11 +1541,13 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                     -delta_t/delta_x*(fluctuation_plus[:n_variables_right]+fluctuation_minus))
                     values[right_boundary_subdomain+1,:n_variables_right] \
                         = self.time_integration.integrate(values[right_boundary_subdomain+1,:n_variables_right],source_term_right,delta_t) 
-                    self.dom_decomp_val_res1[right_boundary_subdomain-1] \
+                    self.dom_decomp_val_res1[right_boundary_subdomain] \
                         = np.linalg.norm(generalized_roe_plus1[:-1,-1]*(values_boundary_help[n_variables_left-1]\
                                                              -previous_values[right_boundary_subdomain,n_variables_left-1])\
                                         +generalized_roe_plus2[:-1,-1]*(previous_values[right_boundary_subdomain+1,n_variables_left-1]\
-                                                                 -values_boundary_help[n_variables_left-1]))
+                                                                 -values_boundary_help[n_variables_left-1]),np.inf)
+                    self.dom_decomp_val_res2[right_boundary_subdomain] \
+                        = np.abs(values[right_boundary_subdomain+1,n_variables_right-1]-previous_values[right_boundary_subdomain+1,n_variables_right-1])
                     
             for i in range(right_boundary_subdomain+1,self.mesh.resolution+1):
                 generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
@@ -1561,105 +1571,110 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             
                 self.dom_decomp_val_res1[i-1] \
                     = np.linalg.norm(generalized_roe_plus[:-1,-1]*(previous_values[i,n_variables_right-1]-previous_values[i-1,n_variables_right-1])\
-                    + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_right-1]-previous_values[i,n_variables_right-1]))
+                    + generalized_roe_minus[:-1,-1]*(previous_values[i+1,n_variables_right-1]-previous_values[i,n_variables_right-1]),np.inf)
+                self.dom_decomp_val_res2[i-1] \
+                    = np.abs(values[i,n_variables_right-1]-previous_values[i,n_variables_right-1])
             
             step_count += 1
             print(t)
             t+=delta_t
 
+        self.dom_decomp_val_res1 = self.dom_decomp_val_res1/delta_x
+        self.dom_decomp_val_res2 = self.dom_decomp_val_res2/delta_t
+
         values = simulation_data = self._post_processing(values)
         return simulation_data  
-
-    # def _resontruct_subdomains(self,
-    #                            values: np.array,
-    #                            delta_x: float,
-    #                            delta_t: float) -> np.array:
-        
-
-    #     super()._update_domain_decomposition_pointwise(values,delta_x,delta_t)
-
-    #     orders_out = []
-    #     number_of_variables_out = []
-    #     boundary_interfaces = []
-
-    #     orders_out.append(int(self.orders_cellwise[0]))
-    #     number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[0])))
-    #     for i in range(1,self.mesh.resolution+1):
-    #         if self.orders_cellwise[i] != self.orders_cellwise[i+1]:
-    #             orders_out.append(int(self.orders_cellwise[i+1]))
-    #             number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[i+1])))
-    #             boundary_interfaces.append(int(i))
-
-    #     # Set undefined moments and padded moments to zero
-    #     right_boundary = -1
-    #     for m in range(len(self.boundary_interfaces_discretized)):
-    #         left_boundary = right_boundary+1
-    #         right_boundary = self.boundary_interfaces_discretized[m]
-    #         values[left_boundary:right_boundary+1,self.numbers_of_variables[m]:self.max_number_of_variables]=0
-    #     values[right_boundary+1:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables]=0 
-
-    #     self.orders = orders_out
-    #     self.boundary_interfaces_discretized = boundary_interfaces
-    #     self.numbers_of_variables = number_of_variables_out
-    #     if len(self.boundary_interfaces_discretized) == 0:
-    #         self.orders.append(self.orders[0])
-    #         self.numbers_of_variables.append(self.numbers_of_variables[0])
-    #         self.boundary_interfaces_discretized.append(np.floor_divide(self.mesh.resolution,2))
-        
-    #     return values
 
     def _resontruct_subdomains(self,
                                values: np.array,
                                delta_x: float,
                                delta_t: float) -> np.array:
-
-        boundary_interfaces = []
-        orders_merged = []
-        number_of_variables_merged = []
-        orders_out = []
-        number_of_variables_out = []
+        
 
         super()._update_domain_decomposition_pointwise(values,delta_x,delta_t)
 
-        for i in range(1,self.mesh.resolution-3,4):
-            local_order = max(self.orders_cellwise[i:i+4])
-            orders_merged.append(local_order)
-            number_of_variables_merged.append(self.pde_type.compute_number_of_variables(local_order))
+        orders_out = []
+        number_of_variables_out = []
+        boundary_interfaces = []
 
-        orders_merged[-1] = max(self.orders_cellwise[i:-1])
-        number_of_variables_merged[-1] = self.pde_type.compute_number_of_variables(orders_merged[-1])
+        orders_out.append(int(self.orders_cellwise[0]))
+        number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[0])))
+        for i in range(1,self.mesh.resolution+1):
+            if self.orders_cellwise[i] != self.orders_cellwise[i+1]:
+                orders_out.append(int(self.orders_cellwise[i+1]))
+                number_of_variables_out.append(self.pde_type.compute_number_of_variables(int(self.orders_cellwise[i+1])))
+                boundary_interfaces.append(int(i))
 
-        orders_out.append(orders_merged[0])
-        number_of_variables_out.append(number_of_variables_merged[0])
-        for i in range(len(orders_merged)-1):
-            if orders_merged[i] > orders_merged[i+1]:
-                orders_out.append(orders_merged[i+1])
-                number_of_variables_out.append(number_of_variables_merged[i+1])
-                boundary_interfaces.append(4*(i+1)+1)
-            elif orders_merged[i] < orders_merged[i+1]:
-                orders_out.append(orders_merged[i+1])
-                number_of_variables_out.append(number_of_variables_merged[i+1])
-                boundary_interfaces.append(4*(i+1)+1)
-            # else:
-            #     values[4*i+1:4*(i+1)+1,number_of_variables_merged[i]:self.max_number_of_variables] = 0
+        # Set undefined moments and padded moments to zero
+        right_boundary = -1
+        for m in range(len(self.boundary_interfaces_discretized)):
+            left_boundary = right_boundary+1
+            right_boundary = self.boundary_interfaces_discretized[m]
+            values[left_boundary:right_boundary+1,self.numbers_of_variables[m]:self.max_number_of_variables]=0
+        values[right_boundary+1:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables]=0 
 
         self.orders = orders_out
         self.boundary_interfaces_discretized = boundary_interfaces
         self.numbers_of_variables = number_of_variables_out
         if len(self.boundary_interfaces_discretized) == 0:
             self.orders.append(self.orders[0])
-            self.numbers_of_variables.append(int(self.numbers_of_variables[0]))
+            self.numbers_of_variables.append(self.numbers_of_variables[0])
             self.boundary_interfaces_discretized.append(np.floor_divide(self.mesh.resolution,2))
-
-        # Set undefined moments to zero
-        left_boundary = 0
-        for m in range(len(self.boundary_interfaces_discretized)):
-            right_boundary = self.boundary_interfaces_discretized[m]+1
-            values[left_boundary:right_boundary,self.numbers_of_variables[m]:self.max_number_of_variables]=0
-            left_boundary = right_boundary+1
-        values[left_boundary:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables]=0 
-
+        
         return values
+
+    # def _resontruct_subdomains(self,
+    #                            values: np.array,
+    #                            delta_x: float,
+    #                            delta_t: float) -> np.array:
+
+    #     boundary_interfaces = []
+    #     orders_merged = []
+    #     number_of_variables_merged = []
+    #     orders_out = []
+    #     number_of_variables_out = []
+
+    #     super()._update_domain_decomposition_pointwise(values,delta_x,delta_t)
+
+    #     for i in range(1,self.mesh.resolution-3,4):
+    #         local_order = max(self.orders_cellwise[i:i+4])
+    #         orders_merged.append(local_order)
+    #         number_of_variables_merged.append(self.pde_type.compute_number_of_variables(local_order))
+
+    #     orders_merged[-1] = max(self.orders_cellwise[i:-1])
+    #     number_of_variables_merged[-1] = self.pde_type.compute_number_of_variables(orders_merged[-1])
+
+    #     orders_out.append(orders_merged[0])
+    #     number_of_variables_out.append(number_of_variables_merged[0])
+    #     for i in range(len(orders_merged)-1):
+    #         if orders_merged[i] > orders_merged[i+1]:
+    #             orders_out.append(orders_merged[i+1])
+    #             number_of_variables_out.append(number_of_variables_merged[i+1])
+    #             boundary_interfaces.append(4*(i+1)+1)
+    #         elif orders_merged[i] < orders_merged[i+1]:
+    #             orders_out.append(orders_merged[i+1])
+    #             number_of_variables_out.append(number_of_variables_merged[i+1])
+    #             boundary_interfaces.append(4*(i+1)+1)
+    #         # else:
+    #         #     values[4*i+1:4*(i+1)+1,number_of_variables_merged[i]:self.max_number_of_variables] = 0
+
+    #     self.orders = orders_out
+    #     self.boundary_interfaces_discretized = boundary_interfaces
+    #     self.numbers_of_variables = number_of_variables_out
+    #     if len(self.boundary_interfaces_discretized) == 0:
+    #         self.orders.append(self.orders[0])
+    #         self.numbers_of_variables.append(int(self.numbers_of_variables[0]))
+    #         self.boundary_interfaces_discretized.append(np.floor_divide(self.mesh.resolution,2))
+
+    #     # Set undefined moments to zero
+    #     left_boundary = 0
+    #     for m in range(len(self.boundary_interfaces_discretized)):
+    #         right_boundary = self.boundary_interfaces_discretized[m]+1
+    #         values[left_boundary:right_boundary,self.numbers_of_variables[m]:self.max_number_of_variables]=0
+    #         left_boundary = right_boundary+1
+    #     values[left_boundary:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables]=0 
+
+    #     return values
 
 class Micro_macro(Simulation):
     """

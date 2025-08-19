@@ -121,7 +121,7 @@ def main():
         stop = timeit.default_timer()
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
-        data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/damBreak-and-smooth_linear_lambda0.1_nu0.1_order1_t5_500.csv', index=False,header=False)
+        # data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/damBreak-and-smooth_linear_lambda0.1_nu0.1_order1_t5_500.csv', index=False,header=False)
         # data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/test.csv', index=False,header=False)
 
         z = np.linspace(0,1,100)
@@ -153,31 +153,31 @@ def main():
         plt.plot(_mesh.cell_center_positions, data_array[:,2])
         plt.title('Velocity')
 
-        # plt.subplot(4,4,4)
-        # plt.plot(_mesh.cell_center_positions, data_array[:,3])
-        # plt.title('alpha_1')
+        plt.subplot(4,4,4)
+        plt.plot(_mesh.cell_center_positions, data_array[:,3])
+        plt.title('alpha_1')
 
-        # plt.subplot(4,4,5)
-        # plt.plot(_mesh.cell_center_positions, data_array[:,4])
-        # plt.title('alpha_2')
+        plt.subplot(4,4,5)
+        plt.plot(_mesh.cell_center_positions, data_array[:,4])
+        plt.title('alpha_2')
 
-        # plt.subplot(4,4,6)
-        # plt.plot(_mesh.cell_center_positions, data_array[:,5])
-        # plt.title('alpha_3')
+        plt.subplot(4,4,6)
+        plt.plot(_mesh.cell_center_positions, data_array[:,5])
+        plt.title('alpha_3')
 
-        # plt.subplot(4,4,7)
-        # plt.plot(_mesh.cell_center_positions, data_array[:,6])
-        # plt.title('alpha_4')
+        plt.subplot(4,4,7)
+        plt.plot(_mesh.cell_center_positions, data_array[:,6])
+        plt.title('alpha_4')
 
-        # plt.subplot(4,4,8)
-        # plt.plot(_mesh.cell_center_positions, data_array[:,7])
-        # plt.scatter(_mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,7])+(5-data_array[:,-1])*np.min(data_array[:,7]))/5,s=5,color = 'hotpink')
-        # plt.title('alpha_5')
+        plt.subplot(4,4,8)
+        plt.plot(_mesh.cell_center_positions, data_array[:,7])
+        plt.scatter(_mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,7])+(5-data_array[:,-1])*np.min(data_array[:,7]))/5,s=5,color = 'hotpink')
+        plt.title('alpha_5')
 
-        # plt.subplot(4,4,9)
-        # plt.plot(_mesh.cell_center_positions, data_array[:,7])
-        # plt.scatter(_mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,8])+(5-data_array[:,-1])*np.min(data_array[:,8]))/5,s=5,color = 'hotpink')
-        # plt.title('alpha_5')
+        plt.subplot(4,4,9)
+        plt.plot(_mesh.cell_center_positions, data_array[:,7])
+        plt.scatter(_mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,8])+(5-data_array[:,-1])*np.min(data_array[:,8]))/5,s=5,color = 'hotpink')
+        plt.title('alpha_5')
 
         if numerical_method_information['method'] == 'spatially_adaptive':
 
@@ -193,19 +193,24 @@ def main():
 
             plt.subplot(4,4,12)
             plt.plot(_mesh.cell_center_positions,_simulation.dom_decomp_val_res1)
-            plt.title('domain_decomposition_values')
+            plt.title('domain_decomposition_values 1')
+
 
             plt.subplot(4,4,13)
+            plt.plot(_mesh.cell_center_positions,_simulation.dom_decomp_val_res2)
+            plt.title('domain_decomposition_values 2')
+
+            plt.subplot(4,4,14)
             plt.plot(_mesh.cell_center_positions,_simulation.breakdown_estimators[:,2])
             plt.scatter(_mesh.cell_center_positions,(data_array[:,-1]*np.max(_simulation.breakdown_estimators[:,2])+(5-data_array[:,-1])*np.min(_simulation.breakdown_estimators[:,2]))/5,s=5,color = 'hotpink')
             plt.title('orders vs height-gradient')
 
-            plt.subplot(4,4,14)
+            plt.subplot(4,4,15)
             # plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],orders,number_of_variables,'last_moment',_mesh.resolution-1,delta_x))
             plt.plot(_mesh.cell_center_positions,_simulation.breakdown_estimators[:,1])
             plt.title('Absolute value last moment')
 
-            plt.subplot(4,4,15)
+            plt.subplot(4,4,16)
             # plt.plot(_mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],orders,number_of_variables,'source_term',_mesh.resolution-1,delta_x))
             plt.plot(_mesh.cell_center_positions,_simulation.breakdown_estimators[:,0])
             plt.title('source term')

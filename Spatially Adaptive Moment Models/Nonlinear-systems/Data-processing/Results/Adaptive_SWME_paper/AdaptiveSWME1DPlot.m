@@ -4,44 +4,23 @@ clc
 format long
 
 % Load data
-% name1 = 'damBreak-and-smooth_lambda1.0_nu0.1_order1_t5'; type1 = 'swme';
-% name2 = 'damBreak-and-smooth_lambda1.0_nu0.1_order5_t5'; type2 = 'swme';
-% name3 = 'damBreak-and-smooth_lambda1.0_nu0.1_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
-% name4 = 'damBreak-and-smooth_lambda1.0_nu0.1_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
+% name1 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_order1_t5_10000'; type1 = 'swme';
+% name2 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_order5_t5_10000'; type2 = 'swme';
+% name3 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveNonConservative_t5_10000'; type3 = 'swmeAdaptive';
+% name4 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveConservative_t5_10000'; type4 = 'swmeAdaptive';
+% reference_data2000x200 = load("damBreak-and-smooth_linear_lambda1.0_nu0.1_t5_2000x200.csv");
 
-% name1 = 'damBreak-and-smooth_lambda0.1_nu0.1_order2_t5'; type1 = 'swme';
-% name2 = 'damBreak-and-smooth_lambda0.1_nu0.1_order5_t5'; type2 = 'swme';
-% name3 = 'damBreak-and-smooth_lambda0.1_nu0.1_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
-% name4 = 'damBreak-and-smooth_lambda0.1_nu0.1_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
+name1 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order2_t5_10000'; type1 = 'swme';
+name2 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order2_t5_10000'; type2 = 'swme';
+name3 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveNonConservative_t5_10000'; type3 = 'swmeAdaptive';
+name4 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveConservative_t5_10000'; type4 = 'swmeAdaptive';
+reference_data2000x200 = load("damBreak-and-smooth_linear_lambda0.1_nu0.1_t5_2000x200.csv");
 
-% name1 = 'damBreak-and-smooth_lambda0.1_nu1.0_order2_t5'; type1 = 'swme';
-% name2 = 'damBreak-and-smooth_lambda0.1_nu1.0_order5_t5'; type2 = 'swme';
-% name3 = 'damBreak-and-smooth_lambda0.1_nu1.0_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
-% name4 = 'damBreak-and-smooth_lambda0.1_nu1.0_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-% Load data
-% name1 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_order1_t5'; type1 = 'swme';
-% name2 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_order5_t5'; type2 = 'swme';
-% name3 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
-% % name4 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
-% name4 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveConservative_grouped_t5'; type4 = 'swmeAdaptive';
-
-name1 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order2_t5'; type1 = 'swme';
-% name2 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order5_t5'; type2 = 'swme';
-name2 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order2_t5_500'; type2 = 'swme';
-name3 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
-name4 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
- 
-% name1 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order2_t5'; type1 = 'swme';
-% name2 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order5_t5'; type2 = 'swme';
-% name3 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveNonConservative_t5'; type3 = 'swmeAdaptive';
-% name4 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveConservative_t5'; type4 = 'swmeAdaptive';
-
-reference_data2000x200 = load("damBreak-and-smooth_linear_lambda0.1_nu0.1_t5_1000x100.csv");
+% name1 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order2_t5_10000'; type1 = 'swme';
+% name2 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order5_t5_10000'; type2 = 'swme';
+% name3 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveNonConservative_t5_10000'; type3 = 'swmeAdaptive';
+% name4 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveConservative_t5_10000'; type4 = 'swmeAdaptive';
+% reference_data2000x200 = load("damBreak-and-smooth_linear_lambda0.1_nu1.0_t5_2000x200.csv");
 
 x_ref2000x200 = reference_data2000x200(:,1); h_ref2000x200 = reference_data2000x200(:,2); u_ref2000x200 = reference_data2000x200(:,3);
 alpha1_ref2000x200 = 3.*reference_data2000x200(:,4); alpha2_ref2000x200 = 5.*reference_data2000x200(:,5);
@@ -52,14 +31,14 @@ alpha1_ref2000x200 = 3.*reference_data2000x200(:,4); alpha2_ref2000x200 = 5.*ref
 [x4,h4,u4,alpha14,alpha24,alpha34,alpha44,alpha54,moments4] = readDataAdaptiveSWME1D(name4,type4);
 
 % plotting = 'all';
-plotting = 'h';
+% plotting = 'h';
 % plotting = 'u';
 % plotting = 'alpha1';
 % plotting = 'alpha2';
 % plotting = 'alpha3';
 % plotting = 'alpha4';
 % plotting = 'alpha5';
-% plotting = 'number_of_moments';
+plotting = 'number_of_moments';
 
 brown = [171, 104, 87]./255;
 
@@ -116,8 +95,8 @@ end
 if(strcmp(plotting,'u'))
     plot1 = plot(x1,u1,x2,u2,x3,u3,x4,u4)
 
-    % axis([-20.,20,-0.05,0.35]);
-    axis([-3.5,3.5,0,0.2]);
+    axis([-20.,20,-0.05,0.35]);
+    % axis([-3.5,3.5,0,0.2]);
     xlabel('x')
     ylabel('u_m')
     

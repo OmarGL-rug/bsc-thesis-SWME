@@ -109,6 +109,12 @@ class PVM(SpatialDiscretization):
             (322 - 13*np.sqrt(70)) / 1800
         ]
 
+        # Nodes on [0, 1]
+        quadrature_nodes = [1/2]
+
+        # Weights on [0, 1]
+        quadrature_weights = [1]
+
         generalized_roe = 0
         for i in range(len(quadrature_nodes)):
             generalized_roe += quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
@@ -120,20 +126,22 @@ class PVM(SpatialDiscretization):
         return fluctuation
     
     def compute_generalized_roe_and_viscosity(self,value_left,value_right,system_matrix,direction,delta_t,delta_x):
-        # Quadrature nodes on [0, 1]
+        # Nodes on [0, 1]
         quadrature_nodes = [
-            0.5 * (1 - np.sqrt(3/7 + 2/7 * np.sqrt(6/5))),
-            0.5 * (1 - np.sqrt(3/7 - 2/7 * np.sqrt(6/5))),
-            0.5 * (1 + np.sqrt(3/7 - 2/7 * np.sqrt(6/5))),
-            0.5 * (1 + np.sqrt(3/7 + 2/7 * np.sqrt(6/5)))
+            (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
+            (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+            1/2,
+            (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+            (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
         ]
 
-        # Quadrature weights on [0, 1]
+        # Weights on [0, 1]
         quadrature_weights = [
-            (18 - np.sqrt(30)) / 72,
-            (18 + np.sqrt(30)) / 72,
-            (18 + np.sqrt(30)) / 72,
-            (18 - np.sqrt(30)) / 72
+            (322 - 13*np.sqrt(70)) / 1800,
+            (322 + 13*np.sqrt(70)) / 1800,
+            128 / 450,
+            (322 + 13*np.sqrt(70)) / 1800,
+            (322 - 13*np.sqrt(70)) / 1800
         ]
 
         generalized_roe = 0
