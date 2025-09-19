@@ -39,7 +39,8 @@ class Implicit(TimeIntegration):
 
     Attributes
     ----------
-    None
+    linear : boolean
+        True if the source term can be written in linear form, false if the source term can not be written in linear form
 
     Implemented methods from interface TimeIntegration
     -------------
@@ -54,8 +55,8 @@ class Implicit(TimeIntegration):
     """
 
     @abstractmethod
-    def __init__(self):
-        pass
+    def __init__(self,linear):
+        self.linear = linear
 
     def integrate(self,
                   initial_value: np.array,
@@ -80,8 +81,11 @@ class Implicit(TimeIntegration):
             final values 
 
         """
-        
-        end_values = spopt.newton(self._compute_residual(initial_value,rhs_f,delta_t),initial_value, maxiter=100)
+
+        if self.linear:
+            end_values = rhs_f(initial_value,delta_t)@initial_value
+        else: 
+            end_values = spopt.newton(self._compute_residual(initial_value,rhs_f,delta_t),initial_value,maxiter=100)
 
         return end_values
     
@@ -163,15 +167,15 @@ class Explicit(TimeIntegration):
 
 class ImplicitEuler(Implicit):
 
-    def __init__(self):
-        pass
+    def __init__(self,linear_source):
+        super().__init__(linear_source)
 
     def _compute_residual(self,
                   initial_value: np.array,
                   rhs_f: Callable[...,np.array],
                   delta_t: float) -> np.array:
         
-        residual = lambda end_value : end_value - delta_t*rhs_f(end_value) - initial_value
+        residual = lambda end_value : end_value - delta_t*rhs_f(end_value,delta_t) - initial_value
 
         return residual
     
@@ -204,6 +208,6 @@ class ExplicitEuler(Explicit):
 
         """
         
-        end_values = initial_value + delta_t*rhs_f(initial_value)
+        end_values = initial_value + delta_t*rhs_f(initial_value,delta_t)
 
         return end_values
