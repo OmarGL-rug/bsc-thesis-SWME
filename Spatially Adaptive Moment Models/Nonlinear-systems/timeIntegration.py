@@ -81,6 +81,7 @@ class Implicit(TimeIntegration):
             final values 
 
         """
+
         if self.linear:
             end_values = rhs_f(initial_value,delta_t)@initial_value
         else: 
