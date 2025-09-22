@@ -21,7 +21,7 @@ viscosity = 0.1
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
                    #linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave, symmetric_damBreak,
                    #smooth_plus_damBreak
-initialCondition = linearHeight_noVelocity
+initialCondition = smooth_wave
 
 breakdown_criterion = height_gradient
 
@@ -52,7 +52,7 @@ y2boundary = 2
 [numerical_method_information]
 # End time
 
-t_end = 2
+t_end = 1
 
 method = micro_macro
 
