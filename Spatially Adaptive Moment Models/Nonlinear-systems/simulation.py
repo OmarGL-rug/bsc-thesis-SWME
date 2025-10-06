@@ -4,6 +4,7 @@ import pde
 import mesh
 import spatialDiscretization
 import timeIntegration
+import pandas as pd
 
 class Simulation(ABC):
 
@@ -580,16 +581,16 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
                                    n,
                                    delta_x,
                                    delta_t,
-                                   tolerance_up_source=0.1,
-                                   tolerance_up_height_gradient=0.15,
-                                   tolerance_up_momentum_gradient=0.15,
-                                   tolerance_up_moment_gradient=0.15,
+                                   tolerance_up_source=0.5,
+                                   tolerance_up_height_gradient=0.2,
+                                   tolerance_up_momentum_gradient=0.2,
+                                   tolerance_up_moment_gradient=0.2,
                                    tolerance_down_height_gradient = 0.001,
                                    tolerance_down_momentum_gradient = 0.001,
                                    tolerance_down_moment_gradient = 0.001,
                                    tolerance_down_last_moment = 0.001,
-                                   tolerance_down_res1=0.001,
-                                   tolerance_down_res2=0.01) -> np.array:        
+                                   tolerance_down_res1=0.005,
+                                   tolerance_down_res2=0.25) -> np.array:        
         """
         TODO
 
@@ -620,7 +621,6 @@ class SpatiallyAdaptiveSimulation1D(Simulation):
             for j in range(self.orders_cellwise[i+1]):
                 self.breakdown_estimators[i,4+j] = 1*np.abs((values[i+2,2+j])-values[i,2+j])/(2*delta_x)
         self.breakdown_estimators[0,0] = 1*np.abs(self.pde_type.compute_source_term_lastentry(self.orders_cellwise[1],values[1,:self.numbers_of_variables_cellwise[1]],True))
-        self.breakdown_estimators[0,1] = np.abs(values[1,self.numbers_of_variables_cellwise[1]-1])
         self.breakdown_estimators[0,2] = 1*np.abs((values[2,0] - values[1,0]))/delta_x
         self.breakdown_estimators[0,3] = 1*np.abs((values[2,1] - values[1,1]))/delta_x
         for j in range(self.orders_cellwise[i+1]):
@@ -1105,7 +1105,9 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             step_count += 1
             print(t)
             t+=delta_t
-
+            
+        self.dom_decomp_val_res1 = self.dom_decomp_val_res1/delta_x
+        self.dom_decomp_val_res2 = self.dom_decomp_val_res2/delta_t
         simulation_data = self._post_processing(values)
         return simulation_data
     

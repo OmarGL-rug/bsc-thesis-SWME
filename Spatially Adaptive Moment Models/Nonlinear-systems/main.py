@@ -121,7 +121,7 @@ def main():
         stop = timeit.default_timer()
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
-        # data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/damBreak-and-smooth_linear_lambda0.1_nu0.1_order1_t5_500.csv', index=False,header=False)
+        # data_frame.to_csv('Data-processing/Results/AdaptiveSWME/damBreak-and-smooth_linear_init.csv', index=False,header=False)
         # data_frame.to_csv('Data-processing/Results/Adaptive_SWME_paper/test.csv', index=False,header=False)
 
         z = np.linspace(0,1,100)
@@ -176,7 +176,7 @@ def main():
 
         plt.subplot(4,4,9)
         plt.plot(_mesh.cell_center_positions, data_array[:,7])
-        plt.scatter(_mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,8])+(5-data_array[:,-1])*np.min(data_array[:,8]))/5,s=5,color = 'hotpink')
+        plt.scatter(_mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,7])+(5-data_array[:,-1])*np.min(data_array[:,7]))/5,s=5,color = 'hotpink')
         plt.title('alpha_5')
 
         if numerical_method_information['method'] == 'spatially_adaptive':
