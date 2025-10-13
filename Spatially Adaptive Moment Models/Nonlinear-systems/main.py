@@ -122,7 +122,7 @@ def main():
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
         # data_frame.to_csv('Data-processing/Results/AdaptiveSWME/damBreak-and-smooth_linear_init.csv', index=False,header=False)
-        data_frame.to_csv('Data-processing/Output/HonoursProject-Cyril/smooth_constantVelocity_lambda1.0_nu1.0_order0.csv', index=False,header=False)
+        # data_frame.to_csv('Data-processing/Output/HonoursProject-Cyril/smooth_constantVelocity_lambda1.0_nu1.0_order0.csv', index=False,header=False)
 
         z = np.linspace(0,1,100)
         if numerical_method_information['method'] == 'spatially_adaptive':
