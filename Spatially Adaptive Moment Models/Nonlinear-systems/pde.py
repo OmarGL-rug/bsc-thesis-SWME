@@ -2693,7 +2693,7 @@ class SWME1D(PDE):
                            order: int,
                            initial_condition: str,
                            position: float) -> np.array:
-        initial_values = np.zeros(self.compute_number_of_variables(self.order))
+        initial_values = np.zeros(self.compute_number_of_variables(order))
         if initial_condition == 'constantHeight_noVelocity':
             initial_values[0] = 1
             initial_values[1] = 0

@@ -53,8 +53,6 @@ class Implicit(TimeIntegration):
     def _compute_residual(self,initial_value,rhs_f,delta_t):
         construct the residual function residual(x), the roots of which will be computed numerically
     """
-
-    @abstractmethod
     def __init__(self,linear):
         self.linear = linear
 
@@ -216,8 +214,8 @@ class Exact(TimeIntegration):
 
 class ImplicitEuler(Implicit):
 
-    def __init__(self,linear_source):
-        super().__init__(linear_source)
+    # def __init__(self,linear_source):
+    #     super().__init__(linear_source)
 
     def _compute_residual(self,
                   initial_value: np.array,

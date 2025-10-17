@@ -7,14 +7,15 @@
 ### True: one-dimensional, False: two-dimensional
 1D = True
 
-### PDE type. Implemented: SWME1D, HSWME1D, HME, Grad
-pde_type = HME
+### PDE type. Implemented: SWME1D, HSWME1D
+pde_type = SWME1D
     # SWME1D, HSWME1D #
     # Specify friction model. Implemented: Newton
 frictionModel = Newton
         # Newton #
         # Specify friction parameters
-relaxation_time = 1.0
+slipLength = 1.0
+viscosity = 1.0
 
 linear_source = True
 
@@ -22,7 +23,7 @@ linear_source = True
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
                    #linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave, symmetric_damBreak,
                    #smooth_plus_damBreak
-initialCondition = shockTube_noVelocity
+initialCondition = smooth_constantVelocity
 
 breakdown_criterion = damBreak_constantVelocity
 
@@ -37,11 +38,11 @@ structuredGrid = True
 
     # structuredGrid #
     # Number of grid points in x-direction and y-direction (if the simulation is 1D: only resolutionX is used)
-resolutionX = 400
+resolutionX = 200
 resolutionY = 800
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
-x1boundary = -3
-x2boundary = 3
+x1boundary = -0.5
+x2boundary = 0.5
 y1boundary = -2
 y2boundary = 2
 
@@ -52,7 +53,7 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 1.0
+t_end = 0.1
 
 # spatially_adaptive, classical, micro_macro
 method = classical
@@ -63,7 +64,7 @@ coupling = conservative
 start_order = 5
     ### CLASSICAL ###
     # Order of the model
-order = 8
+order = 3
 
 
 # Finite volume method type. Implemented: PVM
@@ -74,7 +75,7 @@ fvm_type = PVM
 pvm = PRICE
 
 # Time integration for source term. Implemented: ExplicitEuler, ImplicitEuler, Exact
-timeIntegrator = Exact
+timeIntegrator = ImplicitEuler
 
 # Boundary condition. Implemented: INFLOW_OUTFLOW, PERIODIC
-boundaryCondition = INFLOW_OUTFLOW
+boundaryCondition = PERIODIC
