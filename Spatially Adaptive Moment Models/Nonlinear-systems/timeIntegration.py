@@ -165,6 +165,55 @@ class Explicit(TimeIntegration):
         
         pass
 
+class Exact(TimeIntegration):
+
+    """
+    This class represents an exact time integrator.
+
+    ...
+
+    Attributes
+    ----------
+    None
+
+    Implemented methods from interface TimeIntegration
+    -------------
+    def integrate(self,initial_value,rhs_f,delta_t):
+        integrates the equation dw/dt = rhs_f(w) with a time step of delta_t
+
+    """
+    def __init__(self):
+        pass
+   
+    def integrate(self,
+                  initial_value: np.array,
+                  rhs_f: Callable[...,np.array],
+                  delta_t: float) -> np.array:
+        
+        """
+        integrates the equation dw/dt = rhs_f.w (matrix-vector multiplication) exactly 
+        starting from initial_value with a time step of delta_t.
+
+        Parameters
+        ----------
+        initial_value: np.array
+            initial value w0
+        rhs_f: function
+            the right-hand side function describing the time evolution of w
+        delta_t: float
+            time step size
+        
+        Returns
+        -------
+        end_values: np.array
+            final values 
+
+        """
+        
+        end_values = rhs_f(initial_value,delta_t)
+
+        return end_values
+
 class ImplicitEuler(Implicit):
 
     def __init__(self,linear_source):

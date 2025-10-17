@@ -22,7 +22,7 @@ linear_source = True
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
                    #linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave, symmetric_damBreak,
                    #smooth_plus_damBreak
-initialCondition = shockTube_noVelocity
+initialCondition = constantDensity_noVelocity
 
 breakdown_criterion = damBreak_constantVelocity
 
@@ -40,8 +40,8 @@ structuredGrid = True
 resolutionX = 400
 resolutionY = 800
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
-x1boundary = -3
-x2boundary = 3
+x1boundary = -2.5
+x2boundary = 2.5
 y1boundary = -2
 y2boundary = 2
 
@@ -63,7 +63,7 @@ coupling = conservative
 start_order = 5
     ### CLASSICAL ###
     # Order of the model
-order = 8
+order = 2
 
 
 # Finite volume method type. Implemented: PVM
@@ -77,4 +77,4 @@ pvm = PRICE
 timeIntegrator = Exact
 
 # Boundary condition. Implemented: INFLOW_OUTFLOW, PERIODIC
-boundaryCondition = INFLOW_OUTFLOW
+boundaryCondition = PERIODIC

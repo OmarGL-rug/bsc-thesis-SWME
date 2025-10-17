@@ -26,6 +26,8 @@ class PDE(ABC):
         computes the number of state variables in the PDE given the order of the moment model
     def compute_breakdown_criterion(self,values,breakdown_criterion,n)
         computes the values of the given breakdown criterion in each mesh cell
+    def compute_max_wavespeed(self,order,values)
+        compute the maximum wavespeed in the system, used to calculate a timestep that satisfies CFL condition
     """
 
     @abstractmethod
@@ -47,7 +49,7 @@ class PDE(ABC):
                               order: int,
                               values: np.array) -> np.array:
         """
-        Computes the system matrix with a given order of the PDE evaluated in the given values.
+        Computes the system matrix of the PDE model.
 
         Parameters
         ----------
@@ -59,11 +61,10 @@ class PDE(ABC):
         
         Returns
         -------
-        A: numpy 2D array
-            System matrix
+        A: np.array
+            system matrix
 
         """
-
 
         pass
     
@@ -136,6 +137,32 @@ class PDE(ABC):
         -------
         number_of_variables: int
             number of state variables in the PDE
+
+        """
+
+        pass
+
+    @abstractmethod
+    def compute_max_wavespeed(self,
+                           order: int,
+                           values: np.array) -> float:
+        """
+        Computes the maximum wavespeed magnitude in the system.
+        It effectively computes (or approximates) the maximum eigenvalue (in absolute value) of the system matrix.
+        This id one by providing an analytical function instead of solving an expensive eigenvalue problem.
+
+        Parameters
+        ----------
+        order : int
+            order of the moment model PDE (TODO: create MomentModel as a subclass of PDE)
+        values : numpy 1D array
+            values of the variables
+
+        
+        Returns
+        -------
+        max_wavespeed: float
+            Maximum wave speed (in absolute value) appearing in the PDE system
 
         """
 
@@ -229,7 +256,8 @@ class SWME1D(PDE):
                 viscosity: float,
                 slip_length: float,
                 hyperbolic: bool,
-                linear_source: bool):
+                linear_source: bool,
+                exact_source_computation: bool):
         """
         Constructs all the necessary attributes for the SWME1D object.
 
@@ -249,13 +277,14 @@ class SWME1D(PDE):
         self.slip_length = slip_length
         self.hyperbolic = hyperbolic
         self.linear_source = linear_source
+        self.exact_source_computation = exact_source_computation
 
     def compute_system_matrix(self,
                               order: int,
                               values: np.array,
                               g = 1) -> np.array:
 
-        A=np.zeros((order+2,order+2)) 
+        A=np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
         h = values[0]
         um = values[1]/values[0]
         if order == 0:
@@ -563,7 +592,7 @@ class SWME1D(PDE):
                               order_low: int,
                               values: np.array,
                               g = 1) -> np.array:
-        A_diff=np.zeros((order_low+2,order_low+2)) 
+        A_diff=np.zeros((self.compute_number_of_variables(order_low),self.compute_number_of_variables(order_low))) 
         h = values[0]
         um = values[1]/values[0]
         if order_low == 0:
@@ -680,7 +709,7 @@ class SWME1D(PDE):
         if self.linear_source:
             S = self._compute_source_matrix_inverse(order,values,delta_t)
         else:
-            S = np.zeros(order+2) 
+            S = np.zeros(self.compute_number_of_variables(order)) 
             h = values[0]
             um = values[1]/values[0]
             if order == 0:
@@ -799,7 +828,7 @@ class SWME1D(PDE):
                                       values: np.array,
                                       delta_t,
                                       g = 1) -> np.array:
-        S_inv = np.zeros((order+2,order+2)) 
+        S_inv = np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
         h = values[0]
         if order == 0:
             S_inv[0][0] = 1
@@ -2574,7 +2603,7 @@ class SWME1D(PDE):
                               values: np.array,
                               g = 1) -> np.array:
 
-        A_last_row=np.zeros((1,order+2)) 
+        A_last_row=np.zeros((1,self.compute_number_of_variables(order))) 
         h = values[0]
         um = values[1]/values[0]
         if order == 0:
@@ -2664,7 +2693,7 @@ class SWME1D(PDE):
                            order: int,
                            initial_condition: str,
                            position: float) -> np.array:
-        initial_values = np.zeros(2+order)
+        initial_values = np.zeros(self.compute_number_of_variables(self.order))
         if initial_condition == 'constantHeight_noVelocity':
             initial_values[0] = 1
             initial_values[1] = 0
@@ -2910,7 +2939,21 @@ class SWME1D(PDE):
     def compute_number_of_variables(self, order) -> int:
         number_of_variables = order + 2
         return int(number_of_variables)
-    
+
+    def compute_max_wavespeed(self,
+                           order: int,
+                           values: np.array,
+                           g=1) -> float:
+
+        wave_speed_sqrt = values[:,0]*int(g)
+        for i in range(order):
+            wave_speed_sqrt += np.divide(values[:,i+2]*values[:,i+2],values[:,0]*values[:,0])
+        max_wave_speed_plus = np.max(np.abs(np.divide(values[:,1],values[:,0])+np.sqrt(wave_speed_sqrt)))
+        max_wave_speed_min = np.max(np.abs(np.divide(values[:,1],values[:,0])-np.sqrt(wave_speed_sqrt)))
+        max_wavespeed = max(max_wave_speed_plus,max_wave_speed_min)
+
+        return max_wavespeed
+
     def compute_vertical_velocity_profile(self,
                                           order: int, 
                                           values: np.array,
@@ -3165,6 +3208,20 @@ class SWME1D(PDE):
             print('this criterion is not implemented yet')  
 
         return breakdown_criterion_values
+
+    def convert_to_primitive(self,
+                           order: int,
+                           data_matrix_convective: np.array,
+                           g=1) -> np.array:
+
+        data_matrix_primitive = np.zeros(np.shape(data_matrix_convective))
+        
+        data_matrix_primitive[:,0] = data_matrix_convective[:,0]
+        data_matrix_primitive[:,1] = np.divide(data_matrix_convective[:,1],data_matrix_convective[:,0])
+        for j in range(order): #TODO: this is unnecessary routine here
+            data_matrix_primitive[:,j+2] = np.divide(data_matrix_convective[:,j+2],data_matrix_convective[:,0])
+
+        return data_matrix_primitive 
     
 class VegetationSWME1D(SWME1D):
     """
@@ -3225,6 +3282,8 @@ class VegetationSWME1D(SWME1D):
                 viscosity: float,
                 slip_length: float,
                 hyperbolic: bool,
+                linear_source: bool,
+                exact_source_computation: bool,
                 diameter: float,
                 CD: float,
                 surface_density: float):
@@ -3252,6 +3311,8 @@ class VegetationSWME1D(SWME1D):
         self.viscosity = viscosity
         self.slip_length = slip_length
         self.hyperbolic = hyperbolic
+        self.linear_source = linear_source
+        self.exact_source_computation = exact_source_computation
         self.diameter = diameter
         self.CD = CD
         self.surface_density = surface_density
@@ -4055,4 +4116,698 @@ class VegetationSWME1D(SWME1D):
 
         S = S + self.compute_drag_force(order, values, h_v, stem_diam, n_stems, drag_coeff)
         return S
+
+    def compute_max_wavespeed(self,
+                           order: int,
+                           values: np.array) -> int:
+
+        pass
+
+class HermiteMomentEquations(PDE):
+
+    """
+    This class represents the one-dimensional Hermite Moment Equations for the numerical simulation of the Boltzmann equation
+    with BGK collision operator. The distribution function follows a Hermite polynomial ansatz.
+
+    ...
+
+    Attributes
+    ----------
+    initial_condition : str
+        initial condition for the Hermite Moment Equations
+    relaxation_time : float
+        relaxation time in the BGK operator
+    hyperbolic : boolean
+        whether the model is hyperbolic (HME) or not hyperbolic (grad), true (HME) or false (grad)
+
     
+    Implemented methods from interface PDE
+    ---------------------------------
+    def compute_system_matrix(self,order,values):
+        computes the system matrix of the Hermite moment equations evaluated in the given values, for the given order. 
+    def compute_source_term(self,order,values):
+        computes the source term of the Hermite moment equations evaluated in the given values, for the given order.
+    def get_initial_values(self,order,initial_condition,position):
+        calculates the initial values for one specific physical position
+    def compute_number_of_variables(self,order):
+        computes the number of state variables in the Hermite moment equations given the order of the moment model
+    def compute_breakdown_criterion(self,values,breakdown_criterion,n)
+        computes the values of the given breakdown criterion in each mesh cell
+
+    Instance methods
+    ----------------
+    
+    """
+
+    def __init__(self, 
+                initial_condition: str,
+                relaxation_time: float,
+                hyperbolic: bool,
+                linear_source: bool,
+                exact_source_computation):
+        """
+        Constructs all the necessary attributes for the SWME1D object.
+
+        Parameters
+        ----------
+        initial_condition : str
+            initial condition of the PDE
+        viscosity : float
+            dynamic viscosity value
+        slip_length : float
+            slip length value
+        hyperbolic : boolean
+            true if hyperbolic, false if not hyperbolic
+        """
+        self.initial_condition = initial_condition
+        self.relaxation_time = relaxation_time
+        self.hyperbolic = hyperbolic
+        self.linear_source = linear_source
+        self.exact_source_computation = exact_source_computation
+
+    def compute_system_matrix(self,
+                              order: int,
+                              values: np.array) -> np.array:
+
+        A=np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
+        rho = values[0]
+        u = values[1]
+        theta = values[2]
+        if order == 0:
+            print("The order should be greater than or equal to 2!")
+        if order == 1:
+            print("The order should be greater than or equal to 2!")
+        if order == 2:
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+        if order == 3:
+            f3 = values[3]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            if self.hyperbolic:
+                A[3][1] = 0
+                A[3][2] = (theta*rho)/2.
+        if order == 4:
+            f3 = values[3]
+            f4 = values[4]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+
+            if self.hyperbolic:
+                A[4][1] = 0
+                A[4][2] = -f3
+
+        if order == 5:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+
+            if self.hyperbolic:
+                A[5][1] = 0
+                A[5][2] = -f4
+        if order == 6:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[4][6] = 0
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+
+            if self.hyperbolic:
+                A[6][1] = 0
+                A[6][2] = (theta*f3)/2. - f5
+
+        if order == 7:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+
+            if self.hyperbolic:
+                A[7][1] = 0
+                A[7][2] = (theta*f4)/2. - f6
+
+        if order == 8:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+
+            if self.hyperbolic:
+                A[8][1] = 0
+                A[8][2] = (theta*f5)/2. - f7
+        if order > 8:
+            print('This order is not implemented, yet')
+
+        return A
+
+    def compute_system_matrix_diff(self,
+                              order_low: int,
+                              values: np.array,
+                              g = 1) -> np.array:
+        pass
+
+    def compute_source_term(self,
+                            order: int,
+                            values: np.array,
+                            delta_t: float) -> np.array:
+        if self.exact_source_computation:
+            S = self._compute_source_exact(order,values,delta_t)
+        elif self.linear_source:
+            S = self._compute_source_matrix_inverse(order,values,delta_t)
+        else:
+            S = np.zeros(self.compute_number_of_variables(order)) 
+            for i in range(3,self.compute_number_of_variables(order)+1):
+                S[i] = -1.0/self.relaxation_time*values[i]
+
+        return S
+
+    def _compute_source_exact(self,
+                               order: int,
+                               initial_values: np.array,
+                               delta_t,
+                               g = 1) -> np.array:
+        
+        S_exact = np.zeros(self.compute_number_of_variables(order))
+        S_exact[0] = initial_values[0]
+        S_exact[1] = initial_values[1]
+        S_exact[2] = initial_values[2]
+        for i in range(3,self.compute_number_of_variables(order)):
+            S_exact[i] = initial_values[i]*np.exp(-1.0/self.relaxation_time*delta_t)
+
+        return S_exact
+
+    def _compute_source_matrix_inverse(self,
+                                      order: int,
+                                      values: np.array,
+                                      delta_t,
+                                      g = 1) -> np.array:
+        S_inv = np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
+
+        #Not implemented yet
+        return S_inv
+
+    
+    def compute_source_term_lastentry(self,
+                            order: int,
+                            values: np.array,
+                            last_moment_zero: bool,
+                            g = 1) -> np.array:
+        
+        value_out = 0
+
+        return np.abs(value_out)
+
+    def compute_system_matrix_last_row(self,
+                              order: int,
+                              values: np.array,
+                              g = 1) -> np.array:
+
+        A_last_row=np.zeros((1,self.compute_number_of_variables(order))) 
+
+        return A_last_row
+
+    def get_initial_values(self,
+                           order: int,
+                           initial_condition: str,
+                           position: float) -> np.array:
+        initial_values = np.zeros(self.compute_number_of_variables(order))
+        if initial_condition == 'constantDensity_noVelocity':
+            initial_values[0] = 1
+            initial_values[1] = 0
+            initial_values[2] = 1 
+            if order > 2:
+                initial_values[3] = 0 
+            if order > 3:
+                initial_values[4] = 0 
+            if order > 4:
+                initial_values[5] = 0 
+            if order > 5:
+                initial_values[6] = 0 
+            if order > 6:
+                initial_values[7] = 0
+        elif initial_condition == 'constantDensity_constantVelocity':
+            initial_values[0] = 1
+            initial_values[1] = 1
+            initial_values[2] = 1 
+            if order > 2:
+                initial_values[3] = 0 
+            if order > 3:
+                initial_values[4] = 0 
+            if order > 4:
+                initial_values[5] = 0 
+            if order > 5:
+                initial_values[6] = 0 
+            if order > 6:
+                initial_values[7] = 0
+        elif initial_condition == 'shockTube_noVelocity':
+            x0 = 0
+            if position < x0:
+                initial_values[0] = 2
+                initial_values[1] = 0
+                initial_values[2] = 1 
+                if order > 2:
+                    initial_values[3] = 0 
+                if order > 3:
+                    initial_values[4] = 0 
+                if order > 4:
+                    initial_values[5] = 0 
+                if order > 5:
+                    initial_values[6] = 0
+                if order > 6:
+                    initial_values[7] = 0 
+            else:
+                initial_values[0] = 1
+                initial_values[1] = 0
+                initial_values[2] = 1 
+                if order > 2:
+                    initial_values[3] = 0 
+                if order > 3:
+                    initial_values[4] = 0 
+                if order > 4:
+                    initial_values[5] = 0 
+                if order > 5:
+                    initial_values[6] = 0 
+                if order > 6:
+                    initial_values[7] = 0
+        elif initial_condition == 'shockTube_constantVelocity':
+            x0 = 0
+            if position < x0:
+                initial_values[0] = 2
+                initial_values[1] = 1
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0
+                if order > 5:
+                    initial_values[7] = 0 
+            else:
+                initial_values[0] = 1
+                initial_values[1] = 1
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0 
+                if order > 5:
+                    initial_values[7] = 0
+        elif initial_condition == 'smooth_densityWave_constantVelocity':
+            initial_values[0] = 1 + 0.5*np.exp(-15*position**2)
+            initial_values[1] = 0.2
+            if order > 0:
+                initial_values[2] = 0
+            if order > 1:
+                initial_values[3] = 0 
+            if order > 2:
+                initial_values[4] = 0 
+            if order > 3:
+                initial_values[5] = 0 
+            if order > 4:
+                initial_values[6] = 0 
+            if order > 5:
+                initial_values[7] = 0  
+        elif initial_condition == 'symmetric_shockTube':
+            x0 = -2
+            x1 = 2
+            if x0 < position < x1:
+                initial_values[0] = 2
+                initial_values[1] = 0
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0
+                if order > 5:
+                    initial_values[7] = 0 
+            else:
+                initial_values[0] = 1
+                initial_values[1] = 0
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0 
+                if order > 5:
+                    initial_values[7] = 0
+        return initial_values
+    
+    def compute_number_of_variables(self, order) -> int:
+        number_of_variables = order + 1
+        return int(number_of_variables)
+    
+    def compute_max_wavespeed(self,
+                           order: int,
+                           values: np.array,
+                           max_hermite_roots = [1.73205,2.33441,2.85697,3,32426,3.75044,4.14455,4.51275]) -> float:
+
+        max_wave_speed_plus = np.max(values[:,1]+np.sqrt(values[:,2])*max_hermite_roots[order-2])
+        max_wave_speed_min = np.min(values[:,1]-np.sqrt(values[:,2])*max_hermite_roots[order-2])
+        max_wavespeed = max(np.abs(max_wave_speed_plus),np.abs(max_wave_speed_min))
+
+        return max_wavespeed
+    
+    def compute_all_breakdown_criteria(self,
+                                   values: np.array,
+                                   orders: list,
+                                   number_of_variables: list,
+                                   n,
+                                   delta_x,
+                                   tolerance_up_height_gradient = 0.3,
+                                   tolerance_down_height_gradient = 0.03,
+                                   tolerance_up_momentum_gradient = 0.2,
+                                   tolerance_down_momentum_gradient = 0.02,
+                                   tolerance_up_moment_gradient = 0.1,
+                                   tolerance_down_moment_gradient = 0.01,
+                                   tolerance_up_last_moment = 0.01,
+                                   tolerance_down_last_moment = 0.001,
+                                   tolerance_up_source = 0.002,
+                                   tolerance_down_source = 0.0002) -> np.array:
+
+        """
+        Compute ALL breakdown criteria for quantifying the required modelling complexity
+
+        Parameters
+        ----------
+        values : list of numpy 1D arrays
+            the values of the variables in each mesh cell
+        orders : list of integers
+            the order in each cell
+        number_of_variables : list of integers
+            the number of variables in each cell
+        
+        Returns
+        -------
+        relative_value_last_moment: numpy 2D array
+            modelling complexity quantities in each mesh cell
+
+        """
+        max_order = max(orders)
+        tolerances_up = np.zeros(4+max_order)
+        tolerances_down = np.zeros(4+max_order)
+        tolerances_up[0] = tolerance_up_last_moment
+        tolerances_up[1] = tolerance_up_source
+        tolerances_up[2] = tolerance_up_height_gradient
+        tolerances_up[3] = tolerance_up_momentum_gradient
+        tolerances_down[0] = tolerance_down_last_moment
+        tolerances_down[1] = tolerance_down_source
+        tolerances_down[2] = tolerance_down_height_gradient
+        tolerances_down[3] = tolerance_down_momentum_gradient
+        for i in range(max_order):
+            tolerances_up[4+i] = tolerance_up_moment_gradient
+            tolerances_down[4+i] = tolerance_down_moment_gradient
+
+        breakdown_criterion_flags = np.zeros(n)
+        source_term_lastentry = np.zeros(n)
+        for i in range(n):
+            source_term_lastentry[i] = self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],False)
+
+        breakdown_estimators = np.zeros((n,max_order+4))
+        for i in range(n):
+            breakdown_estimators[i,0] = np.abs(self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],False))
+            breakdown_estimators[i,1] = np.abs(values[i+1,number_of_variables[i+1]-1])
+            breakdown_estimators[i,2] = np.abs((values[i+1,0] - values[i,0]))/delta_x
+            breakdown_estimators[i,3] = np.abs((values[i+1,1] - values[i,1]))/delta_x
+            for j in range(orders[i+1]):
+                breakdown_estimators[i,4+j] = np.abs((values[i+1,2+j])-values[i,2+j])/delta_x
+        breakdown_estimators[0,0] = np.abs(self.compute_source_term_lastentry(orders[1],values[1,:number_of_variables[1]],False))
+        breakdown_estimators[0,1] = np.abs(values[1,number_of_variables[1]-1])
+        breakdown_estimators[0,2] = np.abs((values[2,0] - values[1,0]))/delta_x
+        breakdown_estimators[0,3] = np.abs((values[2,1] - values[1,1]))/delta_x
+        for j in range(orders[i+1]):
+            breakdown_estimators[0,4+j] = np.abs((values[2,2+j])-values[2,2+j])/delta_x    
+
+        for i in range(n):
+            if breakdown_estimators[i,0] > tolerances_up[0]:
+                for j in range(2,orders[i+1]+4):
+                    if breakdown_estimators[i,j] > tolerances_up[j]:
+                        breakdown_criterion_flags[i] = 1
+                        break
+            elif breakdown_estimators[i,1] > tolerances_up[1]:
+                breakdown_criterion_flags[i] = 1
+            elif (breakdown_criterion_flags[i] !=1 and\
+                  breakdown_estimators[i,0] < tolerances_down[0] and breakdown_estimators[i,1] < tolerances_down[1]):
+                breakdown_criterion_flags[i] = -1
+                for j in range(2,orders[i+1]+4):
+                    if breakdown_estimators[i,j] > tolerances_down[j]:
+                        breakdown_criterion_flags[i] = 0
+                        break
+
+        return breakdown_criterion_flags
+        
+    def compute_breakdown_criterion(self,
+                                   values: np.array,
+                                   orders: np.array,
+                                   number_of_variables: list,
+                                   breakdown_criterion: str,
+                                   n,
+                                   delta_x) -> np.array:
+        breakdown_criterion_values = np.zeros(n)
+        
+        if breakdown_criterion == 'height_gradient':
+            if np.abs(values[1,0]) < 0.001:
+                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))/delta_x
+            else:
+                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))/delta_x
+            for i in range(2,n): 
+                if np.abs(values[i,0]) < 0.001:
+                    #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/0.001)
+                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))/delta_x
+                else:
+                    #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/values[i,0])
+                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))/delta_x
+            if np.abs(values[n,0]) < 0.001:
+                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))/delta_x
+            else:
+                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))/delta_x
+        elif breakdown_criterion == 'momentum_gradient':
+            if np.abs(values[1,1]) < 0.001:
+                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))/delta_x
+            else:
+                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))/delta_x
+            for i in range(2,n): 
+                if np.abs(values[i,1]) < 0.001:
+                    #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/0.001)
+                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))/delta_x
+                else:
+                    #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/values[i,1])
+                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))/delta_x
+            if np.abs(values[n,1]) < 0.001:
+                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))/delta_x
+            else:
+                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))/delta_x
+        elif breakdown_criterion == 'last_moment':
+            for i in range(1,n+1): 
+                breakdown_criterion_values[i-1] = np.abs(values[i,number_of_variables[i]-1]) 
+                # If the order is 0, there are no moments and the above value is never used     
+        elif breakdown_criterion == 'source_term':
+            for i in range(n):
+                breakdown_criterion_values[i] = np.abs(self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],True))
+        else:
+            print('this criterion is not implemented yet')  
+
+        return breakdown_criterion_values 
+
+    def convert_to_primitive(self,
+                           order: int,
+                           data_matrix_convective: np.array,
+                           g=1) -> np.array:
+
+        data_matrix_primitive = data_matrix_convective
+
+        return data_matrix_primitive 

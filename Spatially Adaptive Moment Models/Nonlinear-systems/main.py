@@ -20,19 +20,22 @@ def main():
     linear_source = pde_information['linear_source']
     time_integrator = numerical_method_information['timeIntegrator']
     linear_source_implicit = linear_source and time_integrator == 'ImplicitEuler'
+    exact_source_computation = time_integrator == 'Exact'
 
     if pde_information['pde_type'] == 'SWME1D':
         _pde = pde.SWME1D(pde_information['initialCondition'],
                         pde_information.getfloat('viscosity'),
                         pde_information.getfloat('slipLength'),
-                        hyperbolic=False,
-                        linear_source=linear_source_implicit)
+                        False,
+                        linear_source_implicit,
+                        exact_source_computation)
     elif pde_information['pde_type'] == 'HSWME1D':
         _pde = pde.SWME1D(pde_information['initialCondition'],
                         pde_information.getfloat('viscosity'),
                         pde_information.getfloat('slipLength'),
-                        hyperbolic=True,
-                        linear_source=linear_source_implicit)
+                        True,
+                        linear_source_implicit,
+                        exact_source_computation)
         
     elif pde_information['pde_type'] == 'VegetationSWME1D':
         _pde = pde.VegetationSWME1D(pde_information['initialCondition'],
@@ -40,9 +43,24 @@ def main():
                                 pde_information.getfloat('slipLength'),
                                 False,
                                 linear_source_implicit,
+                                exact_source_computation,
                                 0.008,
                                 1,
                                 264)
+    elif pde_information['pde_type'] == 'HME':
+        _pde = pde.HermiteMomentEquations(
+                        pde_information['initialCondition'],
+                        pde_information.getfloat('relaxation_time'),
+                        True,
+                        True,
+                        True)
+    elif pde_information['pde_type'] == 'Grad':
+        _pde = pde.HermiteMomentEquations(
+                        pde_information['initialCondition'],
+                        pde_information.getfloat('relaxation_time'),
+                        False,
+                        True,
+                        True)
     else:
         print('PDE_type is not implemented yet')
     
@@ -62,6 +80,8 @@ def main():
         _time_integration = timeIntegration.ImplicitEuler(linear_source)
     elif numerical_method_information['timeIntegrator'] == 'ExplicitEuler':
         _time_integration = timeIntegration.ExplicitEuler()
+    elif numerical_method_information['timeIntegrator'] == 'Exact':
+        _time_integration = timeIntegration.Exact()
 
     #########################################################################
 
@@ -121,29 +141,29 @@ def main():
         stop = timeit.default_timer()
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
-        # data_frame.to_csv('Data-processing/Results/AdaptiveSWME/damBreak-and-smooth_linear_init.csv', index=False,header=False)
+        # data_frame.to_csv('Data-processing/Output/test.csv', index=False,header=False)
         # data_frame.to_csv('Data-processing/Output/HonoursProject-Cyril/smooth_constantVelocity_lambda1.0_nu1.0_order0.csv', index=False,header=False)
 
-        z = np.linspace(0,1,100)
-        if numerical_method_information['method'] == 'spatially_adaptive':
-            velocity_profile = _pde.compute_vertical_velocity_profile(_simulation.max_order,
-                                                                      data_array,
-                                                                      z)
-            orders = _simulation.orders_cellwise
-            number_of_variables = _simulation.numbers_of_variables_cellwise
-        else: 
-            velocity_profile = _pde.compute_vertical_velocity_profile(numerical_method_information.getint('order'),
-                                                                      data_array,
-                                                                      z)
-            orders = _simulation.order
-            number_of_variables = _simulation.number_of_variables
+        # z = np.linspace(0,1,100)
+        # if numerical_method_information['method'] == 'spatially_adaptive':
+        #     velocity_profile = _pde.compute_vertical_velocity_profile(_simulation.max_order,
+        #                                                               data_array,
+        #                                                               z)
+        #     orders = _simulation.orders_cellwise
+        #     number_of_variables = _simulation.numbers_of_variables_cellwise
+        # else: 
+        #     velocity_profile = _pde.compute_vertical_velocity_profile(numerical_method_information.getint('order'),
+        #                                                               data_array,
+        #                                                               z)
+        #     orders = _simulation.order
+        #     number_of_variables = _simulation.number_of_variables
 
-        print('total mass = ',np.sum(data_array[:,1]*data_array[:,2]))
+        # print('total mass = ',np.sum(data_array[:,1]*data_array[:,2]))
 
-        plt.figure()
-        plt.subplot(4,4,1)
-        plt.plot(velocity_profile[np.floor_divide(_mesh.resolution,2),:], z)
-        plt.title('Velocity profile')
+        # plt.figure()
+        # plt.subplot(4,4,1)
+        # plt.plot(velocity_profile[np.floor_divide(_mesh.resolution,2),:], z)
+        # plt.title('Velocity profile')
 
         plt.subplot(4,4,2)
         plt.plot(_mesh.cell_center_positions, data_array[:,1])
@@ -153,9 +173,9 @@ def main():
         plt.plot(_mesh.cell_center_positions, data_array[:,2])
         plt.title('Velocity')
 
-        # plt.subplot(4,4,4)
-        # plt.plot(_mesh.cell_center_positions, data_array[:,3])
-        # plt.title('alpha_1')
+        plt.subplot(4,4,4)
+        plt.plot(_mesh.cell_center_positions, data_array[:,3])
+        plt.title('alpha_1')
 
         # plt.subplot(4,4,5)
         # plt.plot(_mesh.cell_center_positions, data_array[:,4])

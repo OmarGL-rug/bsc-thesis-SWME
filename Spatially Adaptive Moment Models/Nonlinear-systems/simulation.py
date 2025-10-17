@@ -188,7 +188,7 @@ class ClassicalSimulation1D(Simulation):
 
         values = self._get_initial_conditions(self.mesh.cell_center_positions)
 
-        CFL = 0.3
+        CFL = 0.5
         t = 0
 
         def system_matrix(cell_values):
@@ -207,12 +207,7 @@ class ClassicalSimulation1D(Simulation):
             values[0,:] = self._update_boundary_conditions(values,'left')
             values[self.mesh.resolution+1,:] = self._update_boundary_conditions(values,'right')
             
-            wave_speed_sqrt = values[:,0]*int(g)
-            for i in range(self.order):
-                wave_speed_sqrt += np.divide(values[:,i+2]*values[:,i+2],values[:,0]*values[:,0])
-            max_wave_speed_plus = np.max(np.abs(np.divide(values[:,1],values[:,0])+np.sqrt(wave_speed_sqrt)))
-            max_wave_speed_min = np.max(np.abs(np.divide(values[:,1],values[:,0])-np.sqrt(wave_speed_sqrt)))
-            max_speed = max(max_wave_speed_plus,max_wave_speed_min)
+            max_speed = self.pde_type.compute_max_wavespeed(self.order,values)
 
             delta_t = CFL*delta_x/max_speed #TODO implement CFL condition
 
@@ -303,14 +298,19 @@ class ClassicalSimulation1D(Simulation):
     def _post_processing(self,
                          values) -> np.array:
 
-        data_array = np.zeros((self.mesh.resolution,self.number_of_variables+1)) # rewrite this such that it can be generalized to other PDE models
+        data_array = np.zeros((self.mesh.resolution,self.pde_type.compute_number_of_variables(self.order)+1)) # rewrite this such that it can be generalized to other PDE models
 
         for i in range(self.mesh.resolution):
             data_array[i,0] = self.mesh.cell_center_positions[i]
-        data_array[:,1] = values[1:-1,0]
-        data_array[:,2] = np.divide(values[1:-1,1],data_array[:,1])
-        for j in range(self.order): #TODO: this is unnecessary routine here
-            data_array[:,j+3] = np.divide(values[1:-1,j+2],data_array[:,1])
+
+        data_array[:,1:] = values[1:-1,:]
+
+        data_array[:,1:] = self.pde_type.convert_to_primitive(self.order,data_array[:,1:])
+
+        # data_array[:,1] = values[1:-1,0]
+        # data_array[:,2] = np.divide(values[1:-1,1],data_array[:,1])
+        # for j in range(self.order): #TODO: this is unnecessary routine here
+        #     data_array[:,j+3] = np.divide(values[1:-1,j+2],data_array[:,1])
 
         return data_array
 
@@ -791,13 +791,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             values[0,:self.numbers_of_variables[0]] = self._update_boundary_conditions(values,'left')
             values[self.mesh.resolution+1,:self.numbers_of_variables[-1]] = self._update_boundary_conditions(values,'right')
 
-            wave_speed_sqrt = values[:,0]*int(g)
-            for i in range(self.max_order):
-                wave_speed_sqrt += np.divide(values[:,i+2]*values[:,i+2],values[:,0]*values[:,0])
-            max_wave_speed_plus = np.max(np.abs(np.divide(values[:,1],values[:,0])+np.sqrt(wave_speed_sqrt)))
-            max_wave_speed_min = np.max(np.abs(np.divide(values[:,1],values[:,0])-np.sqrt(wave_speed_sqrt)))
-            max_speed = max(max_wave_speed_plus,max_wave_speed_min)
-            #TODO: add method to PDE class that computes the wave speed (approximately)
+            max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
       
             delta_t = CFL*delta_x/max_speed 
 
@@ -1277,13 +1271,7 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             values[0,:self.numbers_of_variables[0]] = self._update_boundary_conditions(values,'left')
             values[self.mesh.resolution+1,:self.numbers_of_variables[-1]] = self._update_boundary_conditions(values,'right')
 
-            wave_speed_sqrt = values[:,0]*int(g)
-            for i in range(self.max_order):
-                wave_speed_sqrt += np.divide(values[:,i+2]*values[:,i+2],values[:,0]*values[:,0])
-            max_wave_speed_plus = np.max(np.abs(np.divide(values[:,1],values[:,0])+np.sqrt(wave_speed_sqrt)))
-            max_wave_speed_min = np.max(np.abs(np.divide(values[:,1],values[:,0])-np.sqrt(wave_speed_sqrt)))
-            max_speed = max(max_wave_speed_plus,max_wave_speed_min)
-            #TODO: add method to PDE class that computes the wave speed (approximately)
+            max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
       
             delta_t = CFL*delta_x/max_speed 
 
