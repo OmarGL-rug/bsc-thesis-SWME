@@ -1124,7 +1124,11 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             number_of_variables_merged.append(self.pde_type.compute_number_of_variables(local_order))
 
         orders_merged[-1] = max(self.orders_cellwise[i:-1])
+        if self.boundary_condition == 'PERIODIC':
+            orders_merged[-1] = max(orders_merged[-1],orders_merged[0])
+            orders_merged[0] = orders_merged[-1]
         number_of_variables_merged[-1] = self.pde_type.compute_number_of_variables(orders_merged[-1])
+        number_of_variables_merged[0] = number_of_variables_merged[-1]
 
         orders_out.append(orders_merged[0])
         number_of_variables_out.append(number_of_variables_merged[0])
@@ -1582,6 +1586,16 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         
 
         super()._update_domain_decomposition_pointwise(values,delta_x,delta_t)
+
+        if self.boundary_condition == 'PERIODIC':
+            self.orders_cellwise[1] = max(self.orders_cellwise[1],self.orders_cellwise[-2])
+            self.numbers_of_variables_cellwise[1] = self.pde_type.compute_number_of_variables(self.orders_cellwise[1])
+            self.orders_cellwise[-2] = self.orders_cellwise[1]
+            self.numbers_of_variables_cellwise[-2] = self.numbers_of_variables_cellwise[1]
+            self.orders_cellwise[0] = self.orders_cellwise[1]
+            self.numbers_of_variables_cellwise[0] = self.numbers_of_variables_cellwise[1]
+            self.orders_cellwise[-1] = self.orders_cellwise[1]
+            self.numbers_of_variables_cellwise[-1] = self.numbers_of_variables_cellwise[1]
 
         orders_out = []
         number_of_variables_out = []

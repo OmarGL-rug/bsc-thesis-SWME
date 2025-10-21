@@ -53,7 +53,8 @@ class Implicit(TimeIntegration):
     def _compute_residual(self,initial_value,rhs_f,delta_t):
         construct the residual function residual(x), the roots of which will be computed numerically
     """
-    def __init__(self,linear):
+    def __init__(self,
+                 linear: bool):
         self.linear = linear
 
     def integrate(self,
