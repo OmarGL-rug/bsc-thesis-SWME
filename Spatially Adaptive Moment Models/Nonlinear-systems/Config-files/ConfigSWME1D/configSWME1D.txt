@@ -14,8 +14,8 @@ pde_type = SWME1D
 frictionModel = Newton
         # Newton #
         # Specify friction parameters
-slipLength = 10000.0
-viscosity = 0.1
+slipLength = 1.0
+viscosity = 1.0
 
 linear_source = True
 
@@ -56,10 +56,10 @@ y2boundary = 2
 t_end = 3.0
 
 # spatially_adaptive, classical, micro_macro
-method = spatially_adaptive
+method = classical
     ### SPATIALLYADAPTIVE ###
     # spatial coupling: conservative, nonconservative
-coupling = nonconservative
+coupling = conservative
     # Starting order of the adaptive simulation
 start_order = 5
     ### CLASSICAL ###

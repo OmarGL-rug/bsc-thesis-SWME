@@ -109,12 +109,6 @@ class PVM(SpatialDiscretization):
             (322 - 13*np.sqrt(70)) / 1800
         ]
 
-        # Nodes on [0, 1]
-        quadrature_nodes = [1/2]
-
-        # Weights on [0, 1]
-        quadrature_weights = [1]
-
         generalized_roe = 0
         for i in range(len(quadrature_nodes)):
             generalized_roe += quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
