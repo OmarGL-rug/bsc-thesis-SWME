@@ -63,9 +63,8 @@ class PVM(SpatialDiscretization):
                             value_left: np.array,
                             value_right: np.array,
                             system_matrix: Callable[...,np.array],
-                            direction: str,
                             delta_t: float,
-                            delta_x: float) -> np.array:
+                            delta_x: float) -> tuple[np.array,np.array]:
         
         """
         Computes the fluctuations between two cells containing the values value_left and value_right
@@ -78,8 +77,6 @@ class PVM(SpatialDiscretization):
             value of the cell right of the boundary
         system_matrix: function
             function that computes the system matrix along the path between value_left and value_right
-        direction: string 
-            direction of the fluctuation: 'positive' if from left to right, 'negative' if from right to left
         delta_t: float
             time step size
         delta_x: float
@@ -87,8 +84,10 @@ class PVM(SpatialDiscretization):
         
         Returns
         -------
-        fluctuation: np.array
-            fluctuation between two cells containing the values value_left and value_right
+        fluctuation_min: np.array
+            fluctuation between two cells containing the values value_left and value_right in negative direction
+        fluctuation_plus: np.array
+            fluctuation between two cells containing the values value_left and value_right in positive direction
 
         """
         # Nodes on [0, 1]
@@ -112,14 +111,14 @@ class PVM(SpatialDiscretization):
         generalized_roe = 0
         for i in range(len(quadrature_nodes)):
             generalized_roe += quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
-        viscosity = self.compute_viscosity(generalized_roe,delta_t,delta_x)
-        if direction == 'negative':
-            viscosity *= -1
-        fluctuation = (np.dot(generalized_roe,value_right-value_left) + np.dot(viscosity,value_right-value_left))/2
+        generalized_roe = np.dot(generalized_roe,value_right-value_left)
+        viscosity = np.dot(self.compute_viscosity(generalized_roe,delta_t,delta_x),value_right-value_left)
+        fluctuation_min = (generalized_roe - viscosity)/2
+        fluctuation_plus = (generalized_roe + viscosity)/2
 
-        return fluctuation
+        return fluctuation_min, fluctuation_plus
     
-    def compute_generalized_roe_and_viscosity(self,value_left,value_right,system_matrix,direction,delta_t,delta_x):
+    def compute_generalized_roe_and_viscosity(self,value_left,value_right,system_matrix,delta_t,delta_x):
         # Nodes on [0, 1]
         quadrature_nodes = [
             (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
@@ -138,13 +137,13 @@ class PVM(SpatialDiscretization):
             (322 - 13*np.sqrt(70)) / 1800
         ]
 
-        generalized_roe = 0
+        generalized_roe = np.zeros((len(value_left),len(value_left)))
         for i in range(len(quadrature_nodes)):
             generalized_roe += quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
         viscosity = self.compute_viscosity(generalized_roe,delta_t,delta_x)
-        if direction == 'negative':
-            viscosity *= -1
-        return (generalized_roe + viscosity)/2.
+        fluct_matrix_min = (generalized_roe - viscosity)/2
+        fluct_matrix_plus = (generalized_roe + viscosity)/2
+        return fluct_matrix_min, fluct_matrix_plus
 
     @abstractmethod
     def compute_viscosity(self,

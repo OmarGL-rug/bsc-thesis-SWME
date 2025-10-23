@@ -14,8 +14,8 @@ pde_type = SWME1D
 frictionModel = Newton
         # Newton #
         # Specify friction parameters
-slipLength = 10000.0
-viscosity = 0.1
+slipLength = 10.0
+viscosity = 10.0
 
 linear_source = True
 
@@ -53,7 +53,7 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 3.0
+t_end = 1.0
 
 # spatially_adaptive, classical, micro_macro
 method = spatially_adaptive
