@@ -47,7 +47,7 @@ class Plotting(ABC):
         pass
 
 
-class SWMEP1DPlotClassical(Plotting):
+class SWME1DPlotClassical(Plotting):
 
     """
     This class represents a plotting object for the plotting of numerical results of the 1D SWME of a classical simulation.
@@ -61,7 +61,7 @@ class SWMEP1DPlotClassical(Plotting):
     Implemented methods from parent class 'Plotting'
     ------------------------------------------------
     def plot(self):
-        computes the fluctuation between two cells with values value_left and value_right
+        TODO
             
     Abstract methods    
     -----------------
@@ -115,12 +115,12 @@ class SWMEP1DPlotClassical(Plotting):
         for i in range(order):
             plt.subplot(3,3,k)
             plt.plot(self.mesh.cell_center_positions, data_array[:,3+i])
-            plt.title('alpha_'+str(i))
+            plt.title('alpha_'+str(i+1))
             k += 1
 
         plt.show()
 
-class SWMEP1DPlotAdaptive(Plotting):
+class SWME1DPlotAdaptive(Plotting):
 
     """
     This class represents a plotting object for the plotting of numerical results of the 1D SWME of a classical simulation.
@@ -228,4 +228,149 @@ class SWMEP1DPlotAdaptive(Plotting):
 
         plt.show()
 
+class HME1DPlotClassical(Plotting):
 
+    """
+    This class represents a plotting object for the plotting of numerical results of the 1D HME of a classical simulation.
+
+    ...
+
+    Attributes
+    ----------
+    None
+
+    Implemented methods from parent class 'Plotting'
+    ------------------------------------------------
+    def plot(self):
+        TODO
+            
+    Abstract methods    
+    -----------------
+    None
+
+    """
+
+    def __init__(self,
+                 pde: pde.HermiteMomentEquations,
+                 mesh: mesh.RectangularMesh,
+                 simulation: simulation.ClassicalSimulation1D):
+        self.pde = pde 
+        self.mesh = mesh
+        self.simulation = simulation
+
+    def plot(self,data_array):
+        
+        """
+        Creates a plot
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+
+        """
+        order = self.simulation.order
+
+        plt.figure()
+
+        plt.subplot(3,3,1)
+        plt.plot(self.mesh.cell_center_positions, data_array[:,1])
+        plt.title('Density')
+
+        plt.subplot(3,3,2)
+        plt.plot(self.mesh.cell_center_positions, data_array[:,2])
+        plt.title('Velocity')
+
+        plt.subplot(3,3,3)
+        plt.plot(self.mesh.cell_center_positions, data_array[:,3])
+        plt.title('Temperature')
+
+        k = 4
+        for i in range(3,order):
+            plt.subplot(3,3,k)
+            plt.plot(self.mesh.cell_center_positions, data_array[:,i+1])
+            plt.title('f_'+str(i))
+            k += 1
+
+        plt.show()
+
+class HME1DPlotAdaptive(Plotting):
+
+    """
+    This class represents a plotting object for the plotting of numerical results of the 1D HME of a classical simulation.
+
+    ...
+
+    Attributes
+    ----------
+    None
+
+    Implemented methods from parent class 'Plotting'
+    ------------------------------------------------
+    def plot(self):
+        TODO
+            
+    Abstract methods    
+    -----------------
+    None
+
+    """
+
+    def __init__(self,
+                 pde: pde.HermiteMomentEquations,
+                 mesh: mesh.RectangularMesh,
+                 simulation: simulation.SpatiallyAdaptiveSimulation1D):
+        self.pde = pde 
+        self.mesh = mesh
+        self.simulation = simulation
+
+    def plot(self,data_array):
+        
+        """
+        Creates a plot
+
+        Parameters
+        ----------
+        
+        Returns
+        -------
+
+        """
+        order = self.simulation.max_order
+
+        plt.figure()
+
+        plt.subplot(4,3,1)
+        plt.plot(self.mesh.cell_center_positions, data_array[:,1])
+        plt.title('Density')
+
+        plt.subplot(4,3,2)
+        plt.plot(self.mesh.cell_center_positions, data_array[:,2])
+        plt.title('Velocity')
+
+        plt.subplot(4,3,3)
+        plt.plot(self.mesh.cell_center_positions, data_array[:,3])
+        plt.title('Temperature')
+
+        k = 4
+        for i in range(3,order+1):
+            plt.subplot(4,3,k)
+            plt.plot(self.mesh.cell_center_positions, data_array[:,i+1])
+            plt.title('f_'+str(i))
+            k += 1
+
+        plt.subplot(4,3,k)
+        plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,0])
+        plt.title('Absolute value last moment')
+
+        plt.subplot(4,3,k+1)
+        plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,1])
+        plt.title('Density gradient')
+
+        plt.subplot(4,3,k+2)
+        plt.plot(self.mesh.cell_center_positions,data_array[:,0])
+        plt.scatter(self.mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,0])+(5-data_array[:,-1])*np.min(data_array[:,0]))/8,s=8,color = 'hotpink')
+        plt.title('orders vs density')
+
+        plt.show()

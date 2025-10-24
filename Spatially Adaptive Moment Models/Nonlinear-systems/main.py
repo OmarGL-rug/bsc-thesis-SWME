@@ -139,9 +139,14 @@ def main():
 
         if pde_information['pde_type'] == 'SWME1D':
             if numerical_method_information['method'] == 'spatially_adaptive':
-                _plotting = plotting.SWMEP1DPlotAdaptive(_pde,_mesh,_simulation)
+                _plotting = plotting.SWME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
-                _plotting = plotting.SWMEP1DPlotClassical(_pde,_mesh,_simulation)
+                _plotting = plotting.SWME1DPlotClassical(_pde,_mesh,_simulation)
+        elif pde_information['pde_type'] == 'HME':
+            if numerical_method_information['method'] == 'spatially_adaptive':
+                _plotting = plotting.HME1DPlotAdaptive(_pde,_mesh,_simulation)
+            elif numerical_method_information['method'] == 'classical':
+                _plotting = plotting.HME1DPlotClassical(_pde,_mesh,_simulation)
     
         start = timeit.default_timer()
         data_array = _simulation.run_simulation(numerical_method_information.getfloat('t_end'))

@@ -4891,3 +4891,51 @@ class HermiteMomentEquations(PDE):
         data_matrix_primitive = data_matrix_convective
 
         return data_matrix_primitive 
+    
+    def compute_breakdown_criteria_full(self,
+                                   values: np.array,
+                                   n,
+                                   delta_x,
+                                   delta_t,
+                                   max_order,
+                                   orders_cellwise,
+                                   numbers_of_variables_cellwise,
+                                   dom_decomp_val_res1,
+                                   dom_decomp_val_res2,
+                                   tolerance_up_density_gradient = 0.05,
+                                   tolerance_down_last_moment = 0.005) -> np.array:       
+        """
+        TODO
+
+        Parameters
+        ----------
+        values : list of numpy 1D arrays
+            the values of the variables in each mesh cell
+        orders : list of integers
+            the order in each cell
+        number_of_variables : list of integers
+            the number of variables in each cell
+        
+        Returns
+        -------
+        relative_value_last_moment: numpy 2D array
+            modelling complexity quantities in each mesh cell
+
+        """
+        breakdown_criterion_flags = np.zeros(n)
+        breakdown_estimators = np.zeros((n,2))
+
+        for i in range(n):
+            breakdown_estimators[i,0] = np.abs(values[i+1,numbers_of_variables_cellwise[i+1]-1]) 
+            for j in range(numbers_of_variables_cellwise[i]):
+                breakdown_estimators[i,1] += ((values[i+2,j] - values[i,j])/(2*delta_x))**2 
+
+        breakdown_estimators[:,1] = np.sqrt(breakdown_estimators[:,1])
+        for i in range(n):
+            if breakdown_estimators[i,1] > tolerance_up_density_gradient:
+                breakdown_criterion_flags[i] = 1
+            else:
+                if breakdown_estimators[i,0] < tolerance_down_last_moment: 
+                    breakdown_criterion_flags[i] = -1
+        
+        return breakdown_estimators, breakdown_criterion_flags
