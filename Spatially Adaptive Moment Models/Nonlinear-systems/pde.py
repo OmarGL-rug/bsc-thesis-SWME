@@ -16,30 +16,30 @@ class PDE(ABC):
     
     Abstract methods
     -------
+    def init(self):
+        initializes the pde object
     def compute_system_matrix(self,order,values):
         computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
     def compute_source_term(self,order,values):
         computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
+    def compute_source_term_lastentry(self,order,values,last_moment_zero)
+        computes the last entry of the source term vector
     def get_initial_values(self,order,initial_condition,position):
         calculates the initial values for one specific physical position
     def compute_number_of_variables(self,order):
         computes the number of state variables in the PDE given the order of the moment model
-    def compute_breakdown_criterion(self,values,breakdown_criterion,n)
-        computes the values of the given breakdown criterion in each mesh cell
-    def compute_max_wavespeed(self,order,values)
+    def compute_max_wavespeed(self,order,values):
         compute the maximum wavespeed in the system, used to calculate a timestep that satisfies CFL condition
+    def convert_to_primitive(self,order,data_matrix_convective):
+        converts the computed values to the values of the primitive variables
+    def compute_breakdown_criteria_full(self):
+        computes breakdown criteria for adaptive simulation
     """
 
     @abstractmethod
-    def __init__(self, 
-                initial_condition: str):
+    def __init__(self):
         """
-        Constructs all the necessary attributes for the PDE object.
-
-        Parameters
-        ----------
-        initial_condition : str
-            initial condition of the PDE
+        Implemented in the child classes
         """
 
         pass
@@ -47,7 +47,7 @@ class PDE(ABC):
     @abstractmethod
     def compute_system_matrix(self,
                               order: int,
-                              values: np.array) -> np.array:
+                              values: np.ndarray) -> np.ndarray:
         """
         Computes the system matrix of the PDE model.
 
@@ -61,7 +61,7 @@ class PDE(ABC):
         
         Returns
         -------
-        A: np.array
+        A: np.ndarray
             system matrix
 
         """
@@ -71,7 +71,7 @@ class PDE(ABC):
     @abstractmethod
     def compute_source_term(self,
                             order: int,
-                            values: np.array) -> np.array:
+                            values: np.ndarray) -> np.ndarray:
         """
         Computes the source term with a given order of the PDE evaluated in the given values.
 
@@ -85,18 +85,44 @@ class PDE(ABC):
         
         Returns
         -------
-        S: numpy 1D array
-            source term vector
+        S: numpy 1D array or numpy 2D array
+            source term vector if the moment model has a non-linear source term, 
+            source term matrix if the moment model has a linear source term
 
         """
 
         pass
 
     @abstractmethod
+    def compute_source_term_lastentry(self,
+                        order: int,
+                        values: np.ndarray,
+                        last_moment_zero: bool) -> np.ndarray:
+
+        """
+        Computes the last entry of the source term (in vector form)
+
+        Parameters
+        ----------
+        order : integer
+            the order of the system
+        values : np.ndarray
+            array containing the current values in each grid cell
+        last_moment_zero : boolean
+            true if the last moment is set to zero, false if not
+
+        Returns
+        -------
+        source_term_lastentry : np.ndarray
+            the last entry of the source term vector
+
+        """
+
+    @abstractmethod
     def get_initial_values(self,
                            order: int,
                            initial_condition: str,
-                           position) -> np.array:
+                           position) -> np.ndarray:
 
         """
         calculates the initial values for one specific physical position
@@ -113,7 +139,7 @@ class PDE(ABC):
         
         Returns
         -------
-        initial_values: numpy 1D array
+        initial_values: numpy 1D array (if 1D) or numpy 2D array (if 2D)
             initial values for the given initial condition evaluated in the phyiscal position
 
         """
@@ -145,11 +171,11 @@ class PDE(ABC):
     @abstractmethod
     def compute_max_wavespeed(self,
                            order: int,
-                           values: np.array) -> float:
+                           values: np.ndarray) -> float:
         """
         Computes the maximum wavespeed magnitude in the system.
         It effectively computes (or approximates) the maximum eigenvalue (in absolute value) of the system matrix.
-        This id one by providing an analytical function instead of solving an expensive eigenvalue problem.
+        This is done by providing an analytical function instead of solving an expensive eigenvalue problem.
 
         Parameters
         ----------
@@ -169,48 +195,32 @@ class PDE(ABC):
         pass
 
     @abstractmethod
-    def compute_breakdown_criterion(self,
-                                   values: list,
-                                   number_of_variables: int,
-                                   breakdown_criterion: str,
-                                   n) -> np.array:
-
+    def convert_to_primitive(self,
+                           order: int,
+                           data_matrix_convective: np.ndarray) -> np.ndarray:
         """
-        Compute specific breakdown criterion value for quantifying the required modelling complexity
+        Converts the computed variables to primitive variables
 
         Parameters
         ----------
-        values : list of numpy 1D arrays
-            the values of the variables in each mesh cell
-        number_of_variables : integer
-            the number of variables
-        breakdown_criterion : str
-            the breakdwon criterion that is considered
-        n : str
-            the number of grid cells
+        order : int
+            order of the moment model PDE
+        data_matrix_convective : numpy array
+            array containing all the computed values 
         
         Returns
         -------
-        breakdown_criterion_values: np.array
-            value for the breakdown criterion in each mesh cell
+        data_matrix_primitive : numpy array
+            array containing all the values of the primitive variables
 
         """
 
-        pass
-    
     @abstractmethod
-    def compute_all_breakdown_criteria(self,
-                                   values: np.array,
-                                   number_of_variables: list,
-                                   n,
-                                   delta_x,
-                                   tolerance_up_height_gradient,
-                                   tolerance_down_height_gradient,
-                                   tolerance_up_momentum_gradient,
-                                   tolerance_down_momentum_gradient,
-                                   tolerance_up_last_moment,
-                                   tolerance_down_last_moment) -> np.array:
-        pass
+    def compute_breakdown_criteria_full(self) -> np.ndarray:        
+        """
+        Documented in the child classes
+
+        """
 
 class SWME1D(PDE):
 
@@ -229,26 +239,41 @@ class SWME1D(PDE):
         value for the slip length
     hyperbolic : boolean
         whether the model is hyperbolic, true (HSWME) or false (SWME)
+    linear_source : boolean
+        true if the source term is represented as a constant matrix multiplied by the state vector,
+        false if the source term is represented in vector form
 
     
     Implemented methods from interface PDE
     ---------------------------------
+    def init(self, initial_condition,viscosity,slip_length,hyperbolic,linear_source,exact_source_computation):
+        initializes the SWME1D object
     def compute_system_matrix(self,order,values):
-        computes the system matrix of the SWME1D evaluated in the given values, for the given order. 
+        computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
     def compute_source_term(self,order,values):
-        computes the system matrix of the SWME1D evaluated in the given values, for the given order.
+        computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
+    def compute_source_term_lastentry(self,order,values,last_moment_zero)
+        computes the last entry of the source term vector
     def get_initial_values(self,order,initial_condition,position):
         calculates the initial values for one specific physical position
     def compute_number_of_variables(self,order):
         computes the number of state variables in the PDE given the order of the moment model
-    def compute_breakdown_criterion(self,values,breakdown_criterion,n)
-        computes the values of the given breakdown criterion in each mesh cell
+    def compute_max_wavespeed(self,order,values):
+        compute the maximum wavespeed in the system, used to calculate a timestep that satisfies CFL condition
+    def convert_to_primitive(self,order,data_matrix_convective):
+        converts the computed values to the values of the primitive variables
+    def compute_breakdown_criteria_full(self):
+        computes breakdown criteria for adaptive simulation
+
 
     Instance methods
     ----------------
     def compute_vertical_velocity_profile(self,values):
         reconstruct the vertical velocity profiles from the moment values
-    
+    def _compute_source_matrix_inverse(self,order,values,delta_t,g = 1):
+        computes a matrix for efficient implicit numerical solution
+    def compute_system_matrix_diff(self,order_low,values,g = 1) -> np.ndarray:
+        Computes the difference between the system matrix of order M+1 and the system matrix of order M   
     """
 
     def __init__(self, 
@@ -256,8 +281,7 @@ class SWME1D(PDE):
                 viscosity: float,
                 slip_length: float,
                 hyperbolic: bool,
-                linear_source: bool,
-                exact_source_computation: bool):
+                linear_source: bool):
         """
         Constructs all the necessary attributes for the SWME1D object.
 
@@ -271,33 +295,34 @@ class SWME1D(PDE):
             slip length value
         hyperbolic : boolean
             true if hyperbolic, false if not hyperbolic
+        linear_source : boolean
+            true if the source term is represented as a constant matrix multiplied by the state vector,
+            false if the source term is represented in vector form
         """
         self.initial_condition = initial_condition
         self.viscosity = viscosity
         self.slip_length = slip_length
         self.hyperbolic = hyperbolic
         self.linear_source = linear_source
-        self.exact_source_computation = exact_source_computation
+        self.exact_source_computation = False
 
     def compute_system_matrix(self,
                               order: int,
-                              values: np.array,
-                              g = 1) -> np.array:
+                              values: np.ndarray,
+                              g = 1) -> np.ndarray:
 
-        A=np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
+        # The gravitational constant g is set to 1, because the simulations are based on dimensionless equations
+        A = np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
         h = values[0]
         um = values[1]/values[0]
         if order == 0:
-            A[0][0] = 0
             A[0][1] = 1
             A[1][0] = g*h - um*um
             A[1][1] = 2.*um
         if order == 1:
             alpha1 = values[2]/values[0]
 
-            A[0][0] = 0
             A[0][1] = 1
-            A[0][2] = 0
             A[1][0] = g*h - um*um - alpha1*alpha1/3
             A[1][1] = 2*um
             A[1][2] = 2*alpha1/3
@@ -311,10 +336,7 @@ class SWME1D(PDE):
             if self.hyperbolic:
                 alpha2 = 0
 
-            A[0][0] = 0
             A[0][1] = 1
-            A[0][2] = 0
-            A[0][3] = 0
             A[1][0] = g*h - um*um - alpha1*alpha1/3 - alpha2*alpha2/5
             A[1][1] = 2*um
             A[1][2] = 2*alpha1/3
@@ -336,11 +358,7 @@ class SWME1D(PDE):
                 alpha2 = 0
                 alpha3 = 0
 
-            A[0][0] = 0
             A[0][1] = 1
-            A[0][2] = 0
-            A[0][3] = 0
-            A[0][4] = 0
             A[1][0] = g*h - um*um - alpha1*alpha1/3 - alpha2*alpha2/5 - alpha3*alpha3/7
             A[1][1] = 2*um
             A[1][2] = 2*alpha1/3
@@ -358,11 +376,9 @@ class SWME1D(PDE):
             A[3][4] = 4*alpha1/7 + alpha3/3
             A[4][0] = -2*um*alpha3 - 2*alpha2*(9*alpha1 + 4*alpha3)/15 
             A[4][1] = 2*alpha3
-            A[4][2] = 0
             A[4][3] = 2*(alpha1 + alpha3)/5
             A[4][4] = um + alpha2/3
         if order == 4:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
@@ -373,12 +389,7 @@ class SWME1D(PDE):
                 alpha3 = 0
                 alpha4 = 0
 
-            A[0][0] = 0
             A[0][1] = 1
-            A[0][2] = 0
-            A[0][3] = 0
-            A[0][4] = 0
-            A[0][5] = 0
             A[1][0] = g*h - um*um - alpha1*alpha1/3. - alpha2*alpha2/5. - \
             alpha3*alpha3/7. - alpha4*alpha4/9.
             A[1][1] = 2*um
@@ -416,7 +427,6 @@ class SWME1D(PDE):
             A[5][4] = (3*alpha1)/7. + (3*alpha3)/11.
             A[5][5] = um + (23*alpha2)/77. + (243*alpha4)/1001.
         if order == 5:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
@@ -429,13 +439,7 @@ class SWME1D(PDE):
                 alpha4 = 0
                 alpha5 = 0
 
-            A[0][0] = 0
             A[0][1] = 1
-            A[0][2] = 0
-            A[0][3] = 0
-            A[0][4] = 0
-            A[0][5] = 0
-            A[0][6] = 0
             A[1][0] = g*h - um*um - alpha1*alpha1/3. - alpha2*alpha2/5. - \
             alpha3*alpha3/7. - alpha4*alpha4/9. - alpha5*alpha5/11.
             A[1][1] = 2*um
@@ -489,7 +493,6 @@ class SWME1D(PDE):
             A[6][5] = (4*alpha1)/9. + (3*(alpha3 + alpha5))/13.
             A[6][6] = um + (11*alpha2)/39. + (8*alpha4)/39.
         if order == 6:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
@@ -504,14 +507,7 @@ class SWME1D(PDE):
                 alpha5 = 0
                 alpha6 = 0
 
-            A[0][0] = 0
             A[0][1] = 1
-            A[0][2] = 0
-            A[0][3] = 0
-            A[0][4] = 0
-            A[0][5] = 0
-            A[0][6] = 0
-            A[0][7] = 0
             A[1][0] = g*h - um*um - alpha1*alpha1/3. - alpha2*alpha2/5. - \
             alpha3*alpha3/7. - alpha4*alpha4/9. - alpha5*alpha5/11. - \
             alpha6*alpha6/13.
@@ -590,8 +586,28 @@ class SWME1D(PDE):
 
     def compute_system_matrix_diff(self,
                               order_low: int,
-                              values: np.array,
-                              g = 1) -> np.array:
+                              values: np.ndarray,
+                              g = 1) -> np.ndarray:
+        
+        """
+        Computes the difference between the system matrix of order M+1 and the system matrix of order M
+
+        Parameters
+        ----------
+        order_low : integer
+            the order of the low-order system
+        values : np.ndarray
+            array containing the current values in each grid cell
+        g = 1 : float
+            gravitational constant (set to zero, because simulations are based on dimensionless form)
+
+        Returns
+        -------
+        A_diff : np.ndarray
+            the difference matrx
+
+        """
+
         A_diff=np.zeros((self.compute_number_of_variables(order_low),self.compute_number_of_variables(order_low))) 
         h = values[0]
         um = values[1]/values[0]
@@ -642,7 +658,6 @@ class SWME1D(PDE):
             A_diff[4][2] = (14*alpha4)/9.
             A_diff[4][4] = alpha4/3.
         if order_low == 4:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
@@ -668,7 +683,6 @@ class SWME1D(PDE):
             A_diff[5][2] = (20*alpha5)/11.
             A_diff[5][4] = (345*alpha5)/1001.
         if order_low == 5:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
@@ -703,29 +717,29 @@ class SWME1D(PDE):
 
     def compute_source_term(self,
                             order: int,
-                            values: np.array,
+                            values: np.ndarray,
                             delta_t: float,
-                            g = 1) -> np.array:
+                            g = 1) -> np.ndarray:
+        # The gravitational constant g is set to 1, because the simulations are based on dimensionless equations
         if self.linear_source:
-            S = self._compute_source_matrix_inverse(order,values,delta_t)
+            S = self._compute_source_matrix_inverse(order,
+                                                    values,
+                                                    delta_t)
         else:
             S = np.zeros(self.compute_number_of_variables(order)) 
             h = values[0]
             um = values[1]/values[0]
             if order == 0:
-                S[0] = 0
                 S[1] = -self.viscosity/self.slip_length*um
             if order == 1:
                 alpha1 = values[2]/values[0]
 
-                S[0] = 0
                 S[1] = -self.viscosity/self.slip_length*(um + alpha1)
                 S[2] = -3*self.viscosity/self.slip_length*(um + (1 + 4*self.slip_length/h)*alpha1)
             if order == 2:
                 alpha1 = values[2]/values[0]
                 alpha2 = values[3]/values[0]
 
-                S[0] = 0
                 S[1] = -self.viscosity/self.slip_length*(um + alpha1 + alpha2)
                 S[2] = -3*self.viscosity/self.slip_length*(um + (1 + 4*self.slip_length/h)*alpha1 + alpha2)
                 S[3] = -5*self.viscosity/self.slip_length*(um + alpha1 + (1 + 12*self.slip_length/h)*alpha2)
@@ -734,19 +748,16 @@ class SWME1D(PDE):
                 alpha2 = values[3]/values[0]
                 alpha3 = values[4]/values[0]
 
-                S[0] = 0
                 S[1] = -self.viscosity/self.slip_length*(um + alpha1 + alpha2 + alpha3)
                 S[2] = -3*self.viscosity/self.slip_length*((h + 4*self.slip_length)*alpha1 + h*(um + alpha2) + (h + 4*self.slip_length)*alpha3)/h
                 S[3] = -5*self.viscosity/self.slip_length*(um + alpha1 + (1 + 12*self.slip_length/h)*alpha2 + alpha3)
                 S[4] = -7*self.viscosity/self.slip_length*((h + 4*self.slip_length)*alpha1 + h*(um + alpha2) + (h + 24*self.slip_length)*alpha3)/h
             if order == 4:
-
                 alpha1 = values[2]/values[0]
                 alpha2 = values[3]/values[0]
                 alpha3 = values[4]/values[0]
                 alpha4 = values[5]/values[0]
 
-                S[0] = 0
                 S[1] = -((self.viscosity*(um + alpha1 + alpha2 + alpha3 + \
                 alpha4))/self.slip_length)
                 S[2] = (-3*self.viscosity*(um + alpha2 + alpha3 + ((h + \
@@ -761,16 +772,13 @@ class SWME1D(PDE):
                 S[5] = (-9*self.viscosity*(um + alpha1 + alpha3 + alpha4 + ((h + \
                 12*self.slip_length)*alpha2 + \
                 40*self.slip_length*alpha4)/h))/self.slip_length
-
             if order == 5:
-
                 alpha1 = values[2]/values[0]
                 alpha2 = values[3]/values[0]
                 alpha3 = values[4]/values[0]
                 alpha4 = values[5]/values[0]
                 alpha5 = values[6]/values[0]
 
-                S[0] = 0
                 S[1] = -((self.viscosity*(um + alpha1 + alpha2 + alpha3 + alpha4 + \
                 alpha5))/self.slip_length)
                 S[2] = (-3*self.viscosity*(h*um + (h + 4*self.slip_length)*alpha1 + \
@@ -788,9 +796,7 @@ class SWME1D(PDE):
                 S[6] = (-11*self.viscosity*(h*um + (h + 4*self.slip_length)*alpha1 + \
                 h*alpha2 + (h + 24*self.slip_length)*alpha3 + h*alpha4 + (h + \
                 60*self.slip_length)*alpha5))/(h*self.slip_length)
-
             if order == 6:
-
                 alpha1 = values[2]/values[0]
                 alpha2 = values[3]/values[0]
                 alpha3 = values[4]/values[0]
@@ -798,7 +804,6 @@ class SWME1D(PDE):
                 alpha5 = values[6]/values[0]
                 alpha6 = values[7]/values[0]
 
-                S[0] = 0
                 S[1] = -((self.viscosity*(um + alpha1 + alpha2 + alpha3 + alpha4 + \
                 alpha5 + alpha6))/self.slip_length)
                 S[2] = (-3*self.viscosity*(um + alpha2 + alpha3 + alpha4 + alpha5 + \
@@ -825,23 +830,40 @@ class SWME1D(PDE):
 
     def _compute_source_matrix_inverse(self,
                                       order: int,
-                                      values: np.array,
+                                      values: np.ndarray,
                                       delta_t,
-                                      g = 1) -> np.array:
+                                      g = 1) -> np.ndarray:
+        """
+        The friction step in the SWME can be written as w'(t) = S(h0).w(t). 
+        Implicit Euler can then be written as w_i^n+1 = S_impl_eul(h_0,Delta t).w_i^n+1.
+        The function S_impl_eul(h_0,Delta t) was precomputed in Wolfram Mathematica for each order.
+        This function evaluates the function S_impl_eul(h_0,Delta t) in (h_0,Delta t) for a given order.
+
+        Parameters
+        ----------
+        order : integer
+            the order of the system
+        values : np.ndarray
+            array containing the current values in each grid cell
+        delta_t : float
+            current time step
+        g = 1 : float
+            gravitational constant (set to zero, because simulations are based on dimensionless form)
+
+        Returns
+        -------
+        S_inv : np.ndarray
+            the evaluation of the function S_impl_eul(h_0,Delta t) in (h_0,Delta t)
+
+        """
         S_inv = np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
         h = values[0]
         if order == 0:
             S_inv[0][0] = 1
-            S_inv[0][1] = 0
-            S_inv[1][0] = 0
             S_inv[1][1] = (h*self.slip_length)/(h*self.slip_length + \
-            delta_t*self.viscosity)
-            
+            delta_t*self.viscosity)            
         if order == 1:
             S_inv[0][0] = 1
-            S_inv[0][1] = 0
-            S_inv[0][2] = 0
-            S_inv[1][0] = 0
             S_inv[1][1] = (h**3*self.slip_length + 3*h*delta_t*(h + \
             4*self.slip_length)*self.viscosity)/(h**3*self.slip_length + \
             4*h*delta_t*(h + 3*self.slip_length)*self.viscosity + \
@@ -849,7 +871,6 @@ class SWME1D(PDE):
             S_inv[1][2] = -((h**2*delta_t*self.viscosity)/(h**3*self.slip_length \
             + 4*h*delta_t*(h + 3*self.slip_length)*self.viscosity + \
             12*delta_t**2*self.viscosity**2))
-            S_inv[2][0] = 0
             S_inv[2][1] = (-3*h**2*delta_t*self.viscosity)/(h**3*self.slip_length \
             + 4*h*delta_t*(h + 3*self.slip_length)*self.viscosity + \
             12*delta_t**2*self.viscosity**2)
@@ -857,13 +878,8 @@ class SWME1D(PDE):
             delta_t*self.viscosity))/(h**3*self.slip_length + 4*h*delta_t*(h + \
             3*self.slip_length)*self.viscosity + \
             12*delta_t**2*self.viscosity**2)
-
         if order == 2:
             S_inv[0][0] = 1
-            S_inv[0][1] = 0
-            S_inv[0][2] = 0
-            S_inv[0][3] = 0
-            S_inv[1][0] = 0
             S_inv[1][1] = (h**5*self.slip_length + 8*h**3*delta_t*(h + \
             9*self.slip_length)*self.viscosity + 240*h*delta_t**2*(h + \
             3*self.slip_length)*self.viscosity**2)/(h**5*self.slip_length + \
@@ -880,7 +896,6 @@ class SWME1D(PDE):
             9*h**3*delta_t*(h + 8*self.slip_length)*self.viscosity + \
             24*h*delta_t**2*(13*h + 30*self.slip_length)*self.viscosity**2 + \
             720*delta_t**3*self.viscosity**3))
-            S_inv[2][0] = 0
             S_inv[2][1] = (-3*h**2*delta_t*self.viscosity*(h**2 + \
             60*delta_t*self.viscosity))/(h**5*self.slip_length + \
             9*h**3*delta_t*(h + 8*self.slip_length)*self.viscosity + \
@@ -896,7 +911,6 @@ class SWME1D(PDE):
             + 9*h**3*delta_t*(h + 8*self.slip_length)*self.viscosity + \
             24*h*delta_t**2*(13*h + 30*self.slip_length)*self.viscosity**2 + \
             720*delta_t**3*self.viscosity**3)
-            S_inv[3][0] = 0
             S_inv[3][1] = (-5*h**2*delta_t*self.viscosity*(h**2 + \
             12*delta_t*self.viscosity))/(h**5*self.slip_length + \
             9*h**3*delta_t*(h + 8*self.slip_length)*self.viscosity + \
@@ -912,14 +926,8 @@ class SWME1D(PDE):
             9*h**3*delta_t*(h + 8*self.slip_length)*self.viscosity + \
             24*h*delta_t**2*(13*h + 30*self.slip_length)*self.viscosity**2 + \
             720*delta_t**3*self.viscosity**3)
-
         if order == 3:
             S_inv[0][0] = 1
-            S_inv[0][1] = 0
-            S_inv[0][2] = 0
-            S_inv[0][3] = 0
-            S_inv[0][4] = 0
-            S_inv[1][0] = 0
             S_inv[1][1] = (h**7*self.slip_length + 15*h**5*delta_t*(h + \
             16*self.slip_length)*self.viscosity + 960*h**3*delta_t**2*(2*h + \
             13*self.slip_length)*self.viscosity**2 + 33600*h*delta_t**3*(h + \
@@ -948,7 +956,6 @@ class SWME1D(PDE):
             240*h**3*delta_t**2*(9*h + 52*self.slip_length)*self.viscosity**2 + \
             2880*h*delta_t**3*(16*h + 35*self.slip_length)*self.viscosity**3 + \
             100800*delta_t**4*self.viscosity**4))
-            S_inv[2][0] = 0
             S_inv[2][1] = (-3*h**2*delta_t*self.viscosity*(h**2 + \
             60*delta_t*self.viscosity)*(h**2 + \
             140*delta_t*self.viscosity))/(h**7*self.slip_length + \
@@ -978,7 +985,6 @@ class SWME1D(PDE):
             240*h**3*delta_t**2*(9*h + 52*self.slip_length)*self.viscosity**2 + \
             2880*h*delta_t**3*(16*h + 35*self.slip_length)*self.viscosity**3 + \
             100800*delta_t**4*self.viscosity**4)
-            S_inv[3][0] = 0
             S_inv[3][1] = (-5*h**2*delta_t*self.viscosity*(h**4 + \
             180*h**2*delta_t*self.viscosity + \
             1680*delta_t**2*self.viscosity**2))/(h**7*self.slip_length + \
@@ -1005,7 +1011,6 @@ class SWME1D(PDE):
             240*h**3*delta_t**2*(9*h + 52*self.slip_length)*self.viscosity**2 + \
             2880*h*delta_t**3*(16*h + 35*self.slip_length)*self.viscosity**3 + \
             100800*delta_t**4*self.viscosity**4)
-            S_inv[4][0] = 0
             S_inv[4][1] = (-7*h**4*delta_t*self.viscosity*(h**2 + \
             60*delta_t*self.viscosity))/(h**7*self.slip_length + \
             16*h**5*delta_t*(h + 15*self.slip_length)*self.viscosity + \
@@ -1033,7 +1038,6 @@ class SWME1D(PDE):
             240*h**3*delta_t**2*(9*h + 52*self.slip_length)*self.viscosity**2 + \
             2880*h*delta_t**3*(16*h + 35*self.slip_length)*self.viscosity**3 + \
             100800*delta_t**4*self.viscosity**4)
-
         if order == 4:
             S_inv[0][0] = 1
             S_inv[0][1] = 0
@@ -1256,7 +1260,6 @@ class SWME1D(PDE):
             5040*h**3*delta_t**3*(133*h + 680*self.slip_length)*self.viscosity**3 \
             + 201600*h*delta_t**4*(59*h + 126*self.slip_length)*self.viscosity**4 \
             + 25401600*delta_t**5*self.viscosity**5)
-
         if order == 5:
             S_inv[0][0] = 1
             S_inv[0][1] = 0
@@ -1710,7 +1713,6 @@ class SWME1D(PDE):
             784*self.slip_length)*self.viscosity**4 + \
             101606400*h*delta_t**5*(47*h + 99*self.slip_length)*self.viscosity**5 \
             + 10059033600*delta_t**6*self.viscosity**6)
-
         if order == 6:
             S_inv[0][0] = 1
             S_inv[0][1] = 0
@@ -2525,29 +2527,29 @@ class SWME1D(PDE):
 
         return S_inv
 
-    
     def compute_source_term_lastentry(self,
                             order: int,
-                            values: np.array,
+                            values: np.ndarray,
                             last_moment_zero: bool,
-                            g = 1) -> np.array:
-        
-        value_out = 0
+                            g = 1) -> np.ndarray:
+
+        # the gravitational constant g is set to zero because the simulations are based on the dimensionless equations
+        source_term_lastentry = 0
         h = values[0]
         um = values[1]/values[0]
         if order == 1:
             alpha1 = values[2]/values[0]
             if last_moment_zero:
                 alpha1 = 0
-            value_out = -3*self.viscosity/self.slip_length*(um + (1 + 4*self.slip_length/h)*alpha1)
 
+            source_term_lastentry = -3*self.viscosity/self.slip_length*(um + (1 + 4*self.slip_length/h)*alpha1)
         if order == 2:
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             if last_moment_zero:
                 alpha2 = 0
 
-            value_out = -5*self.viscosity/self.slip_length*(um + alpha1 + (1 + 12*self.slip_length/h)*alpha2)
+            source_term_lastentry = -5*self.viscosity/self.slip_length*(um + alpha1 + (1 + 12*self.slip_length/h)*alpha2)
         if order == 3:
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
@@ -2555,21 +2557,19 @@ class SWME1D(PDE):
             if last_moment_zero:
                 alpha3 = 0
 
-            value_out = -7*self.viscosity/self.slip_length*((h + 4*self.slip_length)*alpha1 + h*(um + alpha2) + (h + 24*self.slip_length)*alpha3)/h
+            source_term_lastentry = -7*self.viscosity/self.slip_length*((h + 4*self.slip_length)*alpha1 + h*(um + alpha2) + (h + 24*self.slip_length)*alpha3)/h
         if order == 4:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
             alpha4 = values[5]/values[0]
             if last_moment_zero:
                 alpha4 = 0
-            value_out = (-9*self.viscosity*(um + alpha1 + alpha3 + alpha4 + ((h + \
+
+            source_term_lastentry = (-9*self.viscosity*(um + alpha1 + alpha3 + alpha4 + ((h + \
             12*self.slip_length)*alpha2 + \
             40*self.slip_length*alpha4)/h))/self.slip_length
-
         if order == 5:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
@@ -2577,12 +2577,11 @@ class SWME1D(PDE):
             alpha5 = values[6]/values[0]
             if last_moment_zero:
                 alpha5 = 0
-            value_out = (-11*self.viscosity*(h*um + (h + 4*self.slip_length)*alpha1 + \
+
+            source_term_lastentry = (-11*self.viscosity*(h*um + (h + 4*self.slip_length)*alpha1 + \
             h*alpha2 + (h + 24*self.slip_length)*alpha3 + h*alpha4 + (h + \
             60*self.slip_length)*alpha5))/(h*self.slip_length)
-
         if order == 6:
-
             alpha1 = values[2]/values[0]
             alpha2 = values[3]/values[0]
             alpha3 = values[4]/values[0]
@@ -2591,108 +2590,18 @@ class SWME1D(PDE):
             alpha6 = values[7]/values[0]
             if last_moment_zero:
                 alpha6 = 0
-            value_out = (-13*self.viscosity*(um + alpha1 + alpha3 + alpha4 + alpha5 + \
+
+            source_term_lastentry = (-13*self.viscosity*(um + alpha1 + alpha3 + alpha4 + alpha5 + \
             alpha6 + ((h + 12*self.slip_length)*alpha2 + \
             40*self.slip_length*alpha4 + \
             84*self.slip_length*alpha6)/h))/self.slip_length
 
-        return np.abs(value_out)
-
-    def compute_system_matrix_last_row(self,
-                              order: int,
-                              values: np.array,
-                              g = 1) -> np.array:
-
-        A_last_row=np.zeros((1,self.compute_number_of_variables(order))) 
-        h = values[0]
-        um = values[1]/values[0]
-        if order == 0:
-            A_last_row[0][0] = 0
-            A_last_row[0][1] = 0
-        if order == 1:
-            alpha1 = values[2]/values[0]
-
-            A_last_row[0][0] = (-2*alpha1*alpha1)/3.
-            A_last_row[0][1] = 0
-            A_last_row[0][2] = alpha1/3.
-        if order == 2:
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-
-            if self.hyperbolic:
-                alpha2 = 0
-
-            A_last_row[0][0] = (-6*alpha1*alpha2)/5.
-            A_last_row[0][1] = 0
-            A_last_row[0][2] = 0
-            A_last_row[0][3] = (2*alpha1)/5.
-        if order == 3:
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-            alpha3 = values[4]/values[0]
-
-            if self.hyperbolic:
-                alpha2 = 0
-                alpha3 = 0
-
-            A_last_row[0][0] = (-2*(1287*alpha2*alpha2 + 65*alpha3*(44*alpha1 + \
-            9*alpha3)))/5005.
-            A_last_row[0][1] = 0
-            A_last_row[0][2] = (-2*alpha3)/7.
-            A_last_row[0][3] = (6*alpha2)/35.
-            A_last_row[0][4] = (3*alpha1)/7. + (3*alpha3)/11.
-        if order == 4:
-
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-            alpha3 = values[4]/values[0]
-            alpha4 = values[5]/values[0]
-
-            if self.hyperbolic:
-                alpha2 = 0
-                alpha3 = 0
-                alpha4 = 0
-
-            A_last_row[0][0] = (-2*(390*alpha2*alpha3 + (455*alpha1 + \
-            180*alpha3)*alpha4))/819.
-            A_last_row[0][1] = 0
-            A_last_row[0][2] = (-5*alpha4)/9.
-            A_last_row[0][3] = 0
-            A_last_row[0][4] = (5*(alpha2 + alpha4))/21.
-            A_last_row[0][5] = (4*alpha1)/9. + (3*alpha3)/13.
-        if order == 5:
-
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-            alpha3 = values[4]/values[0]
-            alpha4 = values[5]/values[0]
-            alpha5 = values[6]/values[0]
-
-            if self.hyperbolic:
-                alpha2 = 0
-                alpha3 = 0
-                alpha4 = 0
-                alpha5 = 0
-
-            A_last_row[0][0] = (-100*alpha3*alpha3)/231. - (10*alpha2*alpha4)/11. \
-            - (14*alpha3*alpha5)/33. - (4*(85*alpha4*alpha4 + 459*alpha1*alpha5 + \
-            60*alpha5*alpha5))/1683.
-            A_last_row[0][1] = 0
-            A_last_row[0][2] = (-9*alpha5)/11.
-            A_last_row[0][3] = (-5*alpha4)/33.
-            A_last_row[0][4] = (25*alpha3 + 49*alpha5)/231.
-            A_last_row[0][5] = (3*alpha2)/11. + (19*alpha4)/99.
-            A_last_row[0][6] = (255*alpha1 + 119*alpha3 + 104*alpha5)/561.
-        if order == 6:
-
-            print("Order 7 needs to be implemented for this to work")
-
-        return A_last_row
+        return np.abs(source_term_lastentry)
 
     def get_initial_values(self,
                            order: int,
                            initial_condition: str,
-                           position: float) -> np.array:
+                           position: float) -> np.ndarray:
         initial_values = np.zeros(self.compute_number_of_variables(order))
         if initial_condition == 'constantHeight_noVelocity':
             initial_values[0] = 1
@@ -2806,7 +2715,7 @@ class SWME1D(PDE):
             if order > 6:
                 initial_values[8] = 0
         elif initial_condition == 'smooth_wave':
-            initial_values[0] = 3 + 3*np.exp(-1.5*position**2)
+            initial_values[0] = 1 + 0.5*np.exp(-15*position**2)
             initial_values[1] = 0*initial_values[0]
             if order > 0:
                 initial_values[2] = 0 
@@ -2936,13 +2845,14 @@ class SWME1D(PDE):
                     initial_values[7] = 0 
         return initial_values
     
-    def compute_number_of_variables(self, order) -> int:
+    def compute_number_of_variables(self,
+                                    order: int) -> int:
         number_of_variables = order + 2
         return int(number_of_variables)
 
     def compute_max_wavespeed(self,
                            order: int,
-                           values: np.array,
+                           values: np.ndarray,
                            g=1) -> float:
 
         wave_speed_sqrt = values[:,0]*int(g)
@@ -2956,8 +2866,8 @@ class SWME1D(PDE):
 
     def compute_vertical_velocity_profile(self,
                                           order: int, 
-                                          values: np.array,
-                                          z_points: np.array) -> np.array:
+                                          values: np.ndarray,
+                                          z_points: np.ndarray) -> np.ndarray:
         """
         reconstructs the vertical velocity profile from the moment values and evaluates the velocity profile pointwise
 
@@ -2965,7 +2875,7 @@ class SWME1D(PDE):
         ----------
         order: integer
             order of the model
-        values: np.array (2D)
+        values: np.ndarray (2D)
             2D numpy array containing the values of the variables in each mesh cell
         z_points: 
             the locations in vertical direction in which the velocity is computed
@@ -3003,216 +2913,10 @@ class SWME1D(PDE):
                                                       1680*np.power(z_points,3) + 3150*np.power(z_points,4) - \
                                                       2772*np.power(z_points,5) + 924*np.power(z_points,6))
         return velocity_profile
-    
-    def compute_all_breakdown_criteria(self,
-                                   values: np.array,
-                                   orders: list,
-                                   number_of_variables: list,
-                                   n,
-                                   delta_x,
-                                   tolerance_up_height_gradient = 0.3,
-                                   tolerance_down_height_gradient = 0.03,
-                                   tolerance_up_momentum_gradient = 0.2,
-                                   tolerance_down_momentum_gradient = 0.02,
-                                   tolerance_up_moment_gradient = 0.1,
-                                   tolerance_down_moment_gradient = 0.01,
-                                   tolerance_up_last_moment = 0.01,
-                                   tolerance_down_last_moment = 0.001,
-                                   tolerance_up_source = 0.002,
-                                   tolerance_down_source = 0.0002) -> np.array:
-
-        """
-        Compute ALL breakdown criteria for quantifying the required modelling complexity
-
-        Parameters
-        ----------
-        values : list of numpy 1D arrays
-            the values of the variables in each mesh cell
-        orders : list of integers
-            the order in each cell
-        number_of_variables : list of integers
-            the number of variables in each cell
-        
-        Returns
-        -------
-        relative_value_last_moment: numpy 2D array
-            modelling complexity quantities in each mesh cell
-
-        """
-        max_order = max(orders)
-        tolerances_up = np.zeros(4+max_order)
-        tolerances_down = np.zeros(4+max_order)
-        tolerances_up[0] = tolerance_up_last_moment
-        tolerances_up[1] = tolerance_up_source
-        tolerances_up[2] = tolerance_up_height_gradient
-        tolerances_up[3] = tolerance_up_momentum_gradient
-        tolerances_down[0] = tolerance_down_last_moment
-        tolerances_down[1] = tolerance_down_source
-        tolerances_down[2] = tolerance_down_height_gradient
-        tolerances_down[3] = tolerance_down_momentum_gradient
-        for i in range(max_order):
-            tolerances_up[4+i] = tolerance_up_moment_gradient
-            tolerances_down[4+i] = tolerance_down_moment_gradient
-
-        breakdown_criterion_flags = np.zeros(n)
-        source_term_lastentry = np.zeros(n)
-        for i in range(n):
-            source_term_lastentry[i] = self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],False)
-
-        breakdown_estimators = np.zeros((n,max_order+4))
-        for i in range(n):
-            breakdown_estimators[i,0] = np.abs(self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],False))
-            breakdown_estimators[i,1] = np.abs(values[i+1,number_of_variables[i+1]-1])
-            breakdown_estimators[i,2] = np.abs((values[i+1,0] - values[i,0]))/delta_x
-            breakdown_estimators[i,3] = np.abs((values[i+1,1] - values[i,1]))/delta_x
-            for j in range(orders[i+1]):
-                breakdown_estimators[i,4+j] = np.abs((values[i+1,2+j])-values[i,2+j])/delta_x
-        breakdown_estimators[0,0] = np.abs(self.compute_source_term_lastentry(orders[1],values[1,:number_of_variables[1]],False))
-        breakdown_estimators[0,1] = np.abs(values[1,number_of_variables[1]-1])
-        breakdown_estimators[0,2] = np.abs((values[2,0] - values[1,0]))/delta_x
-        breakdown_estimators[0,3] = np.abs((values[2,1] - values[1,1]))/delta_x
-        for j in range(orders[i+1]):
-            breakdown_estimators[0,4+j] = np.abs((values[2,2+j])-values[2,2+j])/delta_x    
-
-        for i in range(n):
-            if breakdown_estimators[i,0] > tolerances_up[0]:
-                for j in range(2,orders[i+1]+4):
-                    if breakdown_estimators[i,j] > tolerances_up[j]:
-                        breakdown_criterion_flags[i] = 1
-                        break
-            elif breakdown_estimators[i,1] > tolerances_up[1]:
-                breakdown_criterion_flags[i] = 1
-            elif (breakdown_criterion_flags[i] !=1 and\
-                  breakdown_estimators[i,0] < tolerances_down[0] and breakdown_estimators[i,1] < tolerances_down[1]):
-                breakdown_criterion_flags[i] = -1
-                for j in range(2,orders[i+1]+4):
-                    if breakdown_estimators[i,j] > tolerances_down[j]:
-                        breakdown_criterion_flags[i] = 0
-                        break
-
-        # #TODO: this could be made much more efficient
-        # #TODO: with break statement, this might be faster. I could stack the tolerance in an array, then for-loop, and then use break.
-        # flagged = False
-        # if (np.abs(values[1,number_of_variables[1]-1]) > tolerance_up_last_moment\
-        #     or np.abs(source_term_lastentry[0] > tolerance_up_source)\
-        #     or np.abs((values[2,0] - values[1,0])) > tolerance_up_height_gradient \
-        #     or np.abs((values[2,1] - values[1,1])) > tolerance_up_momentum_gradient):
-        #     breakdown_criterion_flags[0] = 1
-        #     flagged = True
-        # elif (not flagged and\
-        #     (np.abs(values[1,number_of_variables[1]-1]) < tolerance_down_last_moment\
-        #     or np.abs(source_term_lastentry[0] < tolerance_down_source)\
-        #     or np.abs((values[2,0] - values[1,0])) < tolerance_down_height_gradient \
-        #     or np.abs((values[2,1] - values[1,1])) < tolerance_down_momentum_gradient)):
-        #     breakdown_criterion_flags[0] = -1
-        #     flagged = True
-        # j = 2
-        # while j<number_of_variables[1] and not flagged:
-        #     if np.abs((values[2,j] - values[1,j])) > tolerance_up_moment_gradient:
-        #         breakdown_criterion_flags[0] = 1
-        #         flagged = True
-        #     elif not flagged and\
-        #         np.abs((values[2,j] - values[1,j])) < tolerance_down_moment_gradient:
-        #         breakdown_criterion_flags[0] = -1
-        #         flagged = True
-        #     j += 1
-        # if not flagged:
-        #     if source_term_lastentry[0] > tolerance_up_source:
-        #         breakdown_criterion_flags[0] = 1
-        #         flagged = True
-        #     elif source_term_lastentry[0] < tolerance_down_source:
-        #         breakdown_criterion_flags[0] = -1
-        #         flagged = True               
-
-        # flagged = False
-        # for i in range(1,n): 
-        #     if np.abs(source_term_lastentry[i]) > tolerance_up_source:
-        #         breakdown_criterion_flags[i] = 1
-        #         flagged = True
-        #     elif np.abs(source_term_lastentry[i]) < tolerance_down_source:
-        #         breakdown_criterion_flags[i] = -1
-        #         flagged = True  
-        #     if not flagged and (np.abs((values[i+1,0] - values[i,0])) > tolerance_up_height_gradient \
-        #         or np.abs((values[i+1,1] - values[1,1])) > tolerance_up_momentum_gradient \
-        #         or np.abs(values[i+1,number_of_variables[i+1]-1]) > tolerance_up_last_moment):
-        #         breakdown_criterion_flags[i] = 1
-        #         flagged = True
-        #     elif (not flagged and\
-        #         (np.abs((values[i+1,0] - values[i,0])) < tolerance_down_height_gradient \
-        #         or np.abs((values[i+1,1] - values[i,1])) < tolerance_down_momentum_gradient \
-        #         or np.abs(values[i+1,number_of_variables[i+1]-1]) < tolerance_down_last_moment)):
-        #         breakdown_criterion_flags[i] = -1
-        #         flagged = True
-        #     j = 2
-        #     while j<number_of_variables[i+1] and not flagged:
-        #         if np.abs((values[i+1,j] - values[i,j])) > tolerance_up_moment_gradient:
-        #             breakdown_criterion_flags[i] = 1
-        #             flagged = True
-        #         elif not flagged and\
-        #             np.abs((values[i+1,j] - values[i,j])) < tolerance_down_moment_gradient:
-        #             breakdown_criterion_flags[i] = -1
-        #             flagged = True
-        #         j += 1
-
-        return breakdown_criterion_flags
-        
-    def compute_breakdown_criterion(self,
-                                   values: np.array,
-                                   orders: np.array,
-                                   number_of_variables: list,
-                                   breakdown_criterion: str,
-                                   n,
-                                   delta_x) -> np.array:
-        breakdown_criterion_values = np.zeros(n)
-        
-        if breakdown_criterion == 'height_gradient':
-            if np.abs(values[1,0]) < 0.001:
-                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))/delta_x
-            else:
-                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))/delta_x
-            for i in range(2,n): 
-                if np.abs(values[i,0]) < 0.001:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/0.001)
-                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))/delta_x
-                else:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/values[i,0])
-                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))/delta_x
-            if np.abs(values[n,0]) < 0.001:
-                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))/delta_x
-            else:
-                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))/delta_x
-        elif breakdown_criterion == 'momentum_gradient':
-            if np.abs(values[1,1]) < 0.001:
-                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))/delta_x
-            else:
-                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))/delta_x
-            for i in range(2,n): 
-                if np.abs(values[i,1]) < 0.001:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/0.001)
-                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))/delta_x
-                else:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/values[i,1])
-                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))/delta_x
-            if np.abs(values[n,1]) < 0.001:
-                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))/delta_x
-            else:
-                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))/delta_x
-        elif breakdown_criterion == 'last_moment':
-            for i in range(1,n+1): 
-                breakdown_criterion_values[i-1] = np.abs(values[i,number_of_variables[i]-1]) 
-                # If the order is 0, there are no moments and the above value is never used     
-        elif breakdown_criterion == 'source_term':
-            for i in range(n):
-                breakdown_criterion_values[i] = np.abs(self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],True))
-        else:
-            print('this criterion is not implemented yet')  
-
-        return breakdown_criterion_values
 
     def convert_to_primitive(self,
                            order: int,
-                           data_matrix_convective: np.array,
-                           g=1) -> np.array:
+                           data_matrix_convective: np.ndarray) -> np.ndarray:
 
         data_matrix_primitive = np.zeros(np.shape(data_matrix_convective))
         
@@ -3224,42 +2928,67 @@ class SWME1D(PDE):
         return data_matrix_primitive 
     
     def compute_breakdown_criteria_full(self,
-                                   values: np.array,
-                                   n,
-                                   delta_x,
-                                   delta_t,
-                                   max_order,
-                                   orders_cellwise,
-                                   numbers_of_variables_cellwise,
-                                   dom_decomp_val_res1,
-                                   dom_decomp_val_res2,
-                                   tolerance_up_source=0.04,
-                                   tolerance_up_height_gradient=0.5,
-                                   tolerance_up_momentum_gradient=0.5,
-                                   tolerance_up_moment_gradient=0.5,
-                                   tolerance_down_height_gradient = 0.001,
-                                   tolerance_down_momentum_gradient = 0.001,
-                                   tolerance_down_moment_gradient = 0.001,
+                                   values: np.ndarray,
+                                   n: int,
+                                   delta_x: float,
+                                   delta_t: float,
+                                   max_order: int,
+                                   orders_cellwise: list,
+                                   numbers_of_variables_cellwise: list,
+                                   dom_decomp_val_res1: np.ndarray,
+                                   dom_decomp_val_res2: np.ndarray,
+                                   tolerance_up_source = 0.04,
+                                   tolerance_up_height_gradient = 0.5,
+                                   tolerance_up_momentum_gradient = 0.5,
+                                   tolerance_up_moment_gradient = 0.5,
                                    tolerance_down_last_moment = 0.0001,
-                                   tolerance_down_res1=0.0001,
-                                   tolerance_down_res2=0.01) -> np.array:        
+                                   tolerance_down_res1 = 0.0001,
+                                   tolerance_down_res2 = 0.01) -> tuple[np.ndarray,np.ndarray]:        
         """
-        TODO
+        Computes the breakown criteria adaptive simulation
 
         Parameters
         ----------
         values : list of numpy 1D arrays
             the values of the variables in each mesh cell
-        orders : list of integers
+        n : integer
+            number of grid cells
+        delta_x : float
+            grid cell size
+        delta_t : float
+            time step size
+        max_order : integer
+            maximum order of the model
+        orders_cellwise : list of integers
             the order in each cell
-        number_of_variables : list of integers
+        number_of_variables_cellwise : list of integers
             the number of variables in each cell
-        
+        dom_decomp_val_res1 : np.ndarray
+            numpy array containing the current values of res1
+        dom_decomp_val_res2 : np.ndarray
+            numpy array containing the current values of res2
+        tolerance_up_source : float
+            threshold for the increase-criterion corresponding to the last entry of the source term vector
+        tolerance_up_height_gradient : float
+            threshold for the increase-criterion corresponding to the height gradient
+        tolerance_up_momentum_gradient : float
+            threshold for the increase-criterion corresponding to the momentum gradient       
+        tolerance_up_moment_gradient : float
+            threshold for the increase-criterion corresponding to the moment gradient
+        tolerance_down_last_moment : float
+            threshold for the decrease-criterion corresponding to the last moment
+        tolerance_down_res1 : float
+            threshold for the decrease-criterion corresponding to res1
+        tolerance_down_res2 : float
+            threshold for the decrease-criterion corresponding to res2
+
         Returns
         -------
-        relative_value_last_moment: numpy 2D array
-            modelling complexity quantities in each mesh cell
-
+        breakdown_estimators : np.ndarray
+            values for each breakdown estimator in each grid cell
+        breakdown_criterion_flags : np.ndarray
+            flags for increasing or reducing the order in each grid cell
+            this array is filled with the values of the changes in order in each grid cell
         """
         breakdown_criterion_flags = np.zeros(n)
         breakdown_estimators = np.zeros((n,max_order+4))
@@ -3275,31 +3004,22 @@ class SWME1D(PDE):
         breakdown_estimators[0,2] = 1*np.abs((values[2,0] - values[1,0]))/delta_x
         breakdown_estimators[0,3] = 1*np.abs((values[2,1] - values[1,1]))/delta_x
         for j in range(orders_cellwise[i+1]):
-            breakdown_estimators[0,4+j] = 1*np.abs((values[2,2+j])-values[2,2+j])/delta_x    
+            breakdown_estimators[0,4+j] = 1*np.abs((values[2,2+j])-values[1,2+j])/delta_x    
 
         for i in range(n):
-            if breakdown_estimators[i,0] > tolerance_up_source:
+            if orders_cellwise[i+1] < max_order and \
+                (breakdown_estimators[i,0] > tolerance_up_source or\
+                    breakdown_estimators[i,2] > tolerance_up_height_gradient or\
+                        breakdown_estimators[i,3] > tolerance_up_momentum_gradient or\
+                            np.any(breakdown_estimators[i,4:orders_cellwise[i+1]+4] > tolerance_up_moment_gradient)):
                 breakdown_criterion_flags[i] = 1
-            else:
-                if breakdown_estimators[i,2] > tolerance_up_height_gradient or breakdown_estimators[i,3] > tolerance_up_momentum_gradient:
-                    breakdown_criterion_flags[i] = 1
-                else:
-                    for j in range(4,orders_cellwise[i+1]+4):
-                        if breakdown_estimators[i,j] > tolerance_up_moment_gradient:
-                            breakdown_criterion_flags[i] = 1
-                            break
-            if (breakdown_criterion_flags[i] !=1 and\
-                  dom_decomp_val_res1[i] < tolerance_down_res1\
-                    and dom_decomp_val_res2[i] < tolerance_down_res2\
-                        and breakdown_estimators[i,1] < tolerance_down_last_moment):
+
+            elif (breakdown_criterion_flags[i] !=1 and\
+                    orders_cellwise[i+1] > 0 and\
+                        dom_decomp_val_res1[i] < tolerance_down_res1\
+                            and dom_decomp_val_res2[i] < tolerance_down_res2\
+                                and breakdown_estimators[i,1] < tolerance_down_last_moment):
                 breakdown_criterion_flags[i] = -1
-                # if self.breakdown_estimators[i,2] > tolerance_down_height_gradient or self.breakdown_estimators[i,3] > tolerance_down_momentum_gradient:
-                #     breakdown_criterion_flags[i] = 0
-                # else:
-                #     for j in range(4,self.orders_cellwise[i+1]+4):
-                #         if self.breakdown_estimators[i,j] > tolerance_down_moment_gradient:
-                #             breakdown_criterion_flags[i] = 0
-                #             break
         
         return breakdown_estimators, breakdown_criterion_flags
     
@@ -3319,14 +3039,20 @@ class VegetationSWME1D(SWME1D):
         value for the slip length
     hyperbolic : boolean
         whether the model is hyperbolic, true (HSWME) or false (SWME)
+    linear_source : boolean
+        true if the source term is represented as a constant matrix multiplied by the state vector,
+        false if the source term is represented in vector form
     diameter : float
         the diameter of the vegetation stem
     CD : float
         the drag force coefficient
     surface_density : float
         number of vegetation elements per squared meter
-    
-    Methods inherited from interface SWME1D
+    h_v : float
+        vegetation height (transformed to the interval [0,h_v])
+        
+
+    Methods inherited from class SWME1D
     ---------------------------------------
     def compute_system_matrix(self,order,values):
         computes the system matrix of the SWME1D evaluated in the given values, for the given order. 
@@ -3334,15 +3060,21 @@ class VegetationSWME1D(SWME1D):
         calculates the initial values for one specific physical position
     def compute_number_of_variables(self,order):
         computes the number of state variables in the PDE given the order of the moment model
-    def compute_breakdown_criterion(self,values,breakdown_criterion,n)
-        computes the values of the given breakdown criterion in each mesh cell
+    def compute_max_wavespeed(self,order,values):
+        compute the maximum wavespeed in the system, used to calculate a timestep that satisfies CFL condition
+    def convert_to_primitive(self,order,data_matrix_convective):
+        converts the computed values to the values of the primitive variables
     def compute_vertical_velocity_profile(self,values):
         reconstruct the vertical velocity profiles from the moment values
+    def compute_system_matrix_diff(self,order_low,values,g = 1) -> np.ndarray:
+        Computes the difference between the system matrix of order M+1 and the system matrix of order M  
 
-    Implemented methods from interface SWME1D
-    ------------------------------------------
+    Implemented methods from interface PDE
+    --------------------------------------
+    def __init__(self, initial_condition,viscosity,slip_length,hyperbolic,linear_source,diameter,CD,surface_density,h_v):
+        Constructs all the necessary attributes for the VegetationSWME1D object.
     def compute_source_term(self,order,values):
-        computes the system matrix of the SWME1D evaluated in the given values, for the given order.
+        computes the system matrix of the VegetationSWME1D evaluated in the given values, for the given order.
 
     Instance methods
     ----------------
@@ -3350,9 +3082,9 @@ class VegetationSWME1D(SWME1D):
         computes the drag force caused by vegetation
     def compute_single_legendre_integral(self,order,h_r):
         computes the integrals of the legendre polynomials phi_i on the interval [0,h_r]
-    def compute_double_legendre_integral():
+    def compute_double_legendre_integral(self,order,h_r):
         computes the integrals of the products of legendre polynomials phi_i*phi_j on the interval [0,h_r]
-    def compute_triple_legendre_integral():
+    def compute_triple_legendre_integral(self,order,h_r):
         computes the integrals of the legendre polynomials phi_i*phi_j*phi_k on the interval [0,h_r]
     
     """
@@ -3363,10 +3095,10 @@ class VegetationSWME1D(SWME1D):
                 slip_length: float,
                 hyperbolic: bool,
                 linear_source: bool,
-                exact_source_computation: bool,
                 diameter: float,
                 CD: float,
-                surface_density: float):
+                surface_density: float,
+                h_v: float):
         """
         Constructs all the necessary attributes for the VegetationSWME1D object.
 
@@ -3380,6 +3112,8 @@ class VegetationSWME1D(SWME1D):
             slip length value
         hyperbolic : boolean
             true if hyperbolic, false if not hyperbolic
+        linear_source : whether the source term can be written in constantmatrix-vector multiplication form
+            true if source term can be written in constantmatrix-vector multiplication form, false if not
         diameter : float
             diameter of a cylindrical vegetation stem
         CD : float
@@ -3392,14 +3126,14 @@ class VegetationSWME1D(SWME1D):
         self.slip_length = slip_length
         self.hyperbolic = hyperbolic
         self.linear_source = linear_source
-        self.exact_source_computation = exact_source_computation
         self.diameter = diameter
         self.CD = CD
         self.surface_density = surface_density
+        self.h_v = h_v
 
     def compute_single_legendre_integral(self,
                                          order: int,
-                                         h_r: float) -> np.array:
+                                         h_r: float) -> np.ndarray:
         """
         computes the integrals of the legendre polynomials phi_i on the interval [0,h_r]
 
@@ -3440,7 +3174,7 @@ class VegetationSWME1D(SWME1D):
 
     def compute_double_legendre_integral(self,
                                          order: int,
-                                         h_r: float) -> np.array:
+                                         h_r: float) -> np.ndarray:
         """
         computes the integrals of the product of legendre polynomials phi_i*phi_j on the interval [0,h_r]
 
@@ -3550,7 +3284,7 @@ class VegetationSWME1D(SWME1D):
 
     def compute_triple_legendre_integral(self,
                                          order: int,
-                                         h_r: float) -> np.array:
+                                         h_r: float) -> np.ndarray:
         """
         computes the integrals of the product of legendre polynomials phi_i*phi_j*phi_k on the interval [0,h_r]
 
@@ -3990,11 +3724,7 @@ class VegetationSWME1D(SWME1D):
 
     def compute_drag_force(self,
                            order: int,
-                           values: np.array,
-                           h_v: float,
-                           stem_diam: float, 
-                           n_stems: float, 
-                           drag_coeff: float) -> np.array:
+                           values: np.ndarray) -> np.ndarray:
         """
         computes the drag force term caused by vegetation
 
@@ -4004,14 +3734,6 @@ class VegetationSWME1D(SWME1D):
             order of the model
         values : numpy array
             values of the variables
-        h_v : float
-            height of the vegetation
-        stem_diam : float
-            diameter of a cylindrical plant stem
-        n_stems : float
-            number of plant stems per squared meter
-        drag_coeff : float
-            drag force coefficient
         
         Returns
         -------
@@ -4023,9 +3745,9 @@ class VegetationSWME1D(SWME1D):
         drag_values = np.zeros(order+2)
         h = values[0]
 
-        single_integrals = self.compute_single_legendre_integral(order,h_v/h)
-        double_integrals = self.compute_double_legendre_integral(order,h_v/h)
-        triple_integrals = self.compute_triple_legendre_integral(order,h_v/h)
+        single_integrals = self.compute_single_legendre_integral(order,self.h_v/h)
+        double_integrals = self.compute_double_legendre_integral(order,self.h_v/h)
+        triple_integrals = self.compute_triple_legendre_integral(order,self.h_v/h)
 
         um = values[1]/values[0]
         
@@ -4034,7 +3756,7 @@ class VegetationSWME1D(SWME1D):
         for i in range(order):
             for j in range(order):
                 sum_var += values[i+2]*values[j+2]*double_integrals[i,j]
-        drag_values[1] = h_v/h*um*um + 2*um*np.sum(values[2:]*single_integrals) + sum_var
+        drag_values[1] = self.h_v/h*um*um + 2*um*np.sum(values[2:]*single_integrals) + sum_var
 
         for k in range(order):
             sum_var = 0
@@ -4043,17 +3765,14 @@ class VegetationSWME1D(SWME1D):
                     sum_var += values[i+2]*values[j+2]*triple_integrals[i,j,k]
             drag_values[k+2] = um*um*single_integrals[k] + 2*um*np.sum(values[2:]*double_integrals[:,k]) + sum_var  
         
-        drag_values = -np.sign(um)*drag_values*n_stems*stem_diam*drag_coeff
+        drag_values = -np.sign(um)*drag_values*self.surface_density*self.diameter*self.CD
 
         return drag_values
 
     def compute_source_term(self,
                             order: int,
-                            values: np.array,
-                            h_v = 0.4,
-                            stem_diam = 0.008, 
-                            n_stems = 800, 
-                            drag_coeff = 0.97) -> np.array:
+                            values: np.ndarray,
+                            delta_t: float) -> np.ndarray:
         """
         Computes the source term with a given order of the PDE evaluated in the given values.
 
@@ -4063,15 +3782,9 @@ class VegetationSWME1D(SWME1D):
             order of the model
         values : numpy array
             values of the variables
-        h_v : float
-            height of the vegetation
-        stem_diam : float
-            diameter of a cylindrical plant stem
-        n_stems : float
-            number of plant stems per squared meter
-        drag_coeff : float
-            drag force coefficient
-        
+        delta_t : float
+            the current time step
+
         
         Returns
         -------
@@ -4079,128 +3792,14 @@ class VegetationSWME1D(SWME1D):
             source term vector
 
         """
-
-        
-        S = np.zeros(order+2) 
-        h = values[0]
-        um = values[1]/values[0]
-        if order == 0:
-            S[0] = 0
-            S[1] = -self.viscosity/self.slip_length*um
-        if order == 1:
-            alpha1 = values[2]/values[0]
-
-            S[0] = 0
-            S[1] = -self.viscosity/self.slip_length*(um + alpha1)
-            S[2] = -3*self.viscosity/self.slip_length*(um + (1 + 4*self.slip_length/h)*alpha1)
-
-        if order == 2:
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-
-            S[0] = 0
-            S[1] = -self.viscosity/self.slip_length*(um + alpha1 + alpha2)
-            S[2] = -3*self.viscosity/self.slip_length*(um + (1 + 4*self.slip_length/h)*alpha1 + alpha2)
-            S[3] = -5*self.viscosity/self.slip_length*(um + alpha1 + (1 + 12*self.slip_length/h)*alpha2)
-        if order == 3:
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-            alpha3 = values[4]/values[0]
-
-            S[0] = 0
-            S[1] = -self.viscosity/self.slip_length*(um + alpha1 + alpha2 + alpha3)
-            S[2] = -3*self.viscosity/self.slip_length*((h + 4*self.slip_length)*alpha1 + h*(um + alpha2) + (h + 4*self.slip_length)*alpha3)/h
-            S[3] = -5*self.viscosity/self.slip_length*(um + alpha1 + (1 + 12*self.slip_length/h)*alpha2 + alpha3)
-            S[4] = -7*self.viscosity/self.slip_length*((h + 4*self.slip_length)*alpha1 + h*(um + alpha2) + (h + 24*self.slip_length)*alpha3)/h
-        if order == 4:
-
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-            alpha3 = values[4]/values[0]
-            alpha4 = values[5]/values[0]
-
-            S[0] = 0
-            S[1] = -((self.viscosity*(um + alpha1 + alpha2 + alpha3 + \
-            alpha4))/self.slip_length)
-            S[2] = (-3*self.viscosity*(um + alpha2 + alpha3 + ((h + \
-            4*self.slip_length)*alpha1 + 4*self.slip_length*alpha3)/h + \
-            alpha4))/self.slip_length
-            S[3] = (-5*self.viscosity*(um + alpha1 + alpha3 + alpha4 + ((h + \
-            12*self.slip_length)*alpha2 + \
-            12*self.slip_length*alpha4)/h))/self.slip_length
-            S[4] = (-7*self.viscosity*(um + alpha2 + alpha3 + ((h + \
-            4*self.slip_length)*alpha1 + 24*self.slip_length*alpha3)/h + \
-            alpha4))/self.slip_length
-            S[5] = (-9*self.viscosity*(um + alpha1 + alpha3 + alpha4 + ((h + \
-            12*self.slip_length)*alpha2 + \
-            40*self.slip_length*alpha4)/h))/self.slip_length
-
-        if order == 5:
-
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-            alpha3 = values[4]/values[0]
-            alpha4 = values[5]/values[0]
-            alpha5 = values[6]/values[0]
-
-            S[0] = 0
-            S[1] = -((self.viscosity*(um + alpha1 + alpha2 + alpha3 + alpha4 + \
-            alpha5))/self.slip_length)
-            S[2] = (-3*self.viscosity*(h*um + (h + 4*self.slip_length)*alpha1 + \
-            h*alpha2 + (h + 4*self.slip_length)*alpha3 + h*alpha4 + (h + \
-            4*self.slip_length)*alpha5))/(h*self.slip_length)
-            S[3] = (-5*self.viscosity*(um + alpha1 + alpha3 + alpha4 + ((h + \
-            12*self.slip_length)*alpha2 + 12*self.slip_length*alpha4)/h + \
-            alpha5))/self.slip_length
-            S[4] = (-7*self.viscosity*(h*um + (h + 4*self.slip_length)*alpha1 + \
-            h*alpha2 + (h + 24*self.slip_length)*alpha3 + h*alpha4 + (h + \
-            24*self.slip_length)*alpha5))/(h*self.slip_length)
-            S[5] = (-9*self.viscosity*(um + alpha1 + alpha3 + alpha4 + ((h + \
-            12*self.slip_length)*alpha2 + 40*self.slip_length*alpha4)/h + \
-            alpha5))/self.slip_length
-            S[6] = (-11*self.viscosity*(h*um + (h + 4*self.slip_length)*alpha1 + \
-            h*alpha2 + (h + 24*self.slip_length)*alpha3 + h*alpha4 + (h + \
-            60*self.slip_length)*alpha5))/(h*self.slip_length)
-
-        if order == 6:
-
-            alpha1 = values[2]/values[0]
-            alpha2 = values[3]/values[0]
-            alpha3 = values[4]/values[0]
-            alpha4 = values[5]/values[0]
-            alpha5 = values[6]/values[0]
-            alpha6 = values[7]/values[0]
-
-            S[0] = 0
-            S[1] = -((self.viscosity*(um + alpha1 + alpha2 + alpha3 + alpha4 + \
-            alpha5 + alpha6))/self.slip_length)
-            S[2] = (-3*self.viscosity*(um + alpha2 + alpha3 + alpha4 + alpha5 + \
-            ((h + 4*self.slip_length)*alpha1 + 4*self.slip_length*(alpha3 + \
-            alpha5))/h + alpha6))/self.slip_length
-            S[3] = (-5*self.viscosity*(um + alpha1 + alpha3 + alpha4 + alpha5 + \
-            alpha6 + ((h + 12*self.slip_length)*alpha2 + \
-            12*self.slip_length*(alpha4 + alpha6))/h))/self.slip_length
-            S[4] = (-7*self.viscosity*(um + alpha2 + alpha3 + alpha4 + alpha5 + \
-            ((h + 4*self.slip_length)*alpha1 + 24*self.slip_length*(alpha3 + \
-            alpha5))/h + alpha6))/self.slip_length
-            S[5] = (-9*self.viscosity*(um + alpha1 + alpha3 + alpha4 + alpha5 + \
-            alpha6 + ((h + 12*self.slip_length)*alpha2 + \
-            40*self.slip_length*(alpha4 + alpha6))/h))/self.slip_length
-            S[6] = (-11*self.viscosity*(um + alpha2 + alpha3 + alpha4 + alpha5 + \
-            ((h + 4*self.slip_length)*alpha1 + 12*self.slip_length*(2*alpha3 + \
-            5*alpha5))/h + alpha6))/self.slip_length
-            S[7] = (-13*self.viscosity*(um + alpha1 + alpha3 + alpha4 + alpha5 + \
-            alpha6 + ((h + 12*self.slip_length)*alpha2 + \
-            40*self.slip_length*alpha4 + \
-            84*self.slip_length*alpha6)/h))/self.slip_length
-
-        S = S + self.compute_drag_force(order, values, h_v, stem_diam, n_stems, drag_coeff)
+        S = super().compute_source_term(order,values,delta_t)
+        S = S + self.compute_drag_force(order, values)
         return S
 
-    def compute_max_wavespeed(self,
-                           order: int,
-                           values: np.array) -> int:
+    def compute_source_term_lastentry(self):
+        pass
 
+    def compute_breakdown_criteria_full():
         pass
 
 class HermiteMomentEquations(PDE):
@@ -4219,24 +3818,40 @@ class HermiteMomentEquations(PDE):
         relaxation time in the BGK operator
     hyperbolic : boolean
         whether the model is hyperbolic (HME) or not hyperbolic (grad), true (HME) or false (grad)
-
+    linear source : boolean
+        whether the source term can be writtn as a constantmatrix-vector multiplication
+        true if the source term can be writtn as a constantmatrix-vector multiplication, false if not
+    exact_source_computation : boolean
+        whether the source term is computed exactly
+        true if the source term is computed exactly, false if not
     
     Implemented methods from interface PDE
     ---------------------------------
+    def __init__(self, initial_condition,relaxation_time,hyperbolic,linear_source,exact_source_computation):
+        Constructs all the necessary attributes for the HermiteMomentEquations1D object.
     def compute_system_matrix(self,order,values):
         computes the system matrix of the Hermite moment equations evaluated in the given values, for the given order. 
     def compute_source_term(self,order,values):
         computes the source term of the Hermite moment equations evaluated in the given values, for the given order.
+    def compute_source_term_lastentry(self,order,values,last_moment_zero)
+        computes the last entry of the source term vector (BGK model)
     def get_initial_values(self,order,initial_condition,position):
         calculates the initial values for one specific physical position
     def compute_number_of_variables(self,order):
         computes the number of state variables in the Hermite moment equations given the order of the moment model
-    def compute_breakdown_criterion(self,values,breakdown_criterion,n)
-        computes the values of the given breakdown criterion in each mesh cell
+    def compute_max_wavespeed(self,order,values):
+        compute the maximum wavespeed in the Hermite moment equations system, 
+        used to calculate a timestep that satisfies CFL condition
+    def convert_to_primitive(self,order,data_matrix_convective):
+        converts the computed values to the values of the primitive variables
+    def compute_breakdown_criteria_full(self):
+        computes breakdown criteria for the Hermite moment equations for adaptive simulation        
 
     Instance methods
     ----------------
-    
+    def _compute_source_exact(self,order,initial_values,delta_t):
+        exact solution of w'(t) = S_matrix.w, with constant matrix S_matrix
+
     """
 
     def __init__(self, 
@@ -4244,9 +3859,9 @@ class HermiteMomentEquations(PDE):
                 relaxation_time: float,
                 hyperbolic: bool,
                 linear_source: bool,
-                exact_source_computation):
+                exact_source_computation: bool):
         """
-        Constructs all the necessary attributes for the SWME1D object.
+        Constructs all the necessary attributes for the HermiteMomentEquations1D object.
 
         Parameters
         ----------
@@ -4258,6 +3873,12 @@ class HermiteMomentEquations(PDE):
             slip length value
         hyperbolic : boolean
             true if hyperbolic, false if not hyperbolic
+        linear source : boolean
+            whether the source term can be writtn as a constantmatrix-vector multiplication
+            true if the source term can be writtn as a constantmatrix-vector multiplication, false if not
+        exact_source_computation : boolean
+            whether the source term is computed exactly
+            true if the source term is computed exactly, false if not
         """
         self.initial_condition = initial_condition
         self.relaxation_time = relaxation_time
@@ -4267,7 +3888,7 @@ class HermiteMomentEquations(PDE):
 
     def compute_system_matrix(self,
                               order: int,
-                              values: np.array) -> np.array:
+                              values: np.ndarray) -> np.ndarray:
 
         A=np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
         rho = values[0]
@@ -4327,7 +3948,6 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[4][1] = 0
                 A[4][2] = -f3
-
         if order == 5:
             f3 = values[3]
             f4 = values[4]
@@ -4403,7 +4023,6 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[6][1] = 0
                 A[6][2] = (theta*f3)/2. - f5
-
         if order == 7:
             f3 = values[3]
             f4 = values[4]
@@ -4453,7 +4072,6 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[7][1] = 0
                 A[7][2] = (theta*f4)/2. - f6
-
         if order == 8:
             f3 = values[3]
             f4 = values[4]
@@ -4511,21 +4129,151 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[8][1] = 0
                 A[8][2] = (theta*f5)/2. - f7
-        if order > 8:
-            print('This order is not implemented, yet')
+        if order == 9:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
 
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+
+            if self.hyperbolic:
+                A[9][1] = 0
+                A[9][2] = (theta*f6)/2. - f8
+        if order == 10:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+            A[9][10] = 10
+            A[10][0] = -((theta*f9)/rho)
+            A[10][1] = 11*f10
+            A[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A[10][3] = (-3*f8)/rho
+            A[10][9] = theta
+            A[10][10] = u
+
+            if self.hyperbolic:
+                A[10][1] = 0
+                A[10][2] = (theta*f7)/2. - f9
         return A
-
-    def compute_system_matrix_diff(self,
-                              order_low: int,
-                              values: np.array,
-                              g = 1) -> np.array:
-        pass
 
     def compute_source_term(self,
                             order: int,
-                            values: np.array,
-                            delta_t: float) -> np.array:
+                            values: np.ndarray,
+                            delta_t: float) -> np.ndarray:
+        
         if self.exact_source_computation:
             S = self._compute_source_exact(order,values,delta_t)
         elif self.linear_source:
@@ -4539,10 +4287,27 @@ class HermiteMomentEquations(PDE):
 
     def _compute_source_exact(self,
                                order: int,
-                               initial_values: np.array,
-                               delta_t,
-                               g = 1) -> np.array:
+                               initial_values: np.ndarray,
+                               delta_t: float) -> np.ndarray:
+        """
+        Exactly solves the ordinary differential equation w'(t) = S_matrix.w(t), with initial condition w^n
+
+        Parameters
+        ----------
+        order : integer
+            order of the model
+        values : numpy array
+            values of the variables
+        delta_t : float
+            current time step
         
+        Returns
+        -------
+        S_exact: numpy 1D array
+            solution of the ordinary differential equation w'(t) = S_matrix.w(t), with initial condition w^n, at time w^n+1
+
+        """
+
         S_exact = np.zeros(self.compute_number_of_variables(order))
         S_exact[0] = initial_values[0]
         S_exact[1] = initial_values[1]
@@ -4554,38 +4319,24 @@ class HermiteMomentEquations(PDE):
 
     def _compute_source_matrix_inverse(self,
                                       order: int,
-                                      values: np.array,
+                                      values: np.ndarray,
                                       delta_t,
-                                      g = 1) -> np.array:
-        S_inv = np.zeros((self.compute_number_of_variables(order),self.compute_number_of_variables(order))) 
-
-        #Not implemented yet
-        return S_inv
-
+                                      g = 1) -> np.ndarray:
+        pass
     
     def compute_source_term_lastentry(self,
                             order: int,
-                            values: np.array,
+                            values: np.ndarray,
                             last_moment_zero: bool,
-                            g = 1) -> np.array:
+                            g = 1) -> np.ndarray:
         
-        value_out = 0
-
-        return np.abs(value_out)
-
-    def compute_system_matrix_last_row(self,
-                              order: int,
-                              values: np.array,
-                              g = 1) -> np.array:
-
-        A_last_row=np.zeros((1,self.compute_number_of_variables(order))) 
-
-        return A_last_row
+        pass
 
     def get_initial_values(self,
                            order: int,
                            initial_condition: str,
-                           position: float) -> np.array:
+                           position: float) -> np.ndarray:
+        
         initial_values = np.zeros(self.compute_number_of_variables(order))
         if initial_condition == 'constantDensity_noVelocity':
             initial_values[0] = 1
@@ -4601,6 +4352,12 @@ class HermiteMomentEquations(PDE):
                 initial_values[6] = 0 
             if order > 6:
                 initial_values[7] = 0
+            if order > 7:
+                initial_values[8] = 0
+            if order > 8:
+                initial_values[9] = 0
+            if order > 9:
+                initial_values[10] = 0
         elif initial_condition == 'constantDensity_constantVelocity':
             initial_values[0] = 1
             initial_values[1] = 1
@@ -4615,6 +4372,12 @@ class HermiteMomentEquations(PDE):
                 initial_values[6] = 0 
             if order > 6:
                 initial_values[7] = 0
+            if order > 7:
+                initial_values[8] = 0
+            if order > 8:
+                initial_values[9] = 0
+            if order > 9:
+                initial_values[10] = 0
         elif initial_condition == 'shockTube_noVelocity':
             x0 = 0
             if position < x0:
@@ -4631,6 +4394,12 @@ class HermiteMomentEquations(PDE):
                     initial_values[6] = 0
                 if order > 6:
                     initial_values[7] = 0 
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
             else:
                 initial_values[0] = 1
                 initial_values[1] = 0
@@ -4645,297 +4414,338 @@ class HermiteMomentEquations(PDE):
                     initial_values[6] = 0 
                 if order > 6:
                     initial_values[7] = 0
-        elif initial_condition == 'shockTube_constantVelocity':
-            x0 = 0
-            if position < x0:
-                initial_values[0] = 2
-                initial_values[1] = 1
-                if order > 0:
-                    initial_values[2] = 0 
-                if order > 1:
-                    initial_values[3] = 0 
-                if order > 2:
-                    initial_values[4] = 0 
-                if order > 3:
-                    initial_values[5] = 0 
-                if order > 4:
-                    initial_values[6] = 0
-                if order > 5:
-                    initial_values[7] = 0 
-            else:
-                initial_values[0] = 1
-                initial_values[1] = 1
-                if order > 0:
-                    initial_values[2] = 0 
-                if order > 1:
-                    initial_values[3] = 0 
-                if order > 2:
-                    initial_values[4] = 0 
-                if order > 3:
-                    initial_values[5] = 0 
-                if order > 4:
-                    initial_values[6] = 0 
-                if order > 5:
-                    initial_values[7] = 0
-        elif initial_condition == 'smooth_densityWave_constantVelocity':
-            initial_values[0] = 1 + 0.5*np.exp(-15*position**2)
-            initial_values[1] = 0.2
-            if order > 0:
-                initial_values[2] = 0
-            if order > 1:
-                initial_values[3] = 0 
-            if order > 2:
-                initial_values[4] = 0 
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
+        elif initial_condition == 'smooth_densityWave_noVelocity':
+            initial_values[0] = 1 + 2*np.exp(-2*position**2)
+            initial_values[1] = 0.5
+            initial_values[2] = 1
             if order > 3:
-                initial_values[5] = 0 
+                initial_values[3] = 0.1
             if order > 4:
-                initial_values[6] = 0 
+                initial_values[4] = 0.1 
             if order > 5:
-                initial_values[7] = 0  
+                initial_values[5] = 0.1 
+            if order > 6:
+                initial_values[6] = 0.1 
+            if order > 7:
+                initial_values[7] = 0.1 
+            if order > 8:
+                initial_values[8] = 0.1  
+            if order > 9:
+                initial_values[10] = 0.1
         elif initial_condition == 'symmetric_shockTube':
-            x0 = -2
-            x1 = 2
+            x0 = -0.5
+            x1 = 0.5
+            if x0 < position < x1:
+                initial_values[0] = 1
+                initial_values[1] = 0
+                initial_values[2] = 1 
+                if order > 2:
+                    initial_values[3] = 0 
+                if order > 3:
+                    initial_values[4] = 0 
+                if order > 4:
+                    initial_values[5] = 0 
+                if order > 5:
+                    initial_values[6] = 0
+                if order > 6:
+                    initial_values[7] = 0 
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
+            else:
+                initial_values[0] = 2
+                initial_values[1] = 0
+                initial_values[2] = 1 
+                if order > 2:
+                    initial_values[3] = 0 
+                if order > 3:
+                    initial_values[4] = 0 
+                if order > 4:
+                    initial_values[5] = 0 
+                if order > 5:
+                    initial_values[6] = 0 
+                if order > 6:
+                    initial_values[7] = 0
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
+        elif initial_condition == 'symmetric_shockTube_constantVelocity':
+            x0 = -0.5
+            x1 = 0.5
             if x0 < position < x1:
                 initial_values[0] = 2
-                initial_values[1] = 0
-                if order > 0:
-                    initial_values[2] = 0 
-                if order > 1:
-                    initial_values[3] = 0 
+                initial_values[1] = -0.1
+                initial_values[2] = 1 
                 if order > 2:
-                    initial_values[4] = 0 
+                    initial_values[3] = 0 
                 if order > 3:
-                    initial_values[5] = 0 
+                    initial_values[4] = 0 
                 if order > 4:
-                    initial_values[6] = 0
+                    initial_values[5] = 0 
                 if order > 5:
+                    initial_values[6] = 0
+                if order > 6:
+                    initial_values[7] = 0
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
+            else:
+                initial_values[0] = 1
+                initial_values[1] = -0.1
+                initial_values[2] = 1 
+                if order > 2:
+                    initial_values[3] = 0 
+                if order > 3:
+                    initial_values[4] = 0 
+                if order > 4:
+                    initial_values[5] = 0 
+                if order > 5:
+                    initial_values[6] = 0 
+                if order > 6:
+                    initial_values[7] = 0
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
+        elif initial_condition == 'colliding_shockTube':
+            x0 = -1.5
+            x1 = -0.5
+            x2 = 0.5
+            x3 = 1.5
+            if x0 < position < x1 or x2 < position < x3:
+                initial_values[0] = 2
+                initial_values[1] = 0
+                initial_values[2] = 1 
+                if order > 2:
+                    initial_values[3] = 0 
+                if order > 3:
+                    initial_values[4] = 0 
+                if order > 4:
+                    initial_values[5] = 0 
+                if order > 5:
+                    initial_values[6] = 0
+                if order > 6:
                     initial_values[7] = 0 
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
             else:
                 initial_values[0] = 1
                 initial_values[1] = 0
-                if order > 0:
-                    initial_values[2] = 0 
-                if order > 1:
-                    initial_values[3] = 0 
+                initial_values[2] = 1 
                 if order > 2:
-                    initial_values[4] = 0 
+                    initial_values[3] = 0 
                 if order > 3:
-                    initial_values[5] = 0 
+                    initial_values[4] = 0 
                 if order > 4:
-                    initial_values[6] = 0 
+                    initial_values[5] = 0 
                 if order > 5:
-                    initial_values[7] = 0
+                    initial_values[6] = 0 
+                if order > 6:
+                    initial_values[7] = 0        
+                if order > 7:
+                    initial_values[8] = 0
+                if order > 8:
+                    initial_values[9] = 0
+                if order > 9:
+                    initial_values[10] = 0
+        elif initial_condition == 'smooth_and_dam':
+            x0 = 0.5
+            x1 = -0.25
+            x2 = -0.75
+            if position > x1:
+                initial_values[0] = 1 + 2*np.exp(-20*(position-x0)**2)
+                initial_values[1] = 0
+                initial_values[2] = 1
+                if order > 3:
+                    initial_values[3] = 0
+                if order > 4:
+                    initial_values[4] = 0 
+                if order > 5:
+                    initial_values[5] = 0 
+                if order > 6:
+                    initial_values[6] = 0 
+                if order > 7:
+                    initial_values[7] = 0 
+                if order > 8:
+                    initial_values[8] = 0  
+                if order > 9:
+                    initial_values[10] = 0
+            else:
+                if x2 < position < x1:
+                    initial_values[0] = 3
+                    initial_values[1] = 0
+                    initial_values[2] = 1
+                    if order > 3:
+                        initial_values[3] = 0
+                    if order > 4:
+                        initial_values[4] = 0 
+                    if order > 5:
+                        initial_values[5] = 0 
+                    if order > 6:
+                        initial_values[6] = 0 
+                    if order > 7:
+                        initial_values[7] = 0 
+                    if order > 8:
+                        initial_values[8] = 0 
+                    if order > 9:
+                        initial_values[10] = 0
+                else:
+                    initial_values[0] = 1
+                    initial_values[1] = 0
+                    initial_values[2] = 1
+                    if order > 3:
+                        initial_values[3] = 0
+                    if order > 4:
+                        initial_values[4] = 0 
+                    if order > 5:
+                        initial_values[5] = 0 
+                    if order > 6:
+                        initial_values[6] = 0 
+                    if order > 7:
+                        initial_values[7] = 0 
+                    if order > 8:
+                        initial_values[8] = 0   
+                    if order > 9:
+                        initial_values[10] = 0                  
         return initial_values
     
-    def compute_number_of_variables(self, order) -> int:
+    def compute_number_of_variables(self,
+                                    order: int) -> int:
         number_of_variables = order + 1
         return int(number_of_variables)
     
     def compute_max_wavespeed(self,
                            order: int,
-                           values: np.array,
-                           max_hermite_roots = [1.73205,2.33441,2.85697,3,32426,3.75044,4.14455,4.51275]) -> float:
+                           values: np.ndarray,
+                           max_hermite_roots = [1.73205,2.33441,2.85697,3,3.2426,3.75044,4.14455,4.51275,4.85946,5.188]) -> float:
 
         max_wave_speed_plus = np.max(values[:,1]+np.sqrt(values[:,2])*max_hermite_roots[order-2])
         max_wave_speed_min = np.min(values[:,1]-np.sqrt(values[:,2])*max_hermite_roots[order-2])
         max_wavespeed = max(np.abs(max_wave_speed_plus),np.abs(max_wave_speed_min))
 
         return max_wavespeed
-    
-    def compute_all_breakdown_criteria(self,
-                                   values: np.array,
-                                   orders: list,
-                                   number_of_variables: list,
-                                   n,
-                                   delta_x,
-                                   tolerance_up_height_gradient = 0.3,
-                                   tolerance_down_height_gradient = 0.03,
-                                   tolerance_up_momentum_gradient = 0.2,
-                                   tolerance_down_momentum_gradient = 0.02,
-                                   tolerance_up_moment_gradient = 0.1,
-                                   tolerance_down_moment_gradient = 0.01,
-                                   tolerance_up_last_moment = 0.01,
-                                   tolerance_down_last_moment = 0.001,
-                                   tolerance_up_source = 0.002,
-                                   tolerance_down_source = 0.0002) -> np.array:
-
-        """
-        Compute ALL breakdown criteria for quantifying the required modelling complexity
-
-        Parameters
-        ----------
-        values : list of numpy 1D arrays
-            the values of the variables in each mesh cell
-        orders : list of integers
-            the order in each cell
-        number_of_variables : list of integers
-            the number of variables in each cell
-        
-        Returns
-        -------
-        relative_value_last_moment: numpy 2D array
-            modelling complexity quantities in each mesh cell
-
-        """
-        max_order = max(orders)
-        tolerances_up = np.zeros(4+max_order)
-        tolerances_down = np.zeros(4+max_order)
-        tolerances_up[0] = tolerance_up_last_moment
-        tolerances_up[1] = tolerance_up_source
-        tolerances_up[2] = tolerance_up_height_gradient
-        tolerances_up[3] = tolerance_up_momentum_gradient
-        tolerances_down[0] = tolerance_down_last_moment
-        tolerances_down[1] = tolerance_down_source
-        tolerances_down[2] = tolerance_down_height_gradient
-        tolerances_down[3] = tolerance_down_momentum_gradient
-        for i in range(max_order):
-            tolerances_up[4+i] = tolerance_up_moment_gradient
-            tolerances_down[4+i] = tolerance_down_moment_gradient
-
-        breakdown_criterion_flags = np.zeros(n)
-        source_term_lastentry = np.zeros(n)
-        for i in range(n):
-            source_term_lastentry[i] = self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],False)
-
-        breakdown_estimators = np.zeros((n,max_order+4))
-        for i in range(n):
-            breakdown_estimators[i,0] = np.abs(self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],False))
-            breakdown_estimators[i,1] = np.abs(values[i+1,number_of_variables[i+1]-1])
-            breakdown_estimators[i,2] = np.abs((values[i+1,0] - values[i,0]))/delta_x
-            breakdown_estimators[i,3] = np.abs((values[i+1,1] - values[i,1]))/delta_x
-            for j in range(orders[i+1]):
-                breakdown_estimators[i,4+j] = np.abs((values[i+1,2+j])-values[i,2+j])/delta_x
-        breakdown_estimators[0,0] = np.abs(self.compute_source_term_lastentry(orders[1],values[1,:number_of_variables[1]],False))
-        breakdown_estimators[0,1] = np.abs(values[1,number_of_variables[1]-1])
-        breakdown_estimators[0,2] = np.abs((values[2,0] - values[1,0]))/delta_x
-        breakdown_estimators[0,3] = np.abs((values[2,1] - values[1,1]))/delta_x
-        for j in range(orders[i+1]):
-            breakdown_estimators[0,4+j] = np.abs((values[2,2+j])-values[2,2+j])/delta_x    
-
-        for i in range(n):
-            if breakdown_estimators[i,0] > tolerances_up[0]:
-                for j in range(2,orders[i+1]+4):
-                    if breakdown_estimators[i,j] > tolerances_up[j]:
-                        breakdown_criterion_flags[i] = 1
-                        break
-            elif breakdown_estimators[i,1] > tolerances_up[1]:
-                breakdown_criterion_flags[i] = 1
-            elif (breakdown_criterion_flags[i] !=1 and\
-                  breakdown_estimators[i,0] < tolerances_down[0] and breakdown_estimators[i,1] < tolerances_down[1]):
-                breakdown_criterion_flags[i] = -1
-                for j in range(2,orders[i+1]+4):
-                    if breakdown_estimators[i,j] > tolerances_down[j]:
-                        breakdown_criterion_flags[i] = 0
-                        break
-
-        return breakdown_criterion_flags
-        
-    def compute_breakdown_criterion(self,
-                                   values: np.array,
-                                   orders: np.array,
-                                   number_of_variables: list,
-                                   breakdown_criterion: str,
-                                   n,
-                                   delta_x) -> np.array:
-        breakdown_criterion_values = np.zeros(n)
-        
-        if breakdown_criterion == 'height_gradient':
-            if np.abs(values[1,0]) < 0.001:
-                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))/delta_x
-            else:
-                breakdown_criterion_values[0] = np.abs((values[2,0] - values[1,0]))/delta_x
-            for i in range(2,n): 
-                if np.abs(values[i,0]) < 0.001:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/0.001)
-                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))/delta_x
-                else:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0])/values[i,0])
-                    breakdown_criterion_values[i] = np.abs((values[i+1,0] - values[i,0]))/delta_x
-            if np.abs(values[n,0]) < 0.001:
-                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))/delta_x
-            else:
-                breakdown_criterion_values[-1] = np.abs((values[n,0] - values[n-1,0]))/delta_x
-        elif breakdown_criterion == 'momentum_gradient':
-            if np.abs(values[1,1]) < 0.001:
-                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))/delta_x
-            else:
-                breakdown_criterion_values[0] = np.abs((values[2,1] - values[1,1]))/delta_x
-            for i in range(2,n): 
-                if np.abs(values[i,1]) < 0.001:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/0.001)
-                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))/delta_x
-                else:
-                    #breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1])/values[i,1])
-                    breakdown_criterion_values[i] = np.abs((values[i+1,1] - values[i,1]))/delta_x
-            if np.abs(values[n,1]) < 0.001:
-                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))/delta_x
-            else:
-                breakdown_criterion_values[-1] = np.abs((values[n,1] - values[n-1,1]))/delta_x
-        elif breakdown_criterion == 'last_moment':
-            for i in range(1,n+1): 
-                breakdown_criterion_values[i-1] = np.abs(values[i,number_of_variables[i]-1]) 
-                # If the order is 0, there are no moments and the above value is never used     
-        elif breakdown_criterion == 'source_term':
-            for i in range(n):
-                breakdown_criterion_values[i] = np.abs(self.compute_source_term_lastentry(orders[i+1],values[i+1,:number_of_variables[i+1]],True))
-        else:
-            print('this criterion is not implemented yet')  
-
-        return breakdown_criterion_values 
 
     def convert_to_primitive(self,
                            order: int,
-                           data_matrix_convective: np.array,
-                           g=1) -> np.array:
+                           data_matrix_convective: np.ndarray) -> np.ndarray:
 
         data_matrix_primitive = data_matrix_convective
 
         return data_matrix_primitive 
     
     def compute_breakdown_criteria_full(self,
-                                   values: np.array,
-                                   n,
-                                   delta_x,
-                                   delta_t,
-                                   max_order,
-                                   orders_cellwise,
-                                   numbers_of_variables_cellwise,
-                                   dom_decomp_val_res1,
-                                   dom_decomp_val_res2,
-                                   tolerance_up_density_gradient = 0.05,
-                                   tolerance_down_last_moment = 0.005) -> np.array:       
+                                   values: np.ndarray,
+                                   n: int,
+                                   delta_x: float,
+                                   delta_t: float,
+                                   max_order: int,
+                                   orders_cellwise: list,
+                                   numbers_of_variables_cellwise: list,
+                                   dom_decomp_val_res1: np.ndarray,
+                                   dom_decomp_val_res2: np.ndarray,
+                                   tolerance_up_flow_gradient = 0.00005,
+                                   tolerance_down_last_moment = 0.00005) -> tuple[np.ndarray,np.ndarray]:       
         """
-        TODO
+        computes the breakdown criteria for adaptive simulation
 
         Parameters
         ----------
         values : list of numpy 1D arrays
             the values of the variables in each mesh cell
-        orders : list of integers
+        delta_x : float
+            grid cell size
+        delta_t : float
+            current time step
+        max_order : integer
+            max order of the moment model
+        orders_cellwise : list of integers
             the order in each cell
-        number_of_variables : list of integers
+        number_of_variables_cellwise : list of integers
             the number of variables in each cell
+        dom_decomp_val_res1 : np.ndarray
+            value of res1 in each grid cell
+        dom_decomp_val_res2 : np.ndarray
+            value of res2 in each grid cell
+        tolerance_up_flow_gradient : float
+            threshold for increase-criterion related to the flow gradients
+        tolerance_down_last_moment : float
+            threshold for decrease-criterion related to the magnitude of the last moment
         
         Returns
         -------
-        relative_value_last_moment: numpy 2D array
-            modelling complexity quantities in each mesh cell
-
+        breakdown_estimators : np.ndarray
+            values of the breakdown estimators in each grid cell
+        breakdown_criterion_flags : np.ndarray
+            flags for increasing or reducing the order in each grid cell
+            this array is filled with the values of the changes in order in each grid cell
         """
-        breakdown_criterion_flags = np.zeros(n)
+        breakdown_criterion_flags = np.zeros(n,dtype=int)
         breakdown_estimators = np.zeros((n,2))
 
+        # print(np.abs((values[2,0] - values[0,0]))/(2*delta_x*max(0.1,np.abs(values[1,0]))))
         for i in range(n):
-            breakdown_estimators[i,0] = np.abs(values[i+1,numbers_of_variables_cellwise[i+1]-1]) 
-            for j in range(numbers_of_variables_cellwise[i]):
-                breakdown_estimators[i,1] += ((values[i+2,j] - values[i,j])/(2*delta_x))**2 
-
-        breakdown_estimators[:,1] = np.sqrt(breakdown_estimators[:,1])
-        for i in range(n):
-            if breakdown_estimators[i,1] > tolerance_up_density_gradient:
-                breakdown_criterion_flags[i] = 1
+            loc_M = orders_cellwise[i+1]-1
+            breakdown_estimators[i,0] = np.abs(values[i+1,loc_M]) 
+            # for j in range(numbers_of_variables_cellwise[i+1]):
+            #     # breakdown_estimators[i,1] += (max(np.abs((values[i+1,j] - values[i,j])),np.abs((values[i+2,j] - values[i+1,j])))/(delta_x))**2
+            #     breakdown_estimators[i,1] += (np.abs((values[i+2,j] - values[i,j]))/(2*delta_x))**2 
+            # j = 0
+            # breakdown_estimators[i,1] = (np.abs((values[i+2,j] - values[i,j]))/(2*delta_x*max(1,np.abs(values[i+1,j]))))**2
+            if loc_M == 2:
+                breakdown_estimators[i,1] = np.abs(delta_t/(4*delta_x)*values[i+1,0]*values[i+1,2]*(values[i+2,2]-values[i,2]))
+            elif loc_M == 3:
+                breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                                                   (\
+                                                       values[i+1,3]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
+                                                        +values[i+1,3]*(values[i+2,2]-values[i,2]))\
+                                                        -values[i+1,2]*(values[i+2,3]-values[i,3]
+                                                                        )
+                                                        )
+            elif loc_M == 4:
+                breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                                                   (\
+                                                       values[i+1,4]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
+                                                        +values[i+1,4]*(values[i+2,2]-values[i,2]))\
+                                                        +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                                                        -values[i+1,2]*(values[i+2,4]-values[i,4]
+                                                                        )
+                                                        )
             else:
-                if breakdown_estimators[i,0] < tolerance_down_last_moment: 
-                    breakdown_criterion_flags[i] = -1
+                breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                                                   (\
+                                                       values[i+1,loc_M]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
+                                                        -(values[i+1,2]*values[i+1,loc_M-2]/2-values[i+1,loc_M])*(values[i+2,2]-values[i,2]))\
+                                                        +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                                                        -values[i+1,2]*(values[i+2,loc_M]-values[i,loc_M]
+                                                                        )
+                                                        )          
+        # breakdown_estimators[:,1] = np.sqrt(breakdown_estimators[:,1])
+        for i in range(n):
+            if orders_cellwise[i+1] < max_order-1 and breakdown_estimators[i,1] > tolerance_up_flow_gradient:
+                breakdown_criterion_flags[i] = 2
+            else:
+                if orders_cellwise[i+1] > 3 and breakdown_estimators[i,0] < tolerance_down_last_moment: 
+                    breakdown_criterion_flags[i] = -2
         
         return breakdown_estimators, breakdown_criterion_flags

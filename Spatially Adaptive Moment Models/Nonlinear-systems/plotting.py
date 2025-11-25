@@ -14,38 +14,66 @@ class Plotting(ABC):
 
     Attributes
     ----------
-    pde_type : the specific PDE model
-        True if the spatial discretization is of the conservative type, false if non-conservative
+    pde_type : PDE
+        The partial differential equation that has been simulated
+    mesh : RectangularMesh
+        The simulation mesh
+    simulation : Simulation
+        The simulation object
     
-    Class method
-    -------
+    Class methods
+    -------------
     def __init__(self,pde_type):
         initializes the plotting object
 
     Abstract methods
-    -------
+    ---------------
     def plot(self):
         creates a plotting object and plots the simulation results
     """
     def __init__(self,
                  pde_type: pde.PDE,
                  mesh: mesh.RectangularMesh,
-                 adaptive: bool,
                  simulation: simulation.Simulation):
-        self.pde_type = pde_type #implement it as SWME
+
+        """
+        initializes the plotting object
+
+        Parameters
+        ------------
+        pde_type : PDE
+            the PDE model
+        mesh : RectangularMesh
+            the numerical simulation mesh
+        simulation : Simulation
+            the simulation object
+
+        Returns
+        --------        
+        None
+
+        """
+
+        self.pde_type = pde_type 
         self.mesh = mesh
-        self.adaptive = adaptive
         self.simulation = simulation 
 
     @abstractmethod
-    def plot(self,data_array):
-
+    def plot(self,
+             data_array: np.ndarray):
         """
-        Documented in the child classes
+        Creates a plot of the data listed in data_array
+
+        Parameters
+        ----------
+        data_array : numpy array
+
+        Returns
+        -------
+        None
 
         """
         pass
-
 
 class SWME1DPlotClassical(Plotting):
 
@@ -56,42 +84,57 @@ class SWME1DPlotClassical(Plotting):
 
     Attributes
     ----------
-    None
+    pde_type : SWME1D
+        the 1D SWME object
+    mesh : RectangularMesh
+        The simulation mesh
+    simulation : ClassicalSimulation1D
+        The classical 1D simulation object
 
-    Implemented methods from parent class 'Plotting'
-    ------------------------------------------------
+    Implemented methods from abstract parent class 'Plotting'
+    ---------------------------------------------------------
     def plot(self):
-        TODO
-            
-    Abstract methods    
-    -----------------
-    None
+        creates a plotting object and plots the simulation results
+
+    Methods overriden from abstract parent class 'Plotting
+    ------------------------------------------------------
+    def __init__(self,pde_type):
+        initializes the plotting object
 
     """
 
     def __init__(self,
-                 pde: pde.SWME1D,
+                 pde_type: pde.SWME1D,
                  mesh: mesh.RectangularMesh,
                  simulation: simulation.ClassicalSimulation1D):
-        self.pde = pde 
+        """
+        initializes the classical SWME1D plotting object
+
+        Parameters
+        ------------
+        pde_type : SWME1D
+            the SWME1D moment model
+        mesh : RectangularMesh
+            the numerical simulation mesh
+        simulation : ClassicalSimulation1D
+            the simulation object
+
+        Returns
+        --------        
+        None
+
+        """
+
+        self.pde_type = pde_type 
         self.mesh = mesh
         self.simulation = simulation
 
-    def plot(self,data_array):
-        
-        """
-        Creates a plot
+    def plot(self,
+             data_array: np.ndarray):
 
-        Parameters
-        ----------
-        
-        Returns
-        -------
-
-        """
         z = np.linspace(0,1,100)
 
-        velocity_profile = self.pde.compute_vertical_velocity_profile(self.simulation.order,
+        velocity_profile = self.pde_type.compute_vertical_velocity_profile(self.simulation.order,
                                                                     data_array,
                                                                     z)
         order = self.simulation.order
@@ -123,52 +166,63 @@ class SWME1DPlotClassical(Plotting):
 class SWME1DPlotAdaptive(Plotting):
 
     """
-    This class represents a plotting object for the plotting of numerical results of the 1D SWME of a classical simulation.
+    This class represents a plotting object for the plotting of numerical results of the 1D SWME of an adaptive simulation.
 
     ...
 
     Attributes
     ----------
-    None
+    pde_type : SWME1D
+        the 1D SWME object
+    mesh : RectangularMesh
+        The simulation mesh
+    simulation : SpatiallyAdaptiveSimulation1D
+        The adaptive 1D simulation object
 
-    Implemented methods from parent class 'Plotting'
-    ------------------------------------------------
+    Implemented methods from abstract parent class 'Plotting'
+    ---------------------------------------------------------
     def plot(self):
-        computes the fluctuation between two cells with values value_left and value_right
-            
-    Abstract methods    
-    -----------------
-    None
+        creates a plotting object and plots the simulation results
+
+    Methods overriden from abstract parent class 'Plotting
+    ------------------------------------------------------
+    def __init__(self,pde_type):
+        initializes the plotting object
 
     """
 
     def __init__(self,
-                 pde: pde.SWME1D,
+                 pde_type: pde.SWME1D,
                  mesh: mesh.RectangularMesh,
                  simulation: simulation.SpatiallyAdaptiveSimulation1D):
-        self.pde = pde 
+        """
+        initializes the adaptive SWME1D plotting object
+
+        Parameters
+        ------------
+        pde_type : SWME1D
+            the SWME1D moment model
+        mesh : RectangularMesh
+            the numerical simulation mesh
+        simulation : SpatiallyAdaptiveSimulation1D
+            the adaptive 1D simulation object
+
+        Returns
+        --------        
+        None
+
+        """
+        self.pde_type = pde_type 
         self.mesh = mesh
         self.simulation = simulation
 
     def plot(self,data_array):
         
-        """
-        Creates a plot
-
-        Parameters
-        ----------
-        
-        Returns
-        -------
-
-        """
         z = np.linspace(0,1,100)
 
-        velocity_profile = self.pde.compute_vertical_velocity_profile(self.simulation.max_order,
+        velocity_profile = self.pde_type.compute_vertical_velocity_profile(self.simulation.max_order,
                                                                     data_array,
                                                                     z)
-        orders = self.simulation.orders_cellwise
-        number_of_variables = self.simulation.numbers_of_variables_cellwise
         order = self.simulation.max_order
 
         print('total mass = ',np.sum(data_array[:,1]*data_array[:,2]))
@@ -237,58 +291,71 @@ class HME1DPlotClassical(Plotting):
 
     Attributes
     ----------
-    None
+    pde_type : HME1D
+        the 1D HME object
+    mesh : RectangularMesh
+        The simulation mesh
+    simulation : ClassicalSimulation1D
+        The classical 1D simulation object
 
-    Implemented methods from parent class 'Plotting'
-    ------------------------------------------------
+    Implemented methods from abstract parent class 'Plotting'
+    ---------------------------------------------------------
     def plot(self):
-        TODO
-            
-    Abstract methods    
-    -----------------
-    None
+        creates a plotting object and plots the simulation results
+
+    Methods overriden from abstract parent class 'Plotting
+    ------------------------------------------------------
+    def __init__(self,pde_type):
+        initializes the plotting object
 
     """
 
     def __init__(self,
-                 pde: pde.HermiteMomentEquations,
+                 pde_type: pde.HermiteMomentEquations,
                  mesh: mesh.RectangularMesh,
                  simulation: simulation.ClassicalSimulation1D):
-        self.pde = pde 
+        """
+        initializes the classical HME1D plotting object
+
+        Parameters
+        ------------
+        pde_type : HME1D
+            the HME1D moment model
+        mesh : RectangularMesh
+            the numerical simulation mesh
+        simulation : ClassicalSimulation1D
+            the classical 1D simulation object
+
+        Returns
+        --------        
+        None
+
+        """
+        self.pde_type = pde_type 
         self.mesh = mesh
         self.simulation = simulation
 
     def plot(self,data_array):
         
-        """
-        Creates a plot
-
-        Parameters
-        ----------
-        
-        Returns
-        -------
-
-        """
         order = self.simulation.order
 
         plt.figure()
 
-        plt.subplot(3,3,1)
+        plt.subplot(4,4,1)
         plt.plot(self.mesh.cell_center_positions, data_array[:,1])
         plt.title('Density')
 
-        plt.subplot(3,3,2)
+        plt.subplot(4,4,2)
         plt.plot(self.mesh.cell_center_positions, data_array[:,2])
         plt.title('Velocity')
 
-        plt.subplot(3,3,3)
+        plt.subplot(4,4,3)
         plt.plot(self.mesh.cell_center_positions, data_array[:,3])
         plt.title('Temperature')
 
         k = 4
-        for i in range(3,order):
-            plt.subplot(3,3,k)
+        for i in range(3,order+1):
+            plt.subplot(4,4,k)
             plt.plot(self.mesh.cell_center_positions, data_array[:,i+1])
             plt.title('f_'+str(i))
             k += 1
@@ -298,30 +365,53 @@ class HME1DPlotClassical(Plotting):
 class HME1DPlotAdaptive(Plotting):
 
     """
-    This class represents a plotting object for the plotting of numerical results of the 1D HME of a classical simulation.
+    This class represents a plotting object for the plotting of numerical results of the 1D HME of an adaptive simulation.
 
     ...
 
     Attributes
     ----------
-    None
+    pde_type : HME1D
+        the 1D HME object
+    mesh : RectangularMesh
+        The simulation mesh
+    simulation : SpatiallyAdaptiveSimulation1D
+        The adaptive 1D simulation object
 
-    Implemented methods from parent class 'Plotting'
-    ------------------------------------------------
+    Implemented methods from abstract parent class 'Plotting'
+    ---------------------------------------------------------
     def plot(self):
-        TODO
-            
-    Abstract methods    
-    -----------------
-    None
+        creates a plotting object and plots the simulation results
+
+    Methods overriden from abstract parent class 'Plotting
+    ------------------------------------------------------
+    def __init__(self,pde_type):
+        initializes the plotting object
 
     """
 
     def __init__(self,
-                 pde: pde.HermiteMomentEquations,
+                 pde_type: pde.HermiteMomentEquations,
                  mesh: mesh.RectangularMesh,
                  simulation: simulation.SpatiallyAdaptiveSimulation1D):
-        self.pde = pde 
+        """
+        initializes the adaptive HME1D plotting object
+
+        Parameters
+        ------------
+        pde_type : HME1D
+            the HME1D moment model
+        mesh : RectangularMesh
+            the numerical simulation mesh
+        simulation : SpatiallyAdaptiveSimulation1D
+            the adaptive 1D simulation object
+
+        Returns
+        --------        
+        None
+
+        """
+        self.pde_type = pde_type 
         self.mesh = mesh
         self.simulation = simulation
 
@@ -341,34 +431,34 @@ class HME1DPlotAdaptive(Plotting):
 
         plt.figure()
 
-        plt.subplot(4,3,1)
+        plt.subplot(4,4,1)
         plt.plot(self.mesh.cell_center_positions, data_array[:,1])
         plt.title('Density')
 
-        plt.subplot(4,3,2)
+        plt.subplot(4,4,2)
         plt.plot(self.mesh.cell_center_positions, data_array[:,2])
         plt.title('Velocity')
 
-        plt.subplot(4,3,3)
+        plt.subplot(4,4,3)
         plt.plot(self.mesh.cell_center_positions, data_array[:,3])
         plt.title('Temperature')
 
         k = 4
         for i in range(3,order+1):
-            plt.subplot(4,3,k)
+            plt.subplot(4,4,k)
             plt.plot(self.mesh.cell_center_positions, data_array[:,i+1])
             plt.title('f_'+str(i))
             k += 1
 
-        plt.subplot(4,3,k)
+        plt.subplot(4,4,k)
         plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,0])
         plt.title('Absolute value last moment')
 
-        plt.subplot(4,3,k+1)
+        plt.subplot(4,4,k+1)
         plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,1])
         plt.title('Density gradient')
 
-        plt.subplot(4,3,k+2)
+        plt.subplot(4,4,k+2)
         plt.plot(self.mesh.cell_center_positions,data_array[:,0])
         plt.scatter(self.mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,0])+(5-data_array[:,-1])*np.min(data_array[:,0]))/8,s=8,color = 'hotpink')
         plt.title('orders vs density')

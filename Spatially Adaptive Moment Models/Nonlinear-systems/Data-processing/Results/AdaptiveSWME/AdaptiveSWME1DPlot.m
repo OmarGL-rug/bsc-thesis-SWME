@@ -10,17 +10,18 @@ format long
 % name4 = 'damBreak-and-smooth_linear_lambda1.0_nu0.1_adaptiveConservative_t5_10000'; type4 = 'swmeAdaptive';
 % reference_data2000x200 = load("damBreak-and-smooth_linear_lambda1.0_nu0.1_t5_2000x200.csv");
 
-% name1 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order1_t5_10000'; type1 = 'swme';
-% name2 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order5_t5_10000'; type2 = 'swme';
-% name3 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveNonConservative_t5_10000'; type3 = 'swmeAdaptive';
+name1 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order1_t5_10000'; type1 = 'swme';
+name2 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_order5_t5_10000'; type2 = 'swme';
+name3 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveNonConservative_t5_10000'; type3 = 'swmeAdaptive';
 % name4 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveConservative_t5_10000'; type4 = 'swmeAdaptive';
-% reference_data2000x200 = load("damBreak-and-smooth_linear_lambda0.1_nu0.1_t5_2000x200.csv");
+name4 = 'test_newFluctuationsStorage2'; type4 = 'swmeAdaptive';
+reference_data2000x200 = load("damBreak-and-smooth_linear_lambda0.1_nu0.1_t5_2000x200.csv");
 
-name1 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order2_t5_10000'; type1 = 'swme';
-name2 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order5_t5_10000'; type2 = 'swme';
-name3 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveNonConservative_t5_10000'; type3 = 'swmeAdaptive';
-name4 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveConservative_t5_10000'; type4 = 'swmeAdaptive';
-reference_data2000x200 = load("damBreak-and-smooth_linear_lambda0.1_nu1.0_t5_2000x200.csv");
+% name1 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order2_t5_10000'; type1 = 'swme';
+% name2 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_order5_t5_10000'; type2 = 'swme';
+% name3 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveNonConservative_t5_10000'; type3 = 'swmeAdaptive';
+% name4 = 'damBreak-and-smooth_linear_lambda0.1_nu1.0_adaptiveConservative_t5_10000'; type4 = 'swmeAdaptive';
+% reference_data2000x200 = load("damBreak-and-smooth_linear_lambda0.1_nu1.0_t5_2000x200.csv");
 
 
 % name1 = 'damBreak-and-smooth_linear_lambda0.1_nu0.1_adaptiveConservative_t0.5_10000'; type1 = 'swmeAdaptive';
@@ -51,8 +52,8 @@ alpha2_ref2000x200_short = 5.*reference_data2000x200(1:4:end,5);
 % plotting = 'alpha3';
 % plotting = 'alpha4';
 % plotting = 'alpha5';
-% plotting = 'number_of_moments';
-plotting = 'number_of_moments-evolution';
+plotting = 'number_of_moments';
+% plotting = 'number_of_moments-evolution';
 
 brown = [171, 104, 87]./255;
 
@@ -112,7 +113,7 @@ if(strcmp(plotting,'u'))
     % plot1 = plot(x1,u1,x2,u2,x3,u3,x4,u4,x_ref2000x200,u_ref2000x200,'*')
     plot1 = plot(x1,u1,x2,u2,x3,u3,x4,u4)
 
-    axis([-20.,20,-0.08,0.2]);
+    axis([-20.,20,-0.08,0.35]);
     % axis([-3.25,3.25,-0.025,0.2]);
     xlabel('x')
     ylabel('u_m')
@@ -141,8 +142,8 @@ if(strcmp(plotting,'alpha1'))
     % plot1 = plot(x1,alpha11,x2,alpha12,x3,alpha13,x4,alpha14,x_ref2000x200,alpha1_ref2000x200,'*')
     plot1 = plot(x1,alpha11,x2,alpha12,x3,alpha13,x4,alpha14)
     
-    % axis([-20,20,-0.135,0]);
-    axis([-3.75,3.25,-0.135,0]);
+    axis([-20,20,-0.335,0.2]);
+    % axis([-3.75,3.25,-0.135,0]);
     xlabel('x')
     ylabel('\alpha_1')
     

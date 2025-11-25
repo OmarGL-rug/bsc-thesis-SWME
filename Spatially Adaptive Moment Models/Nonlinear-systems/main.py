@@ -4,9 +4,7 @@ import mesh
 import spatialDiscretization
 import timeIntegration
 import plotting
-import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import configparser
 import timeit
 
@@ -28,15 +26,13 @@ def main():
                         pde_information.getfloat('viscosity'),
                         pde_information.getfloat('slipLength'),
                         False,
-                        linear_source_implicit,
-                        exact_source_computation)
+                        linear_source_implicit)
     elif pde_information['pde_type'] == 'HSWME1D':
         _pde = pde.SWME1D(pde_information['initialCondition'],
                         pde_information.getfloat('viscosity'),
                         pde_information.getfloat('slipLength'),
                         True,
-                        linear_source_implicit,
-                        exact_source_computation)
+                        linear_source_implicit)
         
     elif pde_information['pde_type'] == 'VegetationSWME1D':
         _pde = pde.VegetationSWME1D(pde_information['initialCondition'],
@@ -44,24 +40,24 @@ def main():
                                 pde_information.getfloat('slipLength'),
                                 False,
                                 linear_source_implicit,
-                                exact_source_computation,
                                 0.008,
-                                1,
-                                264)
+                                0.97,
+                                800,
+                                0.4)
     elif pde_information['pde_type'] == 'HME':
         _pde = pde.HermiteMomentEquations(
                         pde_information['initialCondition'],
                         pde_information.getfloat('relaxation_time'),
                         True,
                         True,
-                        True)
+                        exact_source_computation)
     elif pde_information['pde_type'] == 'Grad':
         _pde = pde.HermiteMomentEquations(
                         pde_information['initialCondition'],
                         pde_information.getfloat('relaxation_time'),
                         False,
                         True,
-                        True)
+                        exact_source_computation)
     else:
         print('PDE_type is not implemented yet')
     
@@ -117,6 +113,18 @@ def main():
                     _time_integration
                 )
 
+        if numerical_method_information['method'] == 'smoothedAdaptive':
+            start_order = int(numerical_method_information['start_order'])
+            _simulation = simulation.SmoothedAdaptiveSimulation1D(
+                start_order,
+                _pde,
+                _mesh,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
+                pde_information['breakdown_criterion'],
+                _spatialDiscretization,
+                _time_integration)
+
         elif numerical_method_information['method'] == 'classical':
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
@@ -143,7 +151,7 @@ def main():
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.SWME1DPlotClassical(_pde,_mesh,_simulation)
         elif pde_information['pde_type'] == 'HME':
-            if numerical_method_information['method'] == 'spatially_adaptive':
+            if numerical_method_information['method'] == 'spatially_adaptive' or numerical_method_information['method'] == 'smoothedAdaptive':
                 _plotting = plotting.HME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.HME1DPlotClassical(_pde,_mesh,_simulation)

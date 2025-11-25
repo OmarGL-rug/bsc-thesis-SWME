@@ -6,7 +6,7 @@ from collections.abc import Callable
 class TimeIntegration(ABC):
 
     """
-    This interface represents a time integrator.
+    This abstract class represents a time integrator.
 
     ...
 
@@ -19,7 +19,20 @@ class TimeIntegration(ABC):
     -------
     def integrate(self):
         integrates the equation in time
+
+    Instance methods
+    ----------------
+    def __init__(self):
+        initializes the time integrator
+
     """
+
+    def __init__(self):
+        """
+        Initializes the time integrator 
+
+        """        
+        pass
 
     @abstractmethod
     def integrate(self):
@@ -42,32 +55,39 @@ class Implicit(TimeIntegration):
     linear : boolean
         True if the source term can be written in linear form, false if the source term can not be written in linear form
 
-    Implemented methods from interface TimeIntegration
+    Implemented methods from abstract parent class TimeIntegration
     -------------
     def integrate(self,initial_value,rhs_f,delta_t):
         integrates the equation dw/dt = rhs_f(w) with a time step of delta_t
 
             
-    Instance methods    
+    Abstract methods    
     -----------------
     def _compute_residual(self,initial_value,rhs_f,delta_t):
         construct the residual function residual(x), the roots of which will be computed numerically
+
+    Instance methods
+    ----------------
+    def __init__(self,linear):
+        initializes the implicit time integrator
+
     """
+
     def __init__(self,
                  linear: bool):
         self.linear = linear
 
     def integrate(self,
-                  initial_value: np.array,
-                  rhs_f: Callable[...,np.array],
-                  delta_t: float) -> np.array:
+                  initial_value: np.ndarray,
+                  rhs_f: Callable[...,np.ndarray],
+                  delta_t: float) -> np.ndarray:
         
         """
-        integrates the equation dw/dt = rhs_f(w) starting from initial_value with a time step of delta_t
+        integrates the equation dw/dt = rhs_f(w) starting from initial_value with a time step of delta_t with an implicit time integration method
 
         Parameters
         ----------
-        initial_value: np.array
+        initial_value: np.ndarray
             initial value w0
         rhs_f: function
             the right-hand side function describing the time evolution of w
@@ -76,7 +96,7 @@ class Implicit(TimeIntegration):
         
         Returns
         -------
-        end_values: np.array
+        end_values: np.ndarray
             final values 
 
         """
@@ -90,16 +110,16 @@ class Implicit(TimeIntegration):
     
     @abstractmethod
     def _compute_residual(self,
-                  initial_value: np.array,
-                  rhs_f: Callable[...,np.array],
-                  delta_t: float) -> np.array:
+                  initial_value: np.ndarray,
+                  rhs_f: Callable[...,np.ndarray],
+                  delta_t: float) -> np.ndarray:
         
         """
         construct the residual function residual(x), the roots of which will be computed numerically
 
         Parameters
         ----------
-        initial_value: np.array
+        initial_value: np.ndarray
             initial value w0
         rhs_f: function
             the right-hand side function describing the time evolution of w
@@ -126,29 +146,30 @@ class Explicit(TimeIntegration):
     ----------
     None
 
-    Implemented methods from interface TimeIntegration
+    Abstract methods from abstract class TimeIntegration
     -------------
     def integrate(self,initial_value,rhs_f,delta_t):
-        integrates the equation dw/dt = rhs_f(w) with a time step of delta_t
+        integrates the equation dw/dt = rhs_f(w) with a time step of delta_t with an explicit time integration method
+
+    Imherited methods from abstract class TimeIntegration
+    -------------
+    def __initi__(self):
+        initializes the explicit time integrator 
 
     """
 
-    @abstractmethod
-    def __init__(self):
-        pass
-
     @abstractmethod    
     def integrate(self,
-                  initial_value: np.array,
-                  rhs_f: Callable[...,np.array],
-                  delta_t: float) -> np.array:
+                  initial_value: np.ndarray,
+                  rhs_f: Callable[...,np.ndarray],
+                  delta_t: float) -> np.ndarray:
         
         """
         integrates the equation dw/dt = rhs_f(w) starting from initial_value with a time step of delta_t
 
         Parameters
         ----------
-        initial_value: np.array
+        initial_value: np.ndarray
             initial value w0
         rhs_f: function
             the right-hand side function describing the time evolution of w
@@ -157,7 +178,7 @@ class Explicit(TimeIntegration):
         
         Returns
         -------
-        end_values: np.array
+        end_values: np.ndarray
             final values 
 
         """
@@ -168,6 +189,7 @@ class Exact(TimeIntegration):
 
     """
     This class represents an exact time integrator.
+    This integrator can be used when the analytical solution of the source term step is known.
 
     ...
 
@@ -175,19 +197,17 @@ class Exact(TimeIntegration):
     ----------
     None
 
-    Implemented methods from interface TimeIntegration
+    Implemented methods from abstract class TimeIntegration
     -------------
     def integrate(self,initial_value,rhs_f,delta_t):
         integrates the equation dw/dt = rhs_f(w) with a time step of delta_t
 
     """
-    def __init__(self):
-        pass
    
     def integrate(self,
-                  initial_value: np.array,
-                  rhs_f: Callable[...,np.array],
-                  delta_t: float) -> np.array:
+                  initial_value: np.ndarray,
+                  rhs_f: Callable[...,np.ndarray],
+                  delta_t: float) -> np.ndarray:
         
         """
         integrates the equation dw/dt = rhs_f.w (matrix-vector multiplication) exactly 
@@ -195,7 +215,7 @@ class Exact(TimeIntegration):
 
         Parameters
         ----------
-        initial_value: np.array
+        initial_value: np.ndarray
             initial value w0
         rhs_f: function
             the right-hand side function describing the time evolution of w
@@ -204,7 +224,7 @@ class Exact(TimeIntegration):
         
         Returns
         -------
-        end_values: np.array
+        end_values: np.ndarray
             final values 
 
         """
@@ -215,13 +235,27 @@ class Exact(TimeIntegration):
 
 class ImplicitEuler(Implicit):
 
-    # def __init__(self,linear_source):
-    #     super().__init__(linear_source)
+    """
+    This class represents an implicit Euler time integrator.
+
+    ...
+
+    Attributes
+    ----------
+    linear : boolean
+        True if the source term can be written in linear form, false if the source term can not be written in linear form
+
+    Implemented methods from abstract parent class Implicit
+    -------------
+    def _compute_residual(self,initial_value,rhs_f,delta_t):
+        construct the residual function residual(x), the roots of which will be computed numerically
+
+    """
 
     def _compute_residual(self,
-                  initial_value: np.array,
-                  rhs_f: Callable[...,np.array],
-                  delta_t: float) -> np.array:
+                  initial_value: np.ndarray,
+                  rhs_f: Callable[...,np.ndarray],
+                  delta_t: float) -> np.ndarray:
         
         residual = lambda end_value : end_value - delta_t*rhs_f(end_value,delta_t) - initial_value
 
@@ -229,20 +263,32 @@ class ImplicitEuler(Implicit):
     
 class ExplicitEuler(Explicit):
 
-    def __init__(self):
-        pass
+    """
+    This class represents an explicit Euler time integrator.
 
+    ...
+
+    Attributes
+    ----------
+    None
+
+    Implemented methods from abstract parent class Explicit
+    -------------
+    def integrate(self,initial_value,rhs_f,delta_t):
+        integrates the equation dw/dt = rhs_f(w) with a time step of delta_t
+
+    """
     def integrate(self,
-                  initial_value: np.array,
-                  rhs_f: Callable[...,np.array],
-                  delta_t: float) -> np.array:
+                  initial_value: np.ndarray,
+                  rhs_f: Callable[...,np.ndarray],
+                  delta_t: float) -> np.ndarray:
         
         """
         integrates the equation dw/dt = rhs_f(w) starting from initial_value with a time step of delta_t
 
         Parameters
         ----------
-        initial_value: np.array
+        initial_value: np.ndarray
             initial value w0
         rhs_f: function
             the right-hand side function describing the time evolution of w
@@ -251,7 +297,7 @@ class ExplicitEuler(Explicit):
         
         Returns
         -------
-        end_values: np.array
+        end_values: np.ndarray
             final values 
 
         """
