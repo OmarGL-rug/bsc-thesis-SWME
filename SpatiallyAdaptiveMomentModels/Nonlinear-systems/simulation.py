@@ -4,6 +4,7 @@ import pde
 import mesh
 import spatialDiscretization
 import timeIntegration
+from scipy.interpolate import BarycentricInterpolator
 
 class Simulation(ABC):
 
@@ -191,7 +192,7 @@ class ClassicalSimulation1D(Simulation):
         fluctuations_min = np.zeros((self.mesh.resolution+1,self.number_of_variables))
         fluctuations_plus = np.zeros((self.mesh.resolution+1,self.number_of_variables))
 
-        CFL = 0.5 #TODO: put CFL number in config file
+        CFL = 0.9 #TODO: put CFL number in config file
         t = 0
 
         def system_matrix(cell_values):
@@ -431,6 +432,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation,ABC):
         self.dom_decomp_val_res2 = np.zeros(self.mesh.resolution)
 
         self.breakdown_estimators = np.zeros((self.mesh.resolution,self.max_order+4))
+        self.breakdown_criteria_flags = np.full(shape=self.mesh.resolution,dtype=int,fill_value=0)
               
     def _update_boundary_conditions(self,
                                     values: np.ndarray,
@@ -522,7 +524,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation,ABC):
 
         """
 
-        self.breakdown_estimators,breakdown_criteria_flags = self.pde_type.compute_breakdown_criteria_full(
+        self.breakdown_estimators,self.breakdown_criteria_flags = self.pde_type.compute_breakdown_criteria_full(
                                                                         values,
                                                                         self.mesh.resolution,
                                                                         delta_x,
@@ -533,8 +535,8 @@ class SpatiallyAdaptiveSimulation1D(Simulation,ABC):
                                                                         self.dom_decomp_val_res1,
                                                                         self.dom_decomp_val_res2)
         for i in range(self.mesh.resolution):
-            self.orders_cellwise[i+1] += int(breakdown_criteria_flags[i])
-            self.numbers_of_variables_cellwise[i+1] += int(breakdown_criteria_flags[i])     
+            self.orders_cellwise[i+1] += int(self.breakdown_criteria_flags[i])
+            self.numbers_of_variables_cellwise[i+1] += int(self.breakdown_criteria_flags[i])     
         self.orders_cellwise[0] = self.orders_cellwise[1]
         self.numbers_of_variables_cellwise[0] = self.numbers_of_variables_cellwise[1]
         self.orders_cellwise[-1] = self.orders_cellwise[-2]
@@ -672,7 +674,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         res1_min = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
         res1_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
 
-        CFL = 0.5
+        CFL = 0.9
         
         step_count = 0
         t = 0
@@ -687,7 +689,7 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
             # if step_count%10 == 0:
             #     values = self._reconstruct_subdomains(prev_values,delta_x)
-            # values = self._reconstruct_subdomains(values,delta_x,delta_t)
+            values = self._reconstruct_subdomains(values,delta_x,delta_t)
             prev_values = np.copy(values)
 
             right_boundary_subdomain = 0
@@ -1335,10 +1337,10 @@ class ConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         
         return values
 
-class SmoothedConsAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
-
+class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
     """
-    This class represents a smoothed adaptive simulation in 1D.
+    This class represents an adaptive simulation in 1D that uses a path-conservative numerical scheme 
+    (and spatial coupling), and an interpolation technique to fill in the moment values when the order is increased.
 
     ...
 
@@ -1384,7 +1386,7 @@ class SmoothedConsAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         the size of the subregions, relative to the size of the entire domain
     
     Inherited methods from abstract class SpatiallyAdaptiveSimulation1D
-    --------
+    --------------------------------------------------------------------
     def _get_initial_conditions(self,cell_centers_x):
         constructs the initial values in each grid cell
     def _update_boundary_conditions(self,values_boundary):
@@ -1394,17 +1396,542 @@ class SmoothedConsAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
     def _update_domain_decomposition(self,values,tolerance_up,tolerance_down):
         updates the domain decompositions
 
-        
-    Implemented methods from interface Simulation
-    ----------------------------------------------
-    def run_simulation(self,t_end):
-        runs the simulation and outputs the end values
-
-        
     Implemented methods from abstract class SpatiallyAdaptiveSimulation1D
     ----------------------------------------------------------------------
     def _reconstruct_subdomains(self,values,delta_x,delta_t):
         find boundary interfaces from the cellwise model orders     
+
+    Overriden methods from abstract class SpatiallAdaptiveSimulation1D
+    def __init__(self,start_order,pde_type,mesh.RectangularMesh,boundary_condition,initial_condition,
+                    breakdown_criterion,spatial_discretization,time_integration):
+        initializes the SmoothedSubdomainReconstruction object
+    
+    Instance methods
+    ----------------
+    None
+    """
+
+    def __init__(self,
+                 start_order: list,
+                 pde_type: pde.PDE,
+                 mesh: mesh.RectangularMesh,
+                 boundary_condition: str,
+                 initial_condition: str,
+                 breakdown_criterion: str,
+                 spatial_discretization: spatialDiscretization.SpatialDiscretization,
+                 time_integration: timeIntegration.TimeIntegration):
+
+        """
+        Constructs all the necessary attributes for the SpatiallyAdaptiveSimulation1D object.
+
+        Parameters
+        ----------
+        start_order: integer
+            list of the orders of the moment model in each subdomain
+        pde_type : str
+            the partial differential equations that is simulated
+        numbers_of_variables
+            list of the number of state variables in each subdomain
+        mesh : RectangularMesh
+            the used mesh
+        boundary_condition: str
+            the used boundary condition
+        initial_condition: str
+            the initial condition for the simulation
+        breakdown_criterion: str
+            breadown criterion for domain decomposition
+        spatial_discretization: SpatialDiscretization
+            the numerical method for the spatial discretization
+        time_integration: TimeIntegration
+            the time integration method for the integration of the source term
+
+        """
+
+        self.pde_type = pde_type
+        self.mesh = mesh
+        self.boundary_condition = boundary_condition
+        self.initial_condition = initial_condition
+        self.breakdown_criterion = breakdown_criterion
+        self.spatial_discretization = spatial_discretization
+        self.time_integration = time_integration
+
+        self.max_order = start_order
+        self.max_number_of_variables = pde_type.compute_number_of_variables(self.max_order)
+
+        self.orders_cellwise = np.zeros(self.mesh.resolution+2,dtype=int)
+        self.numbers_of_variables_cellwise = np.zeros(self.mesh.resolution+2,dtype=int)
+        for i in range(self.mesh.resolution+2):
+            self.orders_cellwise[i] = start_order
+            self.numbers_of_variables_cellwise[i] = self.pde_type.compute_number_of_variables(start_order)
+
+        self.dom_decomp_val_res1 = np.zeros(self.mesh.resolution)
+        self.dom_decomp_val_res2 = np.zeros(self.mesh.resolution)
+
+        self.breakdown_estimators = np.zeros((self.mesh.resolution,self.max_order+4))
+
+        self.smooth_par = 20
+        self.orders_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
+        self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
+        self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par+1,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
+        self.boundary_interfaces = np.zeros(self.smooth_par,dtype=int)
+
+        self.n_cells_subdomain = int(np.floor(self.mesh.resolution/self.smooth_par))
+        self.subdomain_start = int(np.ceil(self.n_cells_subdomain/2))
+        self.boundary_interfaces[0] = self.subdomain_start - 1
+        for i in range(1,self.smooth_par):
+            self.boundary_interfaces[i] = self.subdomain_start + i*self.n_cells_subdomain - 1
+
+        if self.boundary_condition != 'PERIODIC':
+            self.orders_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
+            self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
+            self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
+            self.boundary_interfaces = np.zeros(self.smooth_par-1,dtype=int)
+            for i in range(self.smooth_par-1):
+                self.boundary_interfaces[i] = (i+1)*self.smooth_par - 1
+
+    def run_simulation(self,
+                       t_end: float,
+                       g = 1) -> np.ndarray:
+    
+        delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
+
+        print("Orders at the beginning of the simulation:",self.orders)
+        
+        values = self._get_initial_conditions(self.mesh.cell_center_positions)
+        fluctuations_min = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
+        fluctuations_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
+        res1_min = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
+        res1_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
+
+        reconstruct_subdomains = self._reconstruct_subdomains()
+        interpolate_added_moments = self._interpolate()
+
+        CFL = 0.9
+        
+        step_count = 0
+        t = 0
+
+        while t < t_end:
+            # update boundary conditions
+            values[0,:self.numbers_of_variables_subdomains[0]] = self._update_boundary_conditions(values,'left')
+            values[self.mesh.resolution+1,:self.numbers_of_variables_subdomains[-1]] = self._update_boundary_conditions(values,'right')
+            max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
+      
+            delta_t = CFL*delta_x/max_speed 
+
+            values = self._reconstruct_subdomains(values,delta_x,delta_t)
+            values = self._interpolate(values)
+
+            prev_values = np.copy(values)
+
+            l_bound_subdom = 1
+
+            for m in range(len(self.orders_subdomains)-1):
+
+                order_left = self.orders_subdomains[m]
+                n_variables_left = self.numbers_of_variables_subdomains[m]
+                order_right = self.orders_subdomains[m+1]
+                n_variables_right = self.numbers_of_variables_subdomains[m+1]
+
+                if order_left < order_right:
+                    prev_values[self.boundary_interfaces[m],n_variables_left:n_variables_right] = 0
+                elif order_left > order_right:
+                    prev_values[self.boundary_interfaces[m]+1,n_variables_right:n_variables_left] = 0                    
+
+                r_bound_subdom = self.boundary_interfaces[m]
+
+                def system_matrix(cell_values):
+                    return self.pde_type.compute_system_matrix(order_left,cell_values)
+
+                for i in range(l_bound_subdom, r_bound_subdom + 1):
+                    generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
+                        prev_values[i-1,:n_variables_left],
+                        prev_values[i,:n_variables_left],
+                        system_matrix,
+                        delta_t,
+                        delta_x)
+                    fluctuations_plus[i-1,:n_variables_left] =\
+                        generalized_roe_plus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left])
+                    fluctuations_min[i-1,:n_variables_left] =\
+                        generalized_roe_minus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left]) 
+                    res1_min[i-1,:n_variables_left-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
+                    res1_plus[i-1,:n_variables_left-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])                    
+                    
+                    l_bound_subdom = r_bound_subdom + 1
+
+            l_bound_subdom = 1
+
+            for m in range(len(self.orders_subdomains)-1):
+                def source_term(cell_values,delta_t):
+                    return self.pde_type.compute_source_term(self.orders_subdomains[m],cell_values,delta_t)
+
+                r_bound_subdom = self.boundary_interfaces[m]
+
+                n_variables = self.numbers_of_variables_subdomains[m]
+
+                for i in range(l_bound_subdom,r_bound_subdom + 1):
+                    values[i,:n_variables] = prev_values[i,:n_variables]\
+                        - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables]+fluctuations_min[i,:n_variables]) 
+                    values[i,:n_variables] = self.time_integration.integrate(values[i,:n_variables],source_term,delta_t)
+
+                    self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables-1]+res1_min[i,:n_variables-1])
+                    self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables-1]-prev_values[i,n_variables-1])
+
+                    l_bound_subdom = r_bound_subdom + 1
+                    
+            for i in range(r_bound_subdom+1,self.mesh.resolution+1):
+                
+                def source_term(cell_values,delta_t):
+                    return self.pde_type.compute_source_term(self.orders_subdomains[-1],cell_values,delta_t)
+                n_variables = self.numbers_of_variables_subdomains[m]
+
+                values[i,:n_variables] = prev_values[i,:n_variables]\
+                    - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables]+fluctuations_min[i,:n_variables]) 
+                values[i,:n_variables] = self.time_integration.integrate(values[i,:n_variables],source_term,delta_t)
+
+                self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables-1]+res1_min[i,:n_variables-1])
+                self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables-1]-prev_values[i,n_variables-1])
+
+            for m in range(len(self.boundary_interfaces)):
+                n_variables_left = self.numbers_of_variables_subdomains[m]
+                n_variables_right = self.numbers_of_variables_subdomains[m+1]
+
+                if n_variables_left < n_variables_right:
+                    self.dom_decomp_val_res1[self.boundary_interfaces[m]-1] =\
+                        2*np.linalg.norm(res1_plus[self.boundary_interfaces[m]-1,:n_variables_left-1])
+                else: 
+                    self.dom_decomp_val_res1[self.boundary_interfaces[m]] =\
+                        2*np.linalg.norm(res1_min[self.boundary_interfaces[m],:n_variables_right-1])
+            
+            step_count += 1
+            print(t)
+            self.dom_decomp_val_res1 = self.dom_decomp_val_res1/delta_x
+            self.dom_decomp_val_res2 = self.dom_decomp_val_res2/delta_t
+            t+=delta_t
+
+        values = simulation_data = self._post_processing(values)
+        return simulation_data  
+
+    def _reconstruct_subdomains(self) -> np.ndarray:
+        
+        _reconstruct_subdomains_fun = self._reconstruct_subdomains_periodicBoundary if self.boundary_condition == 'PERIODIC'\
+            else self._reconstruct_subdomains_nonPeriodicBoundary
+
+        return _reconstruct_subdomains_fun
+
+    def _reconstruct_subdomains_interior(self,
+                               values: np.ndarray,
+                               delta_x: float,
+                               delta_t: float) -> np.ndarray:
+
+        self._update_domain_decomposition_pointwise(values,delta_x,delta_t)
+
+        for i in range(1,len(self.boundary_interfaces)):
+            self.breakdown_criteria_flags_subdomains[i] = np.max(self.breakdown_criteria_flags[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1])
+            local_order = np.max(self.orders_cellwise[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1])
+            local_number_of_variables = self.pde_type.compute_number_of_variables(local_order)
+            self.orders_subdomains[i] = local_order
+            self.numbers_of_variables_subdomains[i] = local_number_of_variables
+            self.orders_cellwise[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1] = local_order
+            self.numbers_of_variables_cellwise[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1] = local_number_of_variables
+
+    def _reconstruct_subdomains_nonPeriodicBoundary(self,
+                               values: np.ndarray,
+                               delta_x: float,
+                               delta_t: float) -> np.ndarray:
+
+        self._reconstruct_subdomains_interior(values,delta_x,delta_t)
+
+        self.orders_subdomains[0] = np.max(self.orders_cellwise[1:self.subdomain_start])
+        self.breakdown_criteria_flags_subdomains[0] = np.max(self.breakdown_criteria_flags[1:self.subdomain_start])
+        self.orders_subdomains[-1] = np.max(self.orders_cellwise[self.boundary_interfaces[-1]:-1])
+        self.breakdown_criteria_flags_subdomains[-1] = np.max(self.breakdown_criteria_flags[self.boundary_interfaces[-1]:-1])
+        self.numbers_of_variables_subdomains[0] = self.pde_type.compute_number_of_variables(self.orders_subdomains[0])
+        self.numbers_of_variables_subdomains[-1] = self.pde_type.compute_number_of_variables(self.orders_subdomains[-1])
+
+        values = self._process_domain_decomposition(values)
+
+        return values
+
+    def _reconstruct_subdomains_periodicBoundary(self,
+                               values: np.ndarray,
+                               delta_x: float,
+                               delta_t: float) -> np.ndarray:
+
+        self._reconstruct_subdomains_interior(values,delta_x,delta_t)
+
+        local_order = max(np.max(self.orders_cellwise[1:self.subdomain_start]),np.max(self.orders_cellwise[self.boundary_interfaces[-1]:-1]))
+        self.breakdown_criteria_flags_subdomains[0] = max(np.max(self.breakdown_criteria_flags[1:self.subdomain_start]),\
+            np.max(self.breakdown_criteria_flags[self.boundary_interfaces[-1]:-1]))
+        self.breakdown_criteria_flags_subdomains[-1] = self.breakdown_criteria_flags_subdomains[0]
+        local_number_of_variables = self.pde_type.compute_number_of_variables(local_order)
+        self.orders_subdomains[0] = local_order
+        self.numbers_of_variables_subdomains[0] = local_number_of_variables
+        self.orders_cellwise[:self.subdomain_start] = local_order
+        self.orders_cellwise[self.boundary_interfaces[-1]:] = local_order
+        self.numbers_of_variables_cellwise[:self.subdomain_start] = local_number_of_variables
+        self.numbers_of_variables_cellwise[self.boundary_interfaces[-1]:] = local_number_of_variables
+
+        values = self._process_domain_decomposition(values)
+
+        return values
+
+    def _process_domain_decomposition(self,values):
+
+        # Set undefined moments to zero
+        values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[0]:] = 0
+        for i in range(1,len(self.boundary_interfaces)):
+            values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,self.numbers_of_variables_subdomains[i]:] = 0
+        values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[-1]:] = 0
+
+        return values
+
+    def _interpolate_subdomains(self) -> np.ndarray:
+        
+        _interpolate_subdomains_fun = self._interpolate_subdomains_periodicBoundary if self.boundary_condition == 'PERIODIC' else\
+            self._interpolate_subdomains_nonPeriodicBoundary
+
+        return _interpolate_subdomains_fun   
+
+    def _interpolate_subdomains_interior(self,values):
+        
+        for i in range(2,len(self.boundary_interfaces)-1):
+            if self.breakdown_criteria_flags_subdomains[i] > 0:
+                values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,\
+                       self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
+                            :self.numbers_of_variables_subdomains[i]] =\
+                    self._interpolate(values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,
+                                             self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
+                                                :self.numbers_of_variables_subdomains[i]],
+                                      values[self.boundary_interfaces[i-2]+1:self.boundary_interfaces[i-1]+1,
+                                             self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
+                                                :self.numbers_of_variables_subdomains[i]],
+                                      values[self.boundary_interfaces[i]+1:self.boundary_interfaces[i+1]+1,
+                                             self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
+                                                :self.numbers_of_variables_subdomains[i]])
+
+        return values
+
+    def _interpolate_subdomains_periodicBoundary(self,values):
+
+        values = self._interpolate_subdomains_interior(values)
+
+        if self.breakdown_criteria_flags_subdomains[0] > 0:
+            values[self.boundary_interfaces[-1]+1:self.boundary_interfaces[0]+1,\
+                   self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]] =\
+                self._interpolate(np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[0]\
+                                                        -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]],\
+                                                 values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[0]\
+                                                        -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]]), axis=0),\
+                                  values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                                    self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                        self.numbers_of_variables_subdomains[0]],\
+                                  values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                                    self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                        self.numbers_of_variables_subdomains[0]])
+
+        if self.smooth_par > 2:
+            if self.breakdown_criteria_flags_subdomains[1] > 0:
+                values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                    self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]] =\
+                    self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
+                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables_subdomains[1]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]]),axis=0),
+                                      values[self.boundary_interfaces[1]+1:self.boundary_interfaces[2]+1,
+                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables_subdomains[1]])
+                
+            if self.breakdown_criteria_flags[-2] > 0:
+                values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                    self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]] =\
+                    self._interpolate(values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,
+                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables_subdomains[-2]],
+                                      values[self.boundary_interfaces[-3]+1:self.boundary_interfaces[-2]+1,
+                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables_subdomains[-2]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[-2]\
+                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[-2]\
+                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]]),axis=0))
+        else:
+            if self.breakdown_criteria_flags_subdomains[1] > 0:
+                values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                    self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]] =\
+                    self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
+                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables_subdomains[1]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]]),axis=0),
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]]),axis=0))
+
+        return values            
+
+    def _interpolate_subdomains_nonPeriodicBoundary(self,values):
+
+        values = self._interpolate_subdomains_interior(values)
+
+        if self.breakdown_criteria_flags_subdomains[0] > 0:
+            values[:self.boundary_interfaces[0]+1,\
+                   self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]] =\
+                        self._interpolate_from_right_data(values[:self.boundary_interfaces[0]+1,\
+                                                            self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                                            self.numbers_of_variables_subdomains[0]],
+                                                        values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                                                            self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                                            self.numbers_of_variables_subdomains[0]])
+        if self.breakdown_criteria_flags_subdomains[-1] > 0:
+            values[self.boundary_interfaces[-1]+1:,\
+                   self.numbers_of_variables_subdomains[-1]-self.breakdown_criteria_flags_subdomains[-1]:self.numbers_of_variables_subdomains[-1]] =\
+                        self._interpolate_from_left_data(values[self.boundary_interfaces[-1]+1:,\
+                                                            self.numbers_of_variables_subdomains[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
+                                                            self.numbers_of_variables_subdomains[-1]],
+                                                        values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                                                            self.numbers_of_variables_subdomains[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
+                                                            self.numbers_of_variables_subdomains[-1]])
+
+        if self.smooth_par > 2:
+            if self.breakdown_criteria_flags_subdomains[1] > 0:
+                values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                    self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]] =\
+                    self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
+                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables_subdomains[1]],
+                                        values[:self.boundary_interfaces[0]+1,
+                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables_subdomains[1]],
+                                        values[self.boundary_interfaces[1]+1:self.boundary_interfaces[2]+1,
+                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables_subdomains[1]])
+        if self.smooth_par > 3:
+            if self.breakdown_criteria_flags_subdomains[-2] > 0:
+                values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                    self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]] =\
+                    self._interpolate(values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,
+                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables_subdomains[-2]],
+                                        values[self.boundary_interfaces[-3]+1:self.boundary_interfaces[-2]+1,
+                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables_subdomains[-2]],
+                                        values[self.boundary_interfaces[-1]+1:,
+                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables_subdomains[-2]])
+
+        return values    
+
+    def _interpolate(self,values,interpolation_data_left,interpolation_data_right):
+
+        data_points_x = np.concatenate(np.arange(interpolation_data_left.shape[0]),\
+                                       np.arange(interpolation_data_left.shape[0]+values.shape[0],
+                                                 interpolation_data_left.shape[0]+values.shape[0]+interpolation_data_right.shape[0],1))
+        data_points_y = np.concatenate((interpolation_data_left,interpolation_data_right),axis=0)
+
+        interpolators = [BarycentricInterpolator(data_points_x, data_points_y[:, j]) for j in range(data_points_y.shape[1])]
+        interpolated_values = np.column_stack([interp(
+            np.arange(interpolation_data_left.shape[0],interpolation_data_left.shape[0]+values.shape[0],1)
+        ) for interp in interpolators])
+
+        return interpolated_values
+
+    def _interpolate_from_left_data(self,values,interpolation_data):
+
+        data_points_x = np.arange(interpolation_data.shape[0])
+
+        interpolators = [BarycentricInterpolator(data_points_x, interpolation_data[:, j]) for j in range(interpolation_data.shape[1])]
+        interpolated_values = np.column_stack([interp(
+            np.arange(interpolation_data.shape[0],interpolation_data.shape[0]+values.shape[0],1)
+        ) for interp in interpolators])
+
+        return interpolated_values   
+
+    def _interpolate_from_right_data(self,values,interpolation_data):
+        data_points_x = np.arange(values.shape[0],values.shape[0]+interpolation_data.shape[0],1)
+
+        interpolators = [BarycentricInterpolator(data_points_x, interpolation_data[:, j]) for j in range(interpolation_data.shape[1])]
+        interpolated_values = np.column_stack([interp(
+            np.arange(values.shape[0])
+        ) for interp in interpolators])
+
+        return interpolated_values  
+
+class SmoothedSubdomainReconstruction(SpatiallyAdaptiveSimulation1D):
+
+    """
+    This class represents a smoothed adaptive simulation in 1D. 
+    It smooths the domain decomposition by grouping cells together and giving them the same model order.
+
+    ...
+
+    Attributes
+    ----------
+    boundary_interfaces : list of floats
+        list of the physical positions of the interfaces that separate the domain into subdomains
+    orders : list of integers
+        list of the order of the moment model in each subdomain
+    max_order : int
+        the maximum order in the simulation
+    max_number_of_variables : int
+        the maximum number of variables in the simulation
+    orders_cellwise : list
+        list conting the order in each cell
+    number_of_variables_cellwise : list
+        list containing the number of variables in each cell
+    pde_type : str
+        the partial differential equations that is simulated
+    numbers_of_variables : int
+        list of the number of state variables in each subdomain
+    mesh : RectangularMesh
+        the used mesh
+    boundary_condition : str
+        the used boundary condition
+    initial_condition : str
+        the initial condition for the simulation
+    breakdown_criterion : str
+        breadown criterion for domain decomposition
+    spatial_discretization : SpatialDiscretization
+        the numerical method for the spatial discretization
+    time_integration : TimeIntegration
+        the time integration method for the right hand side source term
+    dom_decomp_val_res1 : np.ndarray
+        numpy array containing the values of the residual res1 (see definition paper) in each cell
+        this value is only used for hierarchical moment equations
+    dom_decomp_val_res2 : np.ndarray
+        numpy array containing the values of the residual res2 (see definition paper) in each cell
+        this value is only used for hierarchical moment equations
+    breakdown_estimators : np.ndarray
+        numpy array containg the values of each breakdown estimator in each grid cell
+    smooth_par : float
+        the size of the subregions, relative to the size of the entire domain
+    
+    Inherited methods from abstract class SpatiallyAdaptiveSimulation1D
+    --------------------------------------------------------------------
+    def _get_initial_conditions(self,cell_centers_x):
+        constructs the initial values in each grid cell
+    def _update_boundary_conditions(self,values_boundary):
+        updates the boundary conditions
+    def _post_processing(self,values):
+        post processed the end data of the simulation and prepares it for plotting
+    def _update_domain_decomposition(self,values,tolerance_up,tolerance_down):
+        updates the domain decompositions
+
+    Implemented methods from abstract class SpatiallyAdaptiveSimulation1D
+    ----------------------------------------------------------------------
+    def _reconstruct_subdomains(self,values,delta_x,delta_t):
+        find boundary interfaces from the cellwise model orders     
+
+    Overriden methods from abstract class SpatiallAdaptiveSimulation1D
+    def __init__(self,start_order,pde_type,mesh.RectangularMesh,boundary_condition,initial_condition,
+                    breakdown_criterion,spatial_discretization,time_integration):
+        initializes the SmoothedSubdomainReconstruction object
     
     Instance methods
     ----------------
@@ -1473,532 +2000,14 @@ class SmoothedConsAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         self.dom_decomp_val_res2 = np.zeros(self.mesh.resolution)
 
         self.breakdown_estimators = np.zeros((self.mesh.resolution,self.max_order+4))
+        self.breakdown_criteria_flags = np.full(shape=self.mesh.resolution,dtype=int,fill_value=0)
 
-        self.smooth_par = 10
+        self.smooth_par = 20
         self.orders_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
         self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
 
         self.n_cells_subdomain = int(np.floor(self.mesh.resolution/self.smooth_par))
         self.subdomain_start = int(np.ceil(self.n_cells_subdomain/2))
-
-    def run_simulation(self,
-                       t_end: float,
-                       g = 1) -> np.ndarray:
-        
-        delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
-
-        print("Orders at the beginning of the simulation:",self.orders)
-        
-        values = self._get_initial_conditions(self.mesh.cell_center_positions)
-        fluctuations_min = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-        fluctuations_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-        res1_min = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-        res1_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-
-        CFL = 0.5
-        
-        step_count = 0
-        t = 0
-
-        while t < t_end:
-            # update boundary conditions
-            values[0,:self.numbers_of_variables[0]] = self._update_boundary_conditions(values,'left')
-            values[self.mesh.resolution+1,:self.numbers_of_variables[-1]] = self._update_boundary_conditions(values,'right')
-            max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
-      
-            delta_t = CFL*delta_x/max_speed 
-
-            values = self._reconstruct_subdomains(values,delta_x,delta_t)
-            prev_values = np.copy(values)
-
-            right_boundary_subdomain = 0
-
-            for m in range(len(self.boundary_interfaces_discretized)):
-                order_left = self.orders[m]
-                n_variables_left = self.numbers_of_variables[m]
-                order_right = self.orders[m+1]
-                n_variables_right = self.numbers_of_variables[m+1]
-
-                def system_matrix_left(cell_values):
-                    return self.pde_type.compute_system_matrix(order_left,cell_values)
-
-                def system_matrix_right(cell_values):
-                    return self.pde_type.compute_system_matrix(order_right,cell_values)
-
-                left_boundary_subdomain = right_boundary_subdomain+1
-                right_boundary_subdomain = self.boundary_interfaces_discretized[m]
-                
-                if order_right > order_left:
-                    prev_values[right_boundary_subdomain,n_variables_left:n_variables_right] = 0 
-                    values[right_boundary_subdomain,n_variables_left:n_variables_right] = 0 
-                    values_boundary_help = prev_values[right_boundary_subdomain+1,:n_variables_right]
-                    values_boundary_help[n_variables_left:n_variables_right] = 0
-                    for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
-                        generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-                            prev_values[i-1,:n_variables_left],
-                            prev_values[i,:n_variables_left],
-                            system_matrix_left,
-                            delta_t,
-                            delta_x)
-                        fluctuations_plus[i-1,:n_variables_left] =\
-                            generalized_roe_plus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left])
-                        fluctuations_min[i-1,:n_variables_left] =\
-                            generalized_roe_minus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left]) 
-                        res1_min[i-1,:n_variables_left-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-                        res1_plus[i-1,:n_variables_left-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-
-                    # Fluctuation between cell with index right_boundary_subdomain and cell with index right_boundary_subdomain+1
-                    generalized_roe_minus1,generalized_roe_plus1 = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-                        prev_values[right_boundary_subdomain,:n_variables_right],
-                        values_boundary_help,
-                        system_matrix_right,
-                        delta_t,
-                        delta_x)
-                    generalized_roe_minus2,generalized_roe_plus2 = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-                        values_boundary_help,
-                        prev_values[right_boundary_subdomain+1,:n_variables_right],
-                        system_matrix_right,
-                        delta_t,
-                        delta_x
-                    )
-
-                    fluctuations_plus[right_boundary_subdomain,:n_variables_right] =\
-                        generalized_roe_plus1@(values_boundary_help-prev_values[right_boundary_subdomain,:n_variables_right])\
-                            +generalized_roe_plus2@(prev_values[right_boundary_subdomain+1,:n_variables_right]-values_boundary_help)
-                    fluctuations_min[right_boundary_subdomain,:n_variables_right] =\
-                        generalized_roe_minus1@(values_boundary_help-prev_values[right_boundary_subdomain,:n_variables_right])\
-                            +generalized_roe_minus2@(prev_values[right_boundary_subdomain+1,:n_variables_right]-values_boundary_help)
-
-                    res1_min[right_boundary_subdomain,:n_variables_left-1] =\
-                        generalized_roe_minus1[:n_variables_left-1,n_variables_left-1]\
-                            *(values_boundary_help[n_variables_left-1]-prev_values[right_boundary_subdomain,n_variables_left-1])\
-                                +generalized_roe_minus2[:n_variables_left-1,n_variables_left-1]*(values[right_boundary_subdomain+1,:n_variables_left-1]-values_boundary_help[n_variables_left-1])                    
-                    res1_plus[right_boundary_subdomain,:n_variables_right-1] =\
-                        generalized_roe_plus1[:n_variables_right-1,n_variables_right-1]*(values_boundary_help[n_variables_right-1]-prev_values[right_boundary_subdomain,n_variables_right-1])\
-                            +generalized_roe_plus2[:n_variables_right-1,n_variables_right-1]*(prev_values[right_boundary_subdomain+1,n_variables_right-1]-values_boundary_help[n_variables_right-1])
-                    
-                    right_boundary_subdomain += 1
-
-                else:
-                    prev_values[right_boundary_subdomain+1,n_variables_right:n_variables_left] = 0
-                    values[right_boundary_subdomain+1,n_variables_right:n_variables_left] = 0
-                    values_boundary_help = prev_values[right_boundary_subdomain,:n_variables_left]
-                    values_boundary_help[n_variables_right:n_variables_left] = 0
-
-                    for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
-                        generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-                            prev_values[i-1,:n_variables_left],
-                            prev_values[i,:n_variables_left],
-                            system_matrix_left,
-                            delta_t,
-                            delta_x)
-                        fluctuations_plus[i-1,:n_variables_left] =\
-                            generalized_roe_plus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left])
-                        fluctuations_min[i-1,:n_variables_left] =\
-                            generalized_roe_minus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left]) 
-                        res1_min[i-1,:n_variables_left-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-                        res1_plus[i-1,:n_variables_left-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-
-                    # Fluctuation between cell with index right_boundary_subdomain and cell with index right_boundary_subdomain+1
-                    generalized_roe_minus1,generalized_roe_plus1 = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-                        prev_values[right_boundary_subdomain,:n_variables_left],
-                        values_boundary_help,
-                        system_matrix_left,
-                        delta_t,
-                        delta_x)
-                    generalized_roe_minus2,generalized_roe_plus2 = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-                        values_boundary_help,
-                        prev_values[right_boundary_subdomain+1,:n_variables_left],
-                        system_matrix_left,
-                        delta_t,
-                        delta_x
-                    )
-                    fluctuations_plus[right_boundary_subdomain,:n_variables_left] =\
-                        generalized_roe_plus1@(values_boundary_help-prev_values[right_boundary_subdomain,:n_variables_left])\
-                            +generalized_roe_plus2@(prev_values[right_boundary_subdomain+1,:n_variables_left]-values_boundary_help)
-                    fluctuations_min[right_boundary_subdomain,:n_variables_left] =\
-                        generalized_roe_minus1@(values_boundary_help-prev_values[right_boundary_subdomain,:n_variables_left])\
-                            +generalized_roe_minus2@(prev_values[right_boundary_subdomain+1,:n_variables_left]-values_boundary_help)
-
-                    res1_min[right_boundary_subdomain,:n_variables_left-1] =\
-                        generalized_roe_minus1[:n_variables_left-1,n_variables_left-1]\
-                            *(values_boundary_help[n_variables_left-1]-prev_values[right_boundary_subdomain,n_variables_left-1])\
-                                +generalized_roe_minus2[:n_variables_left-1,n_variables_left-1]*(values[right_boundary_subdomain+1,:n_variables_left-1]-values_boundary_help[n_variables_left-1])                    
-                    res1_plus[right_boundary_subdomain,:n_variables_right-1] =\
-                        generalized_roe_plus1[:n_variables_right-1,n_variables_right-1]*(values_boundary_help[n_variables_right-1]-prev_values[right_boundary_subdomain,n_variables_right-1])\
-                            +generalized_roe_plus2[:n_variables_right-1,n_variables_right-1]*(prev_values[right_boundary_subdomain+1,n_variables_right-1]-values_boundary_help[n_variables_right-1])
-                    
-                    right_boundary_subdomain += 1
-
-            for i in range(right_boundary_subdomain+1,self.mesh.resolution+2):
-                generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-                    prev_values[i-1,:n_variables_right],
-                    prev_values[i,:n_variables_right],
-                    system_matrix_right,
-                    delta_t,
-                    delta_x)
-                fluctuations_plus[i-1,:n_variables_right] =\
-                    generalized_roe_plus@(prev_values[i,:n_variables_right]-prev_values[i-1,:n_variables_right])
-                fluctuations_min[i-1,:n_variables_right] =\
-                    generalized_roe_minus@(prev_values[i,:n_variables_right]-prev_values[i-1,:n_variables_right]) 
-                res1_min[i-1,:n_variables_right-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_right-1]-prev_values[i-1,n_variables_right-1])
-                res1_plus[i-1,:n_variables_right-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_right-1]-prev_values[i-1,n_variables_right-1])
-
-            right_boundary_subdomain = 0
-
-            for m in range(len(self.boundary_interfaces_discretized)):
-                order_left = self.orders[m]
-                n_variables_left = self.numbers_of_variables[m]
-                order_right = self.orders[m+1]
-                n_variables_right = self.numbers_of_variables[m+1]
-
-                def source_term_left(cell_values,delta_t):
-                    return self.pde_type.compute_source_term(order_left,cell_values,delta_t)
-
-                def source_term_right(cell_values,delta_t):
-                    return self.pde_type.compute_source_term(order_right,cell_values,delta_t)
-
-                left_boundary_subdomain = right_boundary_subdomain+1
-                right_boundary_subdomain = self.boundary_interfaces_discretized[m]
-                
-                for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
-                    values[i,:n_variables_left] = prev_values[i,:n_variables_left]\
-                        - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables_left]+fluctuations_min[i,:n_variables_left]) 
-                    values[i,:n_variables_left] = self.time_integration.integrate(values[i,:n_variables_left],source_term_left,delta_t)
-
-                    self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables_left-1]+res1_min[i,:n_variables_left-1])
-                    self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_left-1]-prev_values[i,n_variables_left-1])
-                    
-            for i in range(right_boundary_subdomain+1,self.mesh.resolution+1):
-                values[i,:n_variables_right] = prev_values[i,:n_variables_right]\
-                    - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables_right]+fluctuations_min[i,:n_variables_right]) 
-                values[i,:n_variables_right] = self.time_integration.integrate(values[i,:n_variables_right],source_term_right,delta_t)
-
-                self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables_right-1]+res1_min[i,:n_variables_right-1])
-                self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_right-1]-prev_values[i,n_variables_right-1])
-            
-            step_count += 1
-            print(t)
-            self.dom_decomp_val_res1 = self.dom_decomp_val_res1/delta_x
-            self.dom_decomp_val_res2 = self.dom_decomp_val_res2/delta_t
-            t+=delta_t
-
-        values = simulation_data = self._post_processing(values)
-        return simulation_data  
-
-    # def run_simulation(self,
-    #                    t_end: float,
-    #                    g = 1) -> np.ndarray:
-        
-    #     delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
-
-    #     print("Orders at the beginning of the simulation:",self.orders)
-
-    #     values = self._get_initial_conditions(self.mesh.cell_center_positions)
-    #     fluctuations_min = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-    #     fluctuations_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-    #     res1_min = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-    #     res1_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
-
-    #     CFL = 0.5
-        
-    #     step_count = 0
-    #     t = 0
-
-    #     while t < t_end:
-    #         # update boundary conditions
-    #         values[0,:self.numbers_of_variables[0]] = self._update_boundary_conditions(values,'left')
-    #         values[self.mesh.resolution+1,:self.numbers_of_variables[-1]] = self._update_boundary_conditions(values,'right')
-    #         max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
-      
-    #         delta_t = CFL*delta_x/max_speed 
-
-    #         # if step_count%10 == 0:
-    #         #     values = self._reconstruct_subdomains(prev_values,delta_x)
-    #         values = self._reconstruct_subdomains(values,delta_x,delta_t)
-    #         prev_values = np.copy(values)
-
-    #         right_boundary_subdomain = 0
-
-    #         for m in range(len(self.boundary_interfaces_discretized)):
-    #             order_left = self.orders[m]
-    #             n_variables_left = self.numbers_of_variables[m]
-    #             order_right = self.orders[m+1]
-    #             n_variables_right = self.numbers_of_variables[m+1]
-
-    #             def system_matrix_left(cell_values):
-    #                 return self.pde_type.compute_system_matrix(order_left,cell_values)
-
-    #             def system_matrix_right(cell_values):
-    #                 return self.pde_type.compute_system_matrix(order_right,cell_values)
-
-    #             left_boundary_subdomain = right_boundary_subdomain + 1
-    #             right_boundary_subdomain = self.boundary_interfaces_discretized[m]
-                
-    #             if order_right > order_left:
-    #                 prev_values[right_boundary_subdomain-1,n_variables_left:n_variables_right] = \
-    #                     prev_values[right_boundary_subdomain,n_variables_left:n_variables_right] # update boundary interface boundary condition 
-    #                 for i in range(left_boundary_subdomain,right_boundary_subdomain):
-    #                     generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                         prev_values[i-1,:n_variables_left],
-    #                         prev_values[i,:n_variables_left],
-    #                         system_matrix_left,
-    #                         delta_t,
-    #                         delta_x)
-    #                     fluctuations_plus[i-1,:n_variables_left] =\
-    #                         generalized_roe_plus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left])
-    #                     fluctuations_min[i-1,:n_variables_left] =\
-    #                         generalized_roe_minus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left]) 
-    #                     res1_min[i-1,:n_variables_left-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-    #                     res1_plus[i-1,:n_variables_left-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-
-    #                 # Fluctuation between cell with index right_boundary_subdomain-1 and cell with index right_boundary_subdomain
-    #                 generalized_roe_minus_Full, generalized_roe_plus_Full = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                     prev_values[right_boundary_subdomain-1,:n_variables_right],
-    #                     prev_values[right_boundary_subdomain,:n_variables_right],
-    #                     system_matrix_right,
-    #                     delta_t,
-    #                     delta_x) 
-    #                 generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                     prev_values[right_boundary_subdomain-1,:n_variables_left],
-    #                     prev_values[right_boundary_subdomain,:n_variables_left],
-    #                     system_matrix_left,
-    #                     delta_t,
-    #                     delta_x)  
-    #                 fluctuation_plus_Full = generalized_roe_plus_Full@(prev_values[right_boundary_subdomain,:n_variables_right]\
-    #                                                                    -prev_values[right_boundary_subdomain-1,:n_variables_right])
-    #                 fluctuation_plus_Restricted = generalized_roe_plus@(prev_values[right_boundary_subdomain,:n_variables_left]\
-    #                                                                                -prev_values[right_boundary_subdomain-1,:n_variables_left])
-    #                 fluctuations_plus[right_boundary_subdomain-1,:n_variables_right] \
-    #                     = np.hstack((fluctuation_plus_Restricted, fluctuation_plus_Full[n_variables_left:n_variables_right]))
-    #                 fluctuations_min[right_boundary_subdomain-1,:n_variables_left] = generalized_roe_minus@(prev_values[right_boundary_subdomain,:n_variables_left]\
-    #                                                            -prev_values[right_boundary_subdomain-1,:n_variables_left])
-                    
-    #                 res1_min[right_boundary_subdomain-1,:n_variables_left-1] =\
-    #                     generalized_roe_minus[:-1,-1]*(prev_values[right_boundary_subdomain,n_variables_left-1]-prev_values[right_boundary_subdomain-1,n_variables_left-1])
-    #                 res1_plus[right_boundary_subdomain-1,:n_variables_left-1] =\
-    #                     generalized_roe_plus[:-1,-1]*(prev_values[right_boundary_subdomain,n_variables_left-1]-prev_values[right_boundary_subdomain-1,n_variables_left-1])        
-
-    #                 # Fluctuation between cell with index right_boundary_subdomain and cell with index right_boundary_subdomain+1
-    #                 generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                     prev_values[right_boundary_subdomain,:n_variables_right],
-    #                     prev_values[right_boundary_subdomain+1,:n_variables_right],
-    #                     system_matrix_right,
-    #                     delta_t,
-    #                     delta_x)  
-    #                 fluctuations_plus[right_boundary_subdomain,:n_variables_right] = generalized_roe_plus@(prev_values[right_boundary_subdomain+1,:n_variables_right]\
-    #                                                                    -prev_values[right_boundary_subdomain,:n_variables_right])
-    #                 fluctuations_min[right_boundary_subdomain,:n_variables_right] = generalized_roe_minus@(prev_values[right_boundary_subdomain+1,:n_variables_right]\
-    #                                                            -prev_values[right_boundary_subdomain,:n_variables_right])
-                    
-    #                 res1_min[right_boundary_subdomain,:n_variables_left-1] =\
-    #                     generalized_roe_minus[:n_variables_left-1,n_variables_left-1]\
-    #                         *(prev_values[right_boundary_subdomain+1,n_variables_left-1]-prev_values[right_boundary_subdomain,n_variables_left-1])                    
-    #                 res1_plus[right_boundary_subdomain,:n_variables_right-1] =\
-    #                     generalized_roe_plus[:-1,-1]*(prev_values[right_boundary_subdomain+1,n_variables_right-1]-prev_values[right_boundary_subdomain,n_variables_right-1]) 
-                    
-    #                 right_boundary_subdomain += 1
-
-    #             else:
-    #                 prev_values[right_boundary_subdomain+2,n_variables_right:n_variables_left] = \
-    #                     prev_values[right_boundary_subdomain+1,n_variables_right:n_variables_left] # update boundary interface boundary condition
-    #                 for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
-    #                     generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                         prev_values[i-1,:n_variables_left],
-    #                         prev_values[i,:n_variables_left],
-    #                         system_matrix_left,
-    #                         delta_t,
-    #                         delta_x)
-    #                     fluctuations_plus[i-1,:n_variables_left] =\
-    #                         generalized_roe_plus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left])
-    #                     fluctuations_min[i-1,:n_variables_left] =\
-    #                         generalized_roe_minus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left]) 
-    #                     res1_min[i-1,:n_variables_left-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-    #                     res1_plus[i-1,:n_variables_left-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-                    
-    #                 # Fluctuation between cell with index right_boundary_subdomain and cell with index right_boundary_subdomain+1
-    #                 generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                     prev_values[right_boundary_subdomain,:n_variables_left],
-    #                     prev_values[right_boundary_subdomain+1,:n_variables_left],
-    #                     system_matrix_left,
-    #                     delta_t,
-    #                     delta_x)  
-    #                 fluctuations_plus[right_boundary_subdomain,:n_variables_left] = generalized_roe_plus@(prev_values[right_boundary_subdomain+1,:n_variables_left]\
-    #                                                                    -prev_values[right_boundary_subdomain,:n_variables_left])
-    #                 fluctuations_min[right_boundary_subdomain,:n_variables_left] = generalized_roe_minus@(prev_values[right_boundary_subdomain+1,:n_variables_left]\
-    #                                                            -prev_values[right_boundary_subdomain,:n_variables_left])
-                    
-    #                 res1_min[right_boundary_subdomain,:n_variables_left-1] =\
-    #                     generalized_roe_plus[:-1,-1]*(prev_values[right_boundary_subdomain+1,n_variables_left-1]-prev_values[right_boundary_subdomain,n_variables_left-1]) 
-    #                 res1_plus[right_boundary_subdomain,:n_variables_right-1] =\
-    #                     generalized_roe_minus[:n_variables_right-1,n_variables_right-1]\
-    #                         *(prev_values[right_boundary_subdomain+1,n_variables_right-1]-prev_values[right_boundary_subdomain,n_variables_right-1])
-
-    #                 # Fluctuation between cell with index right_boundary_subdomain+1 and cell with index right_boundary_subdomain+2
-    #                 generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                     prev_values[right_boundary_subdomain+1,:n_variables_right],
-    #                     prev_values[right_boundary_subdomain+2,:n_variables_right],
-    #                     system_matrix_right,
-    #                     delta_t,
-    #                     delta_x)             
-    #                 generalized_roe_minus_Full, generalized_roe_plus_Full = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                     prev_values[right_boundary_subdomain+1,:n_variables_left],
-    #                     prev_values[right_boundary_subdomain+2,:n_variables_left],
-    #                     system_matrix_left,
-    #                     delta_t,
-    #                     delta_x) 
-                    
-    #                 fluctuation_minus_Full = generalized_roe_minus_Full@(prev_values[right_boundary_subdomain+2,:n_variables_left]\
-    #                                                          -prev_values[right_boundary_subdomain+1,:n_variables_left])
-    #                 fluctuation_minus_Restricted = generalized_roe_minus@(prev_values[right_boundary_subdomain+2,:n_variables_right]\
-    #                                                          -prev_values[right_boundary_subdomain+1,:n_variables_right])
-                    
-    #                 fluctuations_plus[right_boundary_subdomain+1,:n_variables_right] = generalized_roe_plus@(prev_values[right_boundary_subdomain+2,:n_variables_right]\
-    #                                                          -prev_values[right_boundary_subdomain+1,:n_variables_right])
-    #                 fluctuations_min[right_boundary_subdomain+1,:n_variables_left] = np.hstack((fluctuation_minus_Restricted, fluctuation_minus_Full[n_variables_right:n_variables_left]))
-                    
-    #                 res1_min[right_boundary_subdomain+1,:n_variables_right-1] =\
-    #                     generalized_roe_minus[:-1,-1]*(prev_values[right_boundary_subdomain+2,n_variables_right-1]-prev_values[right_boundary_subdomain+1,n_variables_right-1])
-    #                 res1_plus[right_boundary_subdomain+1,:n_variables_right-1] =\
-    #                     generalized_roe_plus[:-1,-1]*(prev_values[right_boundary_subdomain+2,n_variables_right-1]-prev_values[right_boundary_subdomain+1,n_variables_right-1])   
-
-    #                 right_boundary_subdomain += 2
-            
-    #         for i in range(right_boundary_subdomain+1,self.mesh.resolution+2):
-    #             generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
-    #                 prev_values[i-1,:n_variables_right],
-    #                 prev_values[i,:n_variables_right],
-    #                 system_matrix_right,
-    #                 delta_t,
-    #                 delta_x)
-    #             fluctuations_plus[i-1,:n_variables_right] =\
-    #                 generalized_roe_plus@(prev_values[i,:n_variables_right]-prev_values[i-1,:n_variables_right])
-    #             fluctuations_min[i-1,:n_variables_right] =\
-    #                 generalized_roe_minus@(prev_values[i,:n_variables_right]-prev_values[i-1,:n_variables_right]) 
-    #             res1_min[i-1,:n_variables_right-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_right-1]-prev_values[i-1,n_variables_right-1])
-    #             res1_plus[i-1,:n_variables_right-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_right-1]-prev_values[i-1,n_variables_right-1])
-
-    #         right_boundary_subdomain = 0
-    #         for m in range(len(self.boundary_interfaces_discretized)):
-
-    #             order_left = self.orders[m]
-    #             n_variables_left = self.numbers_of_variables[m]
-    #             order_right = self.orders[m+1]
-    #             n_variables_right = self.numbers_of_variables[m+1]
-
-    #             def source_term_left(cell_values,delta_t):
-    #                 return self.pde_type.compute_source_term(order_left,cell_values,delta_t)
-
-    #             def source_term_right(cell_values,delta_t):
-    #                 return self.pde_type.compute_source_term(order_right,cell_values,delta_t)
-
-    #             left_boundary_subdomain = right_boundary_subdomain+1
-    #             right_boundary_subdomain = self.boundary_interfaces_discretized[m]
-                
-    #             if order_right > order_left:
-    #                 for i in range(left_boundary_subdomain,right_boundary_subdomain):
-
-    #                     values[i,:n_variables_left] = prev_values[i,:n_variables_left]\
-    #                         - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables_left]+fluctuations_min[i,:n_variables_left]) 
-    #                     values[i,:n_variables_left] = self.time_integration.integrate(values[i,:n_variables_left],source_term_left,delta_t)
-
-    #                     self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables_left-1]+res1_min[i,:n_variables_left-1])
-    #                     self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_left-1]-prev_values[i,n_variables_left-1])
-
-    #                 # Evolution equation for the cell with index right_boundary_subdomain
-
-    #                 values[right_boundary_subdomain,:n_variables_right] = (prev_values[right_boundary_subdomain,:n_variables_right]
-    #                 -delta_t/delta_x*(fluctuations_plus[right_boundary_subdomain-1,:n_variables_right] + fluctuations_min[right_boundary_subdomain,:n_variables_right])) 
-                    
-    #                 values[right_boundary_subdomain,:n_variables_right] =\
-    #                     self.time_integration.integrate(values[right_boundary_subdomain,:n_variables_right],source_term_right,delta_t)
-                    
-    #                 self.dom_decomp_val_res1[right_boundary_subdomain-1] =\
-    #                     np.linalg.norm(res1_plus[right_boundary_subdomain-1,:n_variables_left-1]+res1_min[right_boundary_subdomain,:n_variables_left-1])
-    #                 self.dom_decomp_val_res2[right_boundary_subdomain-1] =\
-    #                     np.abs(values[right_boundary_subdomain,n_variables_left-1]-prev_values[right_boundary_subdomain,n_variables_left-1])                     
-            
-    #             else:
-    #                 for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
-    #                     values[i,:n_variables_left] = prev_values[i,:n_variables_left]\
-    #                         -delta_t/delta_x*(fluctuations_plus[i-1,:n_variables_left]+fluctuations_min[i,:n_variables_left])
-    #                     values[i,:n_variables_left] = self.time_integration.integrate(values[i,:n_variables_left],source_term_left,delta_t)
-
-    #                     self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables_left-1]+res1_min[i,:n_variables_left-1])
-    #                     self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_left-1]-prev_values[i,n_variables_left-1])
-                    
-    #                 # Evolution equation for the cell with index right_boundary_subdomain+1
-    #                 values[right_boundary_subdomain+1,:n_variables_left] = (prev_values[right_boundary_subdomain+1,:n_variables_left]
-    #                 -delta_t/delta_x*(fluctuations_plus[right_boundary_subdomain,:n_variables_left] + fluctuations_min[right_boundary_subdomain+1,:n_variables_left])) 
-                    
-    #                 values[right_boundary_subdomain+1,:n_variables_left] =\
-    #                     self.time_integration.integrate(values[right_boundary_subdomain+1,:n_variables_left],source_term_left,delta_t)
-                    
-    #                 self.dom_decomp_val_res1[right_boundary_subdomain] =\
-    #                     np.linalg.norm(res1_plus[right_boundary_subdomain,:n_variables_right-1]+res1_min[right_boundary_subdomain+1,:n_variables_right-1])
-    #                 self.dom_decomp_val_res2[right_boundary_subdomain] =\
-    #                     np.abs(values[right_boundary_subdomain+1,n_variables_right-1]-prev_values[right_boundary_subdomain+1,n_variables_right-1]) 
-
-    #                 right_boundary_subdomain += 1
-            
-    #         for i in range(right_boundary_subdomain+1,self.mesh.resolution+1):
-    #             values[i,:n_variables_right] = prev_values[i,:n_variables_right]\
-    #                 - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables_right]+fluctuations_min[i,:n_variables_right]) 
-    #             values[i,:n_variables_right] = self.time_integration.integrate(values[i,:n_variables_right],source_term_right,delta_t)
-
-    #             self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables_right-1]+res1_min[i,:n_variables_right-1])
-    #             self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables_right-1]-prev_values[i,n_variables_right-1])
-            
-    #         self.dom_decomp_val_res1 = self.dom_decomp_val_res1/delta_x
-    #         self.dom_decomp_val_res2 = self.dom_decomp_val_res2/delta_t
-    #         step_count += 1
-    #         print(t)
-    #         t+=delta_t
-
-            
-    #     simulation_data = self._post_processing(values)
-    #     return simulation_data
-    
-    def _update_domain_decomposition_pointwise(self,
-                                     values,
-                                     delta_x,
-                                     delta_t):
-        
-        """
-        updates the domain decomposition in each point of the domain
-
-        Parameters
-        ----------
-        values : numpy 2D array
-            the values of the variables in each mesh cell
-        delta_x : float
-            grid cell size
-        delta_t : float
-            time step size
-        
-        Returns
-        -------
-        None
-
-        """
-
-        self.breakdown_estimators,breakdown_criteria_flags = self.pde_type.compute_breakdown_criteria_full(
-                                                                        values,
-                                                                        self.mesh.resolution,
-                                                                        delta_x,
-                                                                        delta_t,
-                                                                        self.max_order,
-                                                                        self.orders_cellwise,
-                                                                        self.numbers_of_variables_cellwise,
-                                                                        self.dom_decomp_val_res1,
-                                                                        self.dom_decomp_val_res2)
-        for i in range(self.mesh.resolution):
-            self.orders_cellwise[i+1] += int(breakdown_criteria_flags[i])
-            self.numbers_of_variables_cellwise[i+1] += int(breakdown_criteria_flags[i])     
-        self.orders_cellwise[0] = self.orders_cellwise[1]
-        self.numbers_of_variables_cellwise[0] = self.numbers_of_variables_cellwise[1]
-        self.orders_cellwise[-1] = self.orders_cellwise[-2]
-        self.numbers_of_variables_cellwise[-1] = self.numbers_of_variables_cellwise[-2]    
 
     def _reconstruct_subdomains(self,
                                values: np.ndarray,
@@ -2080,6 +2089,164 @@ class SmoothedConsAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         values[left_boundary:self.mesh.resolution+2,self.numbers_of_variables[-1]:self.max_number_of_variables] = 0 
 
         return values
+
+class SmoothedConsAdaptiveSimulation1D(SmoothedSubdomainReconstruction,ConservativeAdaptiveSimulation1D):
+
+    """
+    This class represents a smoothed adaptive simulation in 1D that uses the conservative interface flux coupling.
+
+    ...
+
+    Attributes
+    ----------
+    boundary_interfaces : list of floats
+        list of the physical positions of the interfaces that separate the domain into subdomains
+    orders : list of integers
+        list of the order of the moment model in each subdomain
+    max_order : int
+        the maximum order in the simulation
+    max_number_of_variables : int
+        the maximum number of variables in the simulation
+    orders_cellwise : list
+        list conting the order in each cell
+    number_of_variables_cellwise : list
+        list containing the number of variables in each cell
+    pde_type : str
+        the partial differential equations that is simulated
+    numbers_of_variables : int
+        list of the number of state variables in each subdomain
+    mesh : RectangularMesh
+        the used mesh
+    boundary_condition : str
+        the used boundary condition
+    initial_condition : str
+        the initial condition for the simulation
+    breakdown_criterion : str
+        breadown criterion for domain decomposition
+    spatial_discretization : SpatialDiscretization
+        the numerical method for the spatial discretization
+    time_integration : TimeIntegration
+        the time integration method for the right hand side source term
+    dom_decomp_val_res1 : np.ndarray
+        numpy array containing the values of the residual res1 (see definition paper) in each cell
+        this value is only used for hierarchical moment equations
+    dom_decomp_val_res2 : np.ndarray
+        numpy array containing the values of the residual res2 (see definition paper) in each cell
+        this value is only used for hierarchical moment equations
+    breakdown_estimators : np.ndarray
+        numpy array containg the values of each breakdown estimator in each grid cell
+    smooth_par : float
+        the size of the subregions, relative to the size of the entire domain
+    
+    Inherited methods from abstract class SpatiallyAdaptiveSimulation1D
+    --------------------------------------------------------------------
+    def _get_initial_conditions(self,cell_centers_x):
+        constructs the initial values in each grid cell
+    def _update_boundary_conditions(self,values_boundary):
+        updates the boundary conditions
+    def _post_processing(self,values):
+        post processed the end data of the simulation and prepares it for plotting
+    def _update_domain_decomposition(self,values,tolerance_up,tolerance_down):
+        updates the domain decompositions
+
+        
+    Inherited methods from parent class ConservativeAdaptiveSimulation
+    -------------------------------------------------------------------
+    def run_simulation(self,t_end):
+        runs the simulation and outputs the end values
+
+    Inherited methods from parent class SmoothedSubdomainReconstruction
+    ----------------------------------------------------------------------
+    def _reconstruct_subdomains(self,values,delta_x,delta_t):
+        find boundary interfaces from the cellwise model orders     
+    def __init__(self,start_order,pde_type,mesh.RectangularMesh,boundary_condition,initial_condition,
+                    breakdown_criterion,spatial_discretization,time_integration):
+        initializes the SmoothedConsAdaptiveSimulation1D object
+    
+    Instance methods
+    ----------------
+    None
+    """
+    pass
+
+class SmoothedNonConsAdaptiveSimulation1D(SmoothedSubdomainReconstruction,NonConservativeAdaptiveSimulation1D):
+
+    """
+    This class represents a smoothed adaptive simulation in 1D that uses the nonconservative padded buffer cell coupling.
+
+    ...
+
+    Attributes
+    ----------
+    boundary_interfaces : list of floats
+        list of the physical positions of the interfaces that separate the domain into subdomains
+    orders : list of integers
+        list of the order of the moment model in each subdomain
+    max_order : int
+        the maximum order in the simulation
+    max_number_of_variables : int
+        the maximum number of variables in the simulation
+    orders_cellwise : list
+        list conting the order in each cell
+    number_of_variables_cellwise : list
+        list containing the number of variables in each cell
+    pde_type : str
+        the partial differential equations that is simulated
+    numbers_of_variables : int
+        list of the number of state variables in each subdomain
+    mesh : RectangularMesh
+        the used mesh
+    boundary_condition : str
+        the used boundary condition
+    initial_condition : str
+        the initial condition for the simulation
+    breakdown_criterion : str
+        breadown criterion for domain decomposition
+    spatial_discretization : SpatialDiscretization
+        the numerical method for the spatial discretization
+    time_integration : TimeIntegration
+        the time integration method for the right hand side source term
+    dom_decomp_val_res1 : np.ndarray
+        numpy array containing the values of the residual res1 (see definition paper) in each cell
+        this value is only used for hierarchical moment equations
+    dom_decomp_val_res2 : np.ndarray
+        numpy array containing the values of the residual res2 (see definition paper) in each cell
+        this value is only used for hierarchical moment equations
+    breakdown_estimators : np.ndarray
+        numpy array containg the values of each breakdown estimator in each grid cell
+    smooth_par : float
+        the size of the subregions, relative to the size of the entire domain
+    
+    Inherited methods from abstract class SpatiallyAdaptiveSimulation1D
+    --------------------------------------------------------------------
+    def _get_initial_conditions(self,cell_centers_x):
+        constructs the initial values in each grid cell
+    def _update_boundary_conditions(self,values_boundary):
+        updates the boundary conditions
+    def _post_processing(self,values):
+        post processed the end data of the simulation and prepares it for plotting
+    def _update_domain_decomposition(self,values,tolerance_up,tolerance_down):
+        updates the domain decompositions
+
+        
+    Inherited methods from parent class ConservativeAdaptiveSimulation
+    -------------------------------------------------------------------
+    def run_simulation(self,t_end):
+        runs the simulation and outputs the end values
+
+    Inherited methods from parent class SmoothedSubdomainReconstruction
+    ----------------------------------------------------------------------
+    def _reconstruct_subdomains(self,values,delta_x,delta_t):
+        find boundary interfaces from the cellwise model orders     
+    def __init__(self,start_order,pde_type,mesh.RectangularMesh,boundary_condition,initial_condition,
+                    breakdown_criterion,spatial_discretization,time_integration):
+        initializes the SmoothedNonConsAdaptiveSimulation1D object
+    
+    Instance methods
+    ----------------
+    None
+    """
+    pass
 
 #TODO: make this a child of the ClassicalSimulation1D
 class Micro_macro(Simulation):

@@ -52,10 +52,10 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 10.0
+t_end = 1.0
 
 # spatially_adaptive, classical, micro_macro, smoothedAdaptive
-method = smoothedAdaptive
+method = spatially_adaptive
     ### SPATIALLYADAPTIVE ###
     # spatial coupling: conservative, nonconservative
 coupling = nonconservative
@@ -63,14 +63,14 @@ coupling = nonconservative
 start_order = 10
     ### CLASSICAL ###
     # Order of the model
-order = 4
+order = 10
 
 
 # Finite volume method type. Implemented: PVM
 fvm_type = PVM
 
     # PVM #
-    # Polynomial viscosity method. Implemented: PRICE, LF
+    # Polynomial viscosity method. Implemented: PRICE, LF, Roe
 pvm = PRICE
 
 # Time integration for source term. Implemented: ExplicitEuler, ImplicitEuler, Exact

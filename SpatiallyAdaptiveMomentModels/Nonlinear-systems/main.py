@@ -68,6 +68,8 @@ def main():
             _spatialDiscretization = spatialDiscretization.PRICE()
         elif numerical_method_information['pvm'] == 'LF':
             _spatialDiscretization = spatialDiscretization.LF()
+        elif numerical_method_information['pvm'] == 'Roe':
+            _spatialDiscretization = spatialDiscretization.Roe()
         else:
             print('this pvm method is not implemented yet')
     else:
@@ -114,16 +116,28 @@ def main():
                 )
 
         if numerical_method_information['method'] == 'smoothedAdaptive':
-            start_order = int(numerical_method_information['start_order'])
-            _simulation = simulation.SmoothedAdaptiveSimulation1D(
-                start_order,
-                _pde,
-                _mesh,
-                numerical_method_information['boundaryCondition'],
-                pde_information['initialCondition'],
-                pde_information['breakdown_criterion'],
-                _spatialDiscretization,
-                _time_integration)
+            if numerical_method_information['coupling'] == 'nonconservative':
+                start_order = int(numerical_method_information['start_order'])
+                _simulation = simulation.SmoothedConsAdaptiveSimulation1D(
+                    start_order,
+                    _pde,
+                    _mesh,
+                    numerical_method_information['boundaryCondition'],
+                    pde_information['initialCondition'],
+                    pde_information['breakdown_criterion'],
+                    _spatialDiscretization,
+                    _time_integration)
+            elif numerical_method_information['coupling'] == 'nonconservative':
+                start_order = int(numerical_method_information['start_order'])
+                _simulation = simulation.SmoothedNonConsAdaptiveSimulation1D(
+                    start_order,
+                    _pde,
+                    _mesh,
+                    numerical_method_information['boundaryCondition'],
+                    pde_information['initialCondition'],
+                    pde_information['breakdown_criterion'],
+                    _spatialDiscretization,
+                    _time_integration)                
 
         elif numerical_method_information['method'] == 'classical':
             _simulation = simulation.ClassicalSimulation1D(

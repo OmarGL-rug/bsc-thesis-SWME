@@ -4424,18 +4424,20 @@ class HermiteMomentEquations(PDE):
             initial_values[0] = 1 + 2*np.exp(-2*position**2)
             initial_values[1] = 0.5
             initial_values[2] = 1
-            if order > 3:
+            if order > 2:
                 initial_values[3] = 0.1
-            if order > 4:
+            if order > 3:
                 initial_values[4] = 0.1 
-            if order > 5:
+            if order > 4:
                 initial_values[5] = 0.1 
-            if order > 6:
+            if order > 5:
                 initial_values[6] = 0.1 
-            if order > 7:
+            if order > 6:
                 initial_values[7] = 0.1 
-            if order > 8:
+            if order > 7:
                 initial_values[8] = 0.1  
+            if order > 8:
+                initial_values[9] = 0.1
             if order > 9:
                 initial_values[10] = 0.1
         elif initial_condition == 'symmetric_shockTube':
@@ -4664,8 +4666,8 @@ class HermiteMomentEquations(PDE):
                                    numbers_of_variables_cellwise: list,
                                    dom_decomp_val_res1: np.ndarray,
                                    dom_decomp_val_res2: np.ndarray,
-                                   tolerance_up_flow_gradient = 0.00005,
-                                   tolerance_down_last_moment = 0.00005) -> tuple[np.ndarray,np.ndarray]:       
+                                   tolerance_up_flow_gradient = 0.001,
+                                   tolerance_down_last_moment = 0.0005) -> tuple[np.ndarray,np.ndarray]:       
         """
         computes the breakdown criteria for adaptive simulation
 

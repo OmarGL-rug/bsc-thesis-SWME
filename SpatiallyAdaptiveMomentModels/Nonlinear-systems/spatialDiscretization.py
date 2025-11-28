@@ -287,3 +287,46 @@ class LF(PVM):
         
         viscosity = delta_x/delta_t*np.identity(np.shape(roe_matrix)[0])
         return viscosity
+
+class Roe(PVM):
+    """
+    This class represents the Roe scheme, a PVM scheme with viscosity function Q(A) = |A|. 
+
+    ...
+
+    Attributes
+    ----------
+    None
+
+    
+    Methods inherited from abtract parent class PVM
+    ------------------------------------------------
+    def compute_fluctuation(self,value_left,value_right,system_matrix,direction,delta_t,delta_x):
+        computes the fluctuation between two cells with values value_left and value_right
+    def compute_generalized_roe_and_viscosity(self,value_left,value_right,system_matrix,direction,delta_t,delta_x):
+        compute the generalized roe matrix and the viscosity matrix between two cells with values value_left and value_right
+
+    Methods implemented from abstract parent class PVM
+    def compute_viscosity(self,roe_matrix,delta_t,delta_x):
+        computes the viscosity matrix for the Roe scheme
+
+    """
+
+    def compute_viscosity(self,
+                          roe_matrix: np.ndarray,
+                          delta_t: float,
+                          delta_x: float):
+
+        # Eigen-decomposition: A = R D R^-1
+        eigenvalues, R = np.linalg.eig(roe_matrix)
+        
+        # Construct |D|
+        D_abs = np.diag(np.abs(eigenvalues))
+        
+        # Compute inverse of R
+        R_inv = np.linalg.inv(R)
+        
+        # Return B = R |D| R^-1
+        viscosity = R @ D_abs @ R_inv
+
+        return viscosity
