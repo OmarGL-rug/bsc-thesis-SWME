@@ -330,3 +330,109 @@ class Roe(PVM):
         viscosity = R @ D_abs @ R_inv
 
         return viscosity
+    
+class Osher(PVM):
+    """
+    TODO
+
+    """
+
+    def compute_fluctuation(self,
+                            value_left: np.ndarray,
+                            value_right: np.ndarray,
+                            system_matrix: Callable[...,np.ndarray],
+                            delta_t: float,
+                            delta_x: float) -> tuple[np.ndarray,np.ndarray]:
+        
+        # Nodes on [0, 1]
+        quadrature_nodes = [
+            (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
+            (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+            1/2,
+            (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+            (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
+        ]
+
+        # Weights on [0, 1]
+        quadrature_weights = [
+            (322 - 13*np.sqrt(70)) / 1800,
+            (322 + 13*np.sqrt(70)) / 1800,
+            128 / 450,
+            (322 + 13*np.sqrt(70)) / 1800,
+            (322 - 13*np.sqrt(70)) / 1800
+        ]
+
+        # quadrature_nodes = [1/2]
+        # quadrature_weights = [1]
+
+        generalized_roe = 0
+        viscosity = 0
+        for i in range(len(quadrature_nodes)):
+            generalized_roe_point = quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
+            generalized_roe += generalized_roe_point
+            viscosity += self.compute_viscosity(generalized_roe_point,delta_t,delta_x)
+        viscosity = np.dot(viscosity,value_right-value_left)
+        generalized_roe = np.dot(generalized_roe,value_right-value_left)
+        fluctuation_min = (generalized_roe - viscosity)/2
+        fluctuation_plus = (generalized_roe + viscosity)/2
+
+        return fluctuation_min, fluctuation_plus
+    
+    def compute_generalized_roe_and_viscosity(self,
+                                              value_left,
+                                              value_right,
+                                              system_matrix,
+                                              delta_t,
+                                              delta_x):
+
+        # Nodes on [0, 1]
+        quadrature_nodes = [
+            (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
+            (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+            1/2,
+            (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+            (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
+        ]
+
+        # Weights on [0, 1]
+        quadrature_weights = [
+            (322 - 13*np.sqrt(70)) / 1800,
+            (322 + 13*np.sqrt(70)) / 1800,
+            128 / 450,
+            (322 + 13*np.sqrt(70)) / 1800,
+            (322 - 13*np.sqrt(70)) / 1800
+        ]
+
+        # quadrature_nodes = [1/2]
+        # quadrature_weights = [1]
+
+        generalized_roe = 0
+        viscosity = 0
+        for i in range(len(quadrature_nodes)):
+            generalized_roe_point = quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
+            generalized_roe += generalized_roe_point
+            viscosity += self.compute_viscosity(generalized_roe_point,delta_t,delta_x)
+        fluct_matrix_min = (generalized_roe - viscosity)/2
+        fluct_matrix_plus = (generalized_roe + viscosity)/2
+
+        return fluct_matrix_min, fluct_matrix_plus
+
+
+    def compute_viscosity(self,
+                          roe_matrix: np.ndarray,
+                          delta_t: float,
+                          delta_x: float):
+
+        # Eigen-decomposition: A = R D R^-1
+        eigenvalues, R = np.linalg.eig(roe_matrix)
+        
+        # Construct |D|
+        D_abs = np.diag(np.abs(eigenvalues))
+        
+        # Compute inverse of R
+        R_inv = np.linalg.inv(R)
+        
+        # Return B = R |D| R^-1
+        viscosity = R @ D_abs @ R_inv
+
+        return viscosity

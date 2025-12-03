@@ -582,6 +582,7 @@ class SpatiallyAdaptiveSimulation1D(Simulation,ABC):
         data_array[:,-1] = self.orders_cellwise[1:-1]
 
         print("Orders at the end of the simulation:",self.orders)
+        print("numbers of vars at the end of the simulation:",self.numbers_of_variables)
         
         return data_array
     
@@ -665,7 +666,6 @@ class NonConservativeAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                        g = 1) -> np.ndarray:
         
         delta_x = (self.mesh.boundaries[1] - self.mesh.boundaries[0])/self.mesh.resolution #TODO: include the possibility of nonuniform grids
-
         print("Orders at the beginning of the simulation:",self.orders)
 
         values = self._get_initial_conditions(self.mesh.cell_center_positions)
@@ -1469,25 +1469,44 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         self.breakdown_estimators = np.zeros((self.mesh.resolution,self.max_order+4))
 
-        self.smooth_par = 20
-        self.orders_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
-        self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
-        self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par+1,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
+        self.smooth_par = 8
+        self.orders = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
+        self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par+1,fill_value=0,dtype=int)
+        self.breakdown_criteria_flags = np.full(shape=self.mesh.resolution,dtype=int,fill_value=0)
+        self.numbers_of_variables = np.full(shape=self.smooth_par+1,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
         self.boundary_interfaces = np.zeros(self.smooth_par,dtype=int)
 
         self.n_cells_subdomain = int(np.floor(self.mesh.resolution/self.smooth_par))
-        self.subdomain_start = int(np.ceil(self.n_cells_subdomain/2))
+        self.subdomain_start = int(np.ceil(self.n_cells_subdomain/2))+1
         self.boundary_interfaces[0] = self.subdomain_start - 1
         for i in range(1,self.smooth_par):
             self.boundary_interfaces[i] = self.subdomain_start + i*self.n_cells_subdomain - 1
 
         if self.boundary_condition != 'PERIODIC':
-            self.orders_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
-            self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
-            self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
+            self.orders = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
+            self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par,fill_value=0,dtype=int)
+            self.numbers_of_variables = np.full(shape=self.smooth_par,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
             self.boundary_interfaces = np.zeros(self.smooth_par-1,dtype=int)
             for i in range(self.smooth_par-1):
-                self.boundary_interfaces[i] = (i+1)*self.smooth_par - 1
+                self.boundary_interfaces[i] = (i+1)*self.n_cells_subdomain - 1
+
+    def _get_initial_conditions(self,
+                                cell_centers_x: np.ndarray) -> np.ndarray:
+
+        initial_values = np.zeros((self.mesh.resolution+2,self.max_number_of_variables))      
+
+        l_bound_subdom = 1
+        for m in range(len(self.orders)-1):
+            r_bound_subdom = self.boundary_interfaces[m]
+            for i in range(l_bound_subdom,r_bound_subdom+1):
+                initial_values[i,:self.numbers_of_variables[m]] =\
+                    self.pde_type.get_initial_values(self.orders[m],self.initial_condition,cell_centers_x[i-1])
+            l_bound_subdom = r_bound_subdom + 1
+        for i in range(l_bound_subdom,self.mesh.resolution+1):
+            initial_values[i,:self.numbers_of_variables[-1]] =\
+                self.pde_type.get_initial_values(self.orders[-1],self.initial_condition,cell_centers_x[i-1])
+            
+        return initial_values
 
     def run_simulation(self,
                        t_end: float,
@@ -1504,7 +1523,7 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         res1_plus = np.zeros((self.mesh.resolution+1,self.max_number_of_variables))
 
         reconstruct_subdomains = self._reconstruct_subdomains()
-        interpolate_added_moments = self._interpolate()
+        interpolate_added_moments = self._interpolate_subdomains()
 
         CFL = 0.9
         
@@ -1513,32 +1532,31 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         while t < t_end:
             # update boundary conditions
-            values[0,:self.numbers_of_variables_subdomains[0]] = self._update_boundary_conditions(values,'left')
-            values[self.mesh.resolution+1,:self.numbers_of_variables_subdomains[-1]] = self._update_boundary_conditions(values,'right')
+            values[0,:self.numbers_of_variables[0]] = self._update_boundary_conditions(values,'left')
+            values[self.mesh.resolution+1,:self.numbers_of_variables[-1]] = self._update_boundary_conditions(values,'right')
             max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
       
             delta_t = CFL*delta_x/max_speed 
-
-            values = self._reconstruct_subdomains(values,delta_x,delta_t)
-            values = self._interpolate(values)
 
             prev_values = np.copy(values)
 
             l_bound_subdom = 1
 
-            for m in range(len(self.orders_subdomains)-1):
+            for m in range(len(self.orders)-1):
 
-                order_left = self.orders_subdomains[m]
-                n_variables_left = self.numbers_of_variables_subdomains[m]
-                order_right = self.orders_subdomains[m+1]
-                n_variables_right = self.numbers_of_variables_subdomains[m+1]
-
-                if order_left < order_right:
-                    prev_values[self.boundary_interfaces[m],n_variables_left:n_variables_right] = 0
-                elif order_left > order_right:
-                    prev_values[self.boundary_interfaces[m]+1,n_variables_right:n_variables_left] = 0                    
+                order_left = self.orders[m]
+                n_variables_left = self.numbers_of_variables[m]
+                order_right = self.orders[m+1]
+                n_variables_right = self.numbers_of_variables[m+1]
 
                 r_bound_subdom = self.boundary_interfaces[m]
+
+                if order_left < order_right:
+                    prev_values[r_bound_subdom,n_variables_left:n_variables_right]=\
+                    prev_values[r_bound_subdom+1,n_variables_left:n_variables_right]                
+                elif order_left > order_right:
+                    prev_values[r_bound_subdom+1,n_variables_right:n_variables_left]=\
+                    prev_values[r_bound_subdom,n_variables_right:n_variables_left]             
 
                 def system_matrix(cell_values):
                     return self.pde_type.compute_system_matrix(order_left,cell_values)
@@ -1555,37 +1573,52 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                     fluctuations_min[i-1,:n_variables_left] =\
                         generalized_roe_minus@(prev_values[i,:n_variables_left]-prev_values[i-1,:n_variables_left]) 
                     res1_min[i-1,:n_variables_left-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])
-                    res1_plus[i-1,:n_variables_left-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])                    
-                    
-                    l_bound_subdom = r_bound_subdom + 1
+                    res1_plus[i-1,:n_variables_left-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_left-1]-prev_values[i-1,n_variables_left-1])                       
+                l_bound_subdom = r_bound_subdom + 1
+
+            def system_matrix(cell_values):
+                return self.pde_type.compute_system_matrix(order_right,cell_values)
+            for i in range(l_bound_subdom, self.mesh.resolution+2):
+                generalized_roe_minus, generalized_roe_plus = self.spatial_discretization.compute_generalized_roe_and_viscosity(
+                    prev_values[i-1,:n_variables_right],
+                    prev_values[i,:n_variables_right],
+                    system_matrix,
+                    delta_t,
+                    delta_x)
+                fluctuations_plus[i-1,:n_variables_right] =\
+                    generalized_roe_plus@(prev_values[i,:n_variables_right]-prev_values[i-1,:n_variables_right])
+                fluctuations_min[i-1,:n_variables_right] =\
+                    generalized_roe_minus@(prev_values[i,:n_variables_right]-prev_values[i-1,:n_variables_right]) 
+                res1_min[i-1,:n_variables_right-1] = generalized_roe_minus[:-1,-1]*(prev_values[i,n_variables_right-1]-prev_values[i-1,n_variables_right-1])
+                res1_plus[i-1,:n_variables_right-1] = generalized_roe_plus[:-1,-1]*(prev_values[i,n_variables_right-1]-prev_values[i-1,n_variables_right-1])                    
 
             l_bound_subdom = 1
 
-            for m in range(len(self.orders_subdomains)-1):
+            for m in range(len(self.orders)-1):
                 def source_term(cell_values,delta_t):
-                    return self.pde_type.compute_source_term(self.orders_subdomains[m],cell_values,delta_t)
+                    return self.pde_type.compute_source_term(self.orders[m],cell_values,delta_t)
 
                 r_bound_subdom = self.boundary_interfaces[m]
 
-                n_variables = self.numbers_of_variables_subdomains[m]
+                n_variables = self.numbers_of_variables[m]
 
                 for i in range(l_bound_subdom,r_bound_subdom + 1):
-                    values[i,:n_variables] = prev_values[i,:n_variables]\
+                    values[i,:n_variables] = values[i,:n_variables]\
                         - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables]+fluctuations_min[i,:n_variables]) 
                     values[i,:n_variables] = self.time_integration.integrate(values[i,:n_variables],source_term,delta_t)
 
                     self.dom_decomp_val_res1[i-1] = np.linalg.norm(res1_plus[i-1,:n_variables-1]+res1_min[i,:n_variables-1])
                     self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables-1]-prev_values[i,n_variables-1])
 
-                    l_bound_subdom = r_bound_subdom + 1
+                l_bound_subdom = r_bound_subdom + 1
                     
-            for i in range(r_bound_subdom+1,self.mesh.resolution+1):
+            for i in range(l_bound_subdom,self.mesh.resolution+1):
                 
                 def source_term(cell_values,delta_t):
-                    return self.pde_type.compute_source_term(self.orders_subdomains[-1],cell_values,delta_t)
-                n_variables = self.numbers_of_variables_subdomains[m]
+                    return self.pde_type.compute_source_term(self.orders[-1],cell_values,delta_t)
+                n_variables = self.numbers_of_variables[-1]
 
-                values[i,:n_variables] = prev_values[i,:n_variables]\
+                values[i,:n_variables] = values[i,:n_variables]\
                     - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables]+fluctuations_min[i,:n_variables]) 
                 values[i,:n_variables] = self.time_integration.integrate(values[i,:n_variables],source_term,delta_t)
 
@@ -1593,8 +1626,8 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
                 self.dom_decomp_val_res2[i-1] = np.abs(values[i,n_variables-1]-prev_values[i,n_variables-1])
 
             for m in range(len(self.boundary_interfaces)):
-                n_variables_left = self.numbers_of_variables_subdomains[m]
-                n_variables_right = self.numbers_of_variables_subdomains[m+1]
+                n_variables_left = self.numbers_of_variables[m]
+                n_variables_right = self.numbers_of_variables[m+1]
 
                 if n_variables_left < n_variables_right:
                     self.dom_decomp_val_res1[self.boundary_interfaces[m]-1] =\
@@ -1605,10 +1638,11 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             
             step_count += 1
             print(t)
+            values = reconstruct_subdomains(values,delta_x,delta_t)
+            # values = interpolate_added_moments(values)
             self.dom_decomp_val_res1 = self.dom_decomp_val_res1/delta_x
             self.dom_decomp_val_res2 = self.dom_decomp_val_res2/delta_t
             t+=delta_t
-
         values = simulation_data = self._post_processing(values)
         return simulation_data  
 
@@ -1627,11 +1661,12 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         self._update_domain_decomposition_pointwise(values,delta_x,delta_t)
 
         for i in range(1,len(self.boundary_interfaces)):
-            self.breakdown_criteria_flags_subdomains[i] = np.max(self.breakdown_criteria_flags[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1])
+            self.breakdown_criteria_flags_subdomains[i] =\
+                np.max(self.breakdown_criteria_flags[self.boundary_interfaces[i-1]:self.boundary_interfaces[i]])
             local_order = np.max(self.orders_cellwise[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1])
             local_number_of_variables = self.pde_type.compute_number_of_variables(local_order)
-            self.orders_subdomains[i] = local_order
-            self.numbers_of_variables_subdomains[i] = local_number_of_variables
+            self.orders[i] = local_order
+            self.numbers_of_variables[i] = local_number_of_variables
             self.orders_cellwise[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1] = local_order
             self.numbers_of_variables_cellwise[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1] = local_number_of_variables
 
@@ -1642,12 +1677,12 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         self._reconstruct_subdomains_interior(values,delta_x,delta_t)
 
-        self.orders_subdomains[0] = np.max(self.orders_cellwise[1:self.subdomain_start])
+        self.orders[0] = np.max(self.orders_cellwise[1:self.subdomain_start])
         self.breakdown_criteria_flags_subdomains[0] = np.max(self.breakdown_criteria_flags[1:self.subdomain_start])
-        self.orders_subdomains[-1] = np.max(self.orders_cellwise[self.boundary_interfaces[-1]:-1])
+        self.orders[-1] = np.max(self.orders_cellwise[self.boundary_interfaces[-1]:-1])
         self.breakdown_criteria_flags_subdomains[-1] = np.max(self.breakdown_criteria_flags[self.boundary_interfaces[-1]:-1])
-        self.numbers_of_variables_subdomains[0] = self.pde_type.compute_number_of_variables(self.orders_subdomains[0])
-        self.numbers_of_variables_subdomains[-1] = self.pde_type.compute_number_of_variables(self.orders_subdomains[-1])
+        self.numbers_of_variables[0] = self.pde_type.compute_number_of_variables(self.orders[0])
+        self.numbers_of_variables[-1] = self.pde_type.compute_number_of_variables(self.orders[-1])
 
         values = self._process_domain_decomposition(values)
 
@@ -1660,17 +1695,20 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         self._reconstruct_subdomains_interior(values,delta_x,delta_t)
 
-        local_order = max(np.max(self.orders_cellwise[1:self.subdomain_start]),np.max(self.orders_cellwise[self.boundary_interfaces[-1]:-1]))
+        local_order = max(np.max(self.orders_cellwise[1:self.subdomain_start]),\
+                          np.max(self.orders_cellwise[self.boundary_interfaces[-1]+1:-1]))
         self.breakdown_criteria_flags_subdomains[0] = max(np.max(self.breakdown_criteria_flags[1:self.subdomain_start]),\
             np.max(self.breakdown_criteria_flags[self.boundary_interfaces[-1]:-1]))
         self.breakdown_criteria_flags_subdomains[-1] = self.breakdown_criteria_flags_subdomains[0]
         local_number_of_variables = self.pde_type.compute_number_of_variables(local_order)
-        self.orders_subdomains[0] = local_order
-        self.numbers_of_variables_subdomains[0] = local_number_of_variables
+        self.orders[0] = local_order
+        self.orders[-1] = local_order
+        self.numbers_of_variables[0] = local_number_of_variables
+        self.numbers_of_variables[-1] = local_number_of_variables
         self.orders_cellwise[:self.subdomain_start] = local_order
-        self.orders_cellwise[self.boundary_interfaces[-1]:] = local_order
+        self.orders_cellwise[self.boundary_interfaces[-1]+1:] = local_order
         self.numbers_of_variables_cellwise[:self.subdomain_start] = local_number_of_variables
-        self.numbers_of_variables_cellwise[self.boundary_interfaces[-1]:] = local_number_of_variables
+        self.numbers_of_variables_cellwise[self.boundary_interfaces[-1]+1:] = local_number_of_variables
 
         values = self._process_domain_decomposition(values)
 
@@ -1679,17 +1717,17 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
     def _process_domain_decomposition(self,values):
 
         # Set undefined moments to zero
-        values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[0]:] = 0
+        values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[0]:] = 0
         for i in range(1,len(self.boundary_interfaces)):
-            values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,self.numbers_of_variables_subdomains[i]:] = 0
-        values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[-1]:] = 0
+            values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,self.numbers_of_variables[i]:] = 0
+        values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[-1]:] = 0
 
         return values
 
     def _interpolate_subdomains(self) -> np.ndarray:
         
-        _interpolate_subdomains_fun = self._interpolate_subdomains_periodicBoundary if self.boundary_condition == 'PERIODIC' else\
-            self._interpolate_subdomains_nonPeriodicBoundary
+        _interpolate_subdomains_fun = self._linear_interpolate_subdomains_periodicBoundary if self.boundary_condition == 'PERIODIC' \
+            else self._linear_interpolate_subdomains_nonPeriodicBoundary
 
         return _interpolate_subdomains_fun   
 
@@ -1698,17 +1736,17 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         for i in range(2,len(self.boundary_interfaces)-1):
             if self.breakdown_criteria_flags_subdomains[i] > 0:
                 values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,\
-                       self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
-                            :self.numbers_of_variables_subdomains[i]] =\
+                       self.numbers_of_variables[i]-self.breakdown_criteria_flags_subdomains[i]\
+                            :self.numbers_of_variables[i]] =\
                     self._interpolate(values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,
-                                             self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
-                                                :self.numbers_of_variables_subdomains[i]],
+                                             self.numbers_of_variables[i]-self.breakdown_criteria_flags_subdomains[i]\
+                                                :self.numbers_of_variables[i]],
                                       values[self.boundary_interfaces[i-2]+1:self.boundary_interfaces[i-1]+1,
-                                             self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
-                                                :self.numbers_of_variables_subdomains[i]],
+                                             self.numbers_of_variables[i]-self.breakdown_criteria_flags_subdomains[i]\
+                                                :self.numbers_of_variables[i]],
                                       values[self.boundary_interfaces[i]+1:self.boundary_interfaces[i+1]+1,
-                                             self.numbers_of_variables_subdomains[i]-self.breakdown_criteria_flags_subdomains[i]\
-                                                :self.numbers_of_variables_subdomains[i]])
+                                             self.numbers_of_variables[i]-self.breakdown_criteria_flags_subdomains[i]\
+                                                :self.numbers_of_variables[i]])
 
         return values
 
@@ -1717,62 +1755,67 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         values = self._interpolate_subdomains_interior(values)
 
         if self.breakdown_criteria_flags_subdomains[0] > 0:
-            values[self.boundary_interfaces[-1]+1:self.boundary_interfaces[0]+1,\
-                   self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]] =\
-                self._interpolate(np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[0]\
-                                                        -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]],\
-                                                 values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[0]\
-                                                        -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]]), axis=0),\
-                                  values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
-                                    self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
-                                        self.numbers_of_variables_subdomains[0]],\
-                                  values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
-                                    self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
-                                        self.numbers_of_variables_subdomains[0]])
+            interpol_values =\
+                self._interpolate(np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[0]\
+                                            -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]],\
+                                        values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[0]\
+                                            -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]]), axis=0),\
+                        values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                        self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                            self.numbers_of_variables[0]],\
+                        values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                        self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                            self.numbers_of_variables[0]])
+            values[self.boundary_interfaces[-1]+1:,\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
+                   interpol_values[:self.mesh.resolution+1-self.boundary_interfaces[-1],:]
+            values[:self.boundary_interfaces[0]+1,\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
+                   interpol_values[self.mesh.resolution+1-self.boundary_interfaces[-1]:,:]            
 
         if self.smooth_par > 2:
             if self.breakdown_criteria_flags_subdomains[1] > 0:
                 values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
-                    self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]] =\
+                    self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]] =\
                     self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
-                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
-                                                    self.numbers_of_variables_subdomains[1]],
-                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[1]\
-                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]],\
-                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[1]\
-                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]]),axis=0),
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]]),axis=0),
                                       values[self.boundary_interfaces[1]+1:self.boundary_interfaces[2]+1,
-                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
-                                                    self.numbers_of_variables_subdomains[1]])
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]])
                 
             if self.breakdown_criteria_flags[-2] > 0:
                 values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
-                    self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]] =\
+                    self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]] =\
                     self._interpolate(values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,
-                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
-                                                    self.numbers_of_variables_subdomains[-2]],
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
                                       values[self.boundary_interfaces[-3]+1:self.boundary_interfaces[-2]+1,
-                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
-                                                    self.numbers_of_variables_subdomains[-2]],
-                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[-2]\
-                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]],\
-                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[-2]\
-                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]]),axis=0))
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[-2]\
+                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[-2]\
+                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]]),axis=0))
         else:
             if self.breakdown_criteria_flags_subdomains[1] > 0:
                 values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
-                    self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]] =\
+                    self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]] =\
                     self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
-                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
-                                                    self.numbers_of_variables_subdomains[1]],
-                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[1]\
-                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]],\
-                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[1]\
-                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]]),axis=0),
-                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables_subdomains[1]\
-                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]],\
-                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables_subdomains[1]\
-                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]]),axis=0))
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]]),axis=0),
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]]),axis=0))
 
         return values            
 
@@ -1782,84 +1825,199 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         if self.breakdown_criteria_flags_subdomains[0] > 0:
             values[:self.boundary_interfaces[0]+1,\
-                   self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables_subdomains[0]] =\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
                         self._interpolate_from_right_data(values[:self.boundary_interfaces[0]+1,\
-                                                            self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
-                                                            self.numbers_of_variables_subdomains[0]],
+                                                            self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                                            self.numbers_of_variables[0]],
                                                         values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
-                                                            self.numbers_of_variables_subdomains[0]-self.breakdown_criteria_flags_subdomains[0]:\
-                                                            self.numbers_of_variables_subdomains[0]])
+                                                            self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                                            self.numbers_of_variables[0]])
         if self.breakdown_criteria_flags_subdomains[-1] > 0:
             values[self.boundary_interfaces[-1]+1:,\
-                   self.numbers_of_variables_subdomains[-1]-self.breakdown_criteria_flags_subdomains[-1]:self.numbers_of_variables_subdomains[-1]] =\
+                   self.numbers_of_variables[-1]-self.breakdown_criteria_flags_subdomains[-1]:self.numbers_of_variables[-1]] =\
                         self._interpolate_from_left_data(values[self.boundary_interfaces[-1]+1:,\
-                                                            self.numbers_of_variables_subdomains[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
-                                                            self.numbers_of_variables_subdomains[-1]],
+                                                            self.numbers_of_variables[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
+                                                            self.numbers_of_variables[-1]],
                                                         values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
-                                                            self.numbers_of_variables_subdomains[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
-                                                            self.numbers_of_variables_subdomains[-1]])
+                                                            self.numbers_of_variables[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
+                                                            self.numbers_of_variables[-1]])
 
         if self.smooth_par > 2:
             if self.breakdown_criteria_flags_subdomains[1] > 0:
                 values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
-                    self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables_subdomains[1]] =\
+                    self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]] =\
                     self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
-                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
-                                                    self.numbers_of_variables_subdomains[1]],
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
                                         values[:self.boundary_interfaces[0]+1,
-                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
-                                                    self.numbers_of_variables_subdomains[1]],
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
                                         values[self.boundary_interfaces[1]+1:self.boundary_interfaces[2]+1,
-                                                self.numbers_of_variables_subdomains[1]-self.breakdown_criteria_flags_subdomains[1]:\
-                                                    self.numbers_of_variables_subdomains[1]])
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]])
         if self.smooth_par > 3:
             if self.breakdown_criteria_flags_subdomains[-2] > 0:
                 values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
-                    self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables_subdomains[-2]] =\
+                    self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]] =\
                     self._interpolate(values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,
-                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
-                                                    self.numbers_of_variables_subdomains[-2]],
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
                                         values[self.boundary_interfaces[-3]+1:self.boundary_interfaces[-2]+1,
-                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
-                                                    self.numbers_of_variables_subdomains[-2]],
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
                                         values[self.boundary_interfaces[-1]+1:,
-                                                self.numbers_of_variables_subdomains[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
-                                                    self.numbers_of_variables_subdomains[-2]])
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]])
 
         return values    
 
     def _interpolate(self,values,interpolation_data_left,interpolation_data_right):
 
-        data_points_x = np.concatenate(np.arange(interpolation_data_left.shape[0]),\
-                                       np.arange(interpolation_data_left.shape[0]+values.shape[0],
-                                                 interpolation_data_left.shape[0]+values.shape[0]+interpolation_data_right.shape[0],1))
-        data_points_y = np.concatenate((interpolation_data_left,interpolation_data_right),axis=0)
+        # data_points_x = np.concatenate((np.arange(interpolation_data_left.shape[0]),\
+        #                                np.arange(interpolation_data_left.shape[0]+values.shape[0],
+        #                                          interpolation_data_left.shape[0]+values.shape[0]+interpolation_data_right.shape[0],1)))
+        # data_points_y = np.concatenate((interpolation_data_left,interpolation_data_right),axis=0)
 
-        interpolators = [BarycentricInterpolator(data_points_x, data_points_y[:, j]) for j in range(data_points_y.shape[1])]
-        interpolated_values = np.column_stack([interp(
-            np.arange(interpolation_data_left.shape[0],interpolation_data_left.shape[0]+values.shape[0],1)
-        ) for interp in interpolators])
+        # interpolators = [BarycentricInterpolator(data_points_x, data_points_y[:, j]) for j in range(data_points_y.shape[1])]
+        # interpolated_values = np.column_stack([interp(
+        #     np.arange(interpolation_data_left.shape[0],interpolation_data_left.shape[0]+values.shape[0],1)
+        # ) for interp in interpolators])
 
-        return interpolated_values
+        # return interpolated_values
+        return self._linear_interpolate(values,interpolation_data_left,interpolation_data_right)
 
     def _interpolate_from_left_data(self,values,interpolation_data):
 
-        data_points_x = np.arange(interpolation_data.shape[0])
+        # data_points_x = np.arange(interpolation_data.shape[0])
 
-        interpolators = [BarycentricInterpolator(data_points_x, interpolation_data[:, j]) for j in range(interpolation_data.shape[1])]
-        interpolated_values = np.column_stack([interp(
-            np.arange(interpolation_data.shape[0],interpolation_data.shape[0]+values.shape[0],1)
-        ) for interp in interpolators])
+        # interpolators = [BarycentricInterpolator(data_points_x, interpolation_data[:, j]) for j in range(interpolation_data.shape[1])]
+        # interpolated_values = np.column_stack([interp(
+        #     np.arange(interpolation_data.shape[0],interpolation_data.shape[0]+values.shape[0],1)
+        # ) for interp in interpolators])
 
-        return interpolated_values   
+        # return interpolated_values   
+        return self._linear_interpolate_from_left_data(values,interpolation_data)
 
     def _interpolate_from_right_data(self,values,interpolation_data):
-        data_points_x = np.arange(values.shape[0],values.shape[0]+interpolation_data.shape[0],1)
+        # data_points_x = np.arange(values.shape[0],values.shape[0]+interpolation_data.shape[0],1)
 
-        interpolators = [BarycentricInterpolator(data_points_x, interpolation_data[:, j]) for j in range(interpolation_data.shape[1])]
-        interpolated_values = np.column_stack([interp(
-            np.arange(values.shape[0])
-        ) for interp in interpolators])
+        # interpolators = [BarycentricInterpolator(data_points_x, interpolation_data[:, j]) for j in range(interpolation_data.shape[1])]
+        # interpolated_values = np.column_stack([interp(
+        #     np.arange(values.shape[0])
+        # ) for interp in interpolators])
+
+        # return interpolated_values  
+        return self._linear_interpolate_from_right_data(values,interpolation_data)
+
+    def _linear_interpolate_subdomains_interior(self,values):
+        
+        for i in range(1,len(self.boundary_interfaces)):
+            if self.breakdown_criteria_flags_subdomains[i] > 0:
+                values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,\
+                       self.numbers_of_variables[i]-self.breakdown_criteria_flags_subdomains[i]\
+                            :self.numbers_of_variables[i]] =\
+                    self._linear_interpolate(
+                        values[self.boundary_interfaces[i-1],\
+                            self.numbers_of_variables[i]-self.breakdown_criteria_flags_subdomains[i]:self.numbers_of_variables[i]],
+                        values[self.boundary_interfaces[i]+1,\
+                            self.numbers_of_variables[i]-self.breakdown_criteria_flags_subdomains[i]:self.numbers_of_variables[i]],
+                        1+self.n_cells_subdomain
+                        )
+
+        return values
+
+    def _linear_interpolate_subdomains_periodicBoundary(self,values):
+
+        values = self._linear_interpolate_subdomains_interior(values)
+        if self.breakdown_criteria_flags_subdomains[0] > 0:
+            interpol_values = self._linear_interpolate(
+                values[self.boundary_interfaces[-1],\
+                    self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]],
+                values[self.boundary_interfaces[0]+1,
+                    self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]],
+                self.mesh.resolution-self.boundary_interfaces[-1]+self.boundary_interfaces[0]+3
+            )
+            
+            values[self.boundary_interfaces[-1]+1:,\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
+                   interpol_values[:self.mesh.resolution+1-self.boundary_interfaces[-1],:]
+            values[:self.boundary_interfaces[0]+1,\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
+                   interpol_values[self.mesh.resolution+1-self.boundary_interfaces[-1]:,:] 
+
+        return values                     
+
+    def _linear_interpolate_subdomains_nonPeriodicBoundary(self,values):
+
+        values = self._interpolate_subdomains_interior(values)
+
+        if self.breakdown_criteria_flags_subdomains[0] > 0:
+            values[:self.boundary_interfaces[0]+1,\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
+                        self._interpolate_from_right_data(values[:self.boundary_interfaces[0]+1,\
+                                                            self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                                            self.numbers_of_variables[0]],
+                                                        values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                                                            self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                                                            self.numbers_of_variables[0]])
+        if self.breakdown_criteria_flags_subdomains[-1] > 0:
+            values[self.boundary_interfaces[-1]+1:,\
+                   self.numbers_of_variables[-1]-self.breakdown_criteria_flags_subdomains[-1]:self.numbers_of_variables[-1]] =\
+                        self._interpolate_from_left_data(values[self.boundary_interfaces[-1]+1:,\
+                                                            self.numbers_of_variables[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
+                                                            self.numbers_of_variables[-1]],
+                                                        values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                                                            self.numbers_of_variables[-1]-self.breakdown_criteria_flags_subdomains[-1]:\
+                                                            self.numbers_of_variables[-1]])
+
+        if self.smooth_par > 2:
+            if self.breakdown_criteria_flags_subdomains[1] > 0:
+                values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                    self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]] =\
+                    self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
+                                        values[:self.boundary_interfaces[0]+1,
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
+                                        values[self.boundary_interfaces[1]+1:self.boundary_interfaces[2]+1,
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]])
+        if self.smooth_par > 3:
+            if self.breakdown_criteria_flags_subdomains[-2] > 0:
+                values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                    self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]] =\
+                    self._interpolate(values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
+                                        values[self.boundary_interfaces[-3]+1:self.boundary_interfaces[-2]+1,
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
+                                        values[self.boundary_interfaces[-1]+1:,
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]])
+
+        return values 
+
+    def _linear_interpolate(self,value_left,value_right,delta_i):
+
+        slope = (value_right - value_left)/(delta_i)
+        # interpolated_values = value_right + np.outer(np.arange(1,delta_i), slope)
+        interpolated_values = np.zeros((delta_i-1,1))
+
+        return interpolated_values
+
+    def _linear_interpolate_from_left_data(self,values,interpolation_data):
+
+        slope = (interpolation_data[-1,:] - interpolation_data[0,:])/(1+interpolation_data.shape[0])
+        interpolated_values = interpolation_data[0,:] + np.outer(np.arange(1,values.shape[0]+1), slope)
+
+        return interpolated_values 
+
+    def _linear_interpolate_from_right_data(self,values,interpolation_data):
+
+        slope = (interpolation_data[-1,:] - interpolation_data[0,:])/(1+interpolation_data.shape[0])
+        interpolated_values = interpolation_data[0,:] + np.outer(np.arange(-values.shape[0],0), slope)
 
         return interpolated_values  
 
@@ -2003,8 +2161,8 @@ class SmoothedSubdomainReconstruction(SpatiallyAdaptiveSimulation1D):
         self.breakdown_criteria_flags = np.full(shape=self.mesh.resolution,dtype=int,fill_value=0)
 
         self.smooth_par = 20
-        self.orders_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
-        self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
+        self.orders = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
+        self.numbers_of_variables = np.full(shape=self.smooth_par,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
 
         self.n_cells_subdomain = int(np.floor(self.mesh.resolution/self.smooth_par))
         self.subdomain_start = int(np.ceil(self.n_cells_subdomain/2))
@@ -2024,8 +2182,8 @@ class SmoothedSubdomainReconstruction(SpatiallyAdaptiveSimulation1D):
         for i in range(self.subdomain_start,self.mesh.resolution-self.n_cells_subdomain,self.n_cells_subdomain):
             local_order = np.max(self.orders_cellwise[i:i+self.n_cells_subdomain])
             local_number_of_variables = self.pde_type.compute_number_of_variables(local_order)
-            self.orders_subdomains[k] = local_order
-            self.numbers_of_variables_subdomains[k] = local_number_of_variables
+            self.orders[k] = local_order
+            self.numbers_of_variables[k] = local_number_of_variables
             self.orders_cellwise[i:i+self.n_cells_subdomain] = local_order
             self.numbers_of_variables_cellwise[i:i+self.n_cells_subdomain] = local_number_of_variables
             k += 1
@@ -2033,36 +2191,36 @@ class SmoothedSubdomainReconstruction(SpatiallyAdaptiveSimulation1D):
         if self.boundary_condition == 'PERIODIC':
             local_order = max(np.max(self.orders_cellwise[1:self.subdomain_start]),np.max(self.orders_cellwise[i+self.smooth_par:-1]))
             local_number_of_variables = self.pde_type.compute_number_of_variables(local_order)
-            self.orders_subdomains[0] = local_order
-            self.numbers_of_variables_subdomains[0] = local_number_of_variables
+            self.orders[0] = local_order
+            self.numbers_of_variables[0] = local_number_of_variables
             self.orders_cellwise[:self.subdomain_start] = local_order
             self.orders_cellwise[i+self.smooth_par:] = local_order
             self.numbers_of_variables_cellwise[:self.subdomain_start] = local_number_of_variables
             self.numbers_of_variables_cellwise[i+self.smooth_par:] = local_number_of_variables
 
-            orders_out.append(int(self.orders_subdomains[0]))
-            number_of_variables_out.append(int(self.numbers_of_variables_subdomains[0]))
+            orders_out.append(int(self.orders[0]))
+            number_of_variables_out.append(int(self.numbers_of_variables[0]))
             for i in range(self.smooth_par-1):
-                if self.orders_subdomains[i] != self.orders_subdomains[i+1]:
-                    orders_out.append(int(self.orders_subdomains[i+1]))
-                    number_of_variables_out.append(int(self.numbers_of_variables_subdomains[i+1]))
+                if self.orders[i] != self.orders[i+1]:
+                    orders_out.append(int(self.orders[i+1]))
+                    number_of_variables_out.append(int(self.numbers_of_variables[i+1]))
                     boundary_interfaces.append(self.subdomain_start+self.n_cells_subdomain*(i+1)-1)
-            if self.orders_subdomains[-1] != self.orders_subdomains[0]:
+            if self.orders[-1] != self.orders[0]:
                 boundary_interfaces.append(self.subdomain_start+self.n_cells_subdomain*(i+1)-1)
-            orders_out.append(int(self.orders_subdomains[0]))
-            number_of_variables_out.append(int(self.numbers_of_variables_subdomains[0]))
+            orders_out.append(int(self.orders[0]))
+            number_of_variables_out.append(int(self.numbers_of_variables[0]))
         else:
-            self.orders_cellwise[:self.subdomain_start] = self.orders_subdomains[1]
-            self.orders_cellwise[i+self.smooth_par:] = self.orders_subdomains[-1]
-            self.numbers_of_variables_cellwise[:self.subdomain_start] = self.numbers_of_variables_subdomains[1]
-            self.numbers_of_variables_cellwise[i+self.smooth_par:] = self.numbers_of_variables_subdomains[-1]
+            self.orders_cellwise[:self.subdomain_start] = self.orders[1]
+            self.orders_cellwise[i+self.smooth_par:] = self.orders[-1]
+            self.numbers_of_variables_cellwise[:self.subdomain_start] = self.numbers_of_variables[1]
+            self.numbers_of_variables_cellwise[i+self.smooth_par:] = self.numbers_of_variables[-1]
 
-            orders_out.append(int(self.orders_subdomains[1]))
-            number_of_variables_out.append(int(self.numbers_of_variables_subdomains[1]))
+            orders_out.append(int(self.orders[1]))
+            number_of_variables_out.append(int(self.numbers_of_variables[1]))
             for i in range(1,self.smooth_par-1):
-                if self.orders_subdomains[i] != self.orders_subdomains[i+1]:
-                    orders_out.append(int(self.orders_subdomains[i+1]))
-                    number_of_variables_out.append(int(self.numbers_of_variables_subdomains[i+1]))
+                if self.orders[i] != self.orders[i+1]:
+                    orders_out.append(int(self.orders[i+1]))
+                    number_of_variables_out.append(int(self.numbers_of_variables[i+1]))
                     boundary_interfaces.append(self.subdomain_start+self.n_cells_subdomain*(i+1)-1)
 
         self.orders = orders_out

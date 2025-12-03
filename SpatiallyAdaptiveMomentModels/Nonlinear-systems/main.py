@@ -70,6 +70,8 @@ def main():
             _spatialDiscretization = spatialDiscretization.LF()
         elif numerical_method_information['pvm'] == 'Roe':
             _spatialDiscretization = spatialDiscretization.Roe()
+        elif numerical_method_information['pvm'] == 'Osher':
+            _spatialDiscretization = spatialDiscretization.Osher()
         else:
             print('this pvm method is not implemented yet')
     else:
@@ -114,8 +116,7 @@ def main():
                     _spatialDiscretization,
                     _time_integration
                 )
-
-        if numerical_method_information['method'] == 'smoothedAdaptive':
+        elif numerical_method_information['method'] == 'smoothedAdaptive':
             if numerical_method_information['coupling'] == 'nonconservative':
                 start_order = int(numerical_method_information['start_order'])
                 _simulation = simulation.SmoothedConsAdaptiveSimulation1D(
@@ -138,7 +139,17 @@ def main():
                     pde_information['breakdown_criterion'],
                     _spatialDiscretization,
                     _time_integration)                
-
+        elif numerical_method_information['method'] == 'interpolatedAdaptive':
+            start_order = int(numerical_method_information['start_order'])
+            _simulation = simulation.InterpolatedAdaptiveSimulation1D(
+                start_order,
+                _pde,
+                _mesh,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
+                pde_information['breakdown_criterion'],
+                _spatialDiscretization,
+                _time_integration) 
         elif numerical_method_information['method'] == 'classical':
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
@@ -159,13 +170,17 @@ def main():
                 _spatialDiscretization,
                 _time_integration)
 
-        if pde_information['pde_type'] == 'SWME1D':
-            if numerical_method_information['method'] == 'spatially_adaptive':
+        if pde_information['pde_type'] == 'SWME1D' or pde_information['pde_type'] == 'HSWME1D':
+            if numerical_method_information['method'] == 'spatially_adaptive' or\
+                numerical_method_information['method'] == 'smoothedAdaptive' or\
+                    numerical_method_information['method'] == 'interpolatedAdaptive':
                 _plotting = plotting.SWME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.SWME1DPlotClassical(_pde,_mesh,_simulation)
-        elif pde_information['pde_type'] == 'HME':
-            if numerical_method_information['method'] == 'spatially_adaptive' or numerical_method_information['method'] == 'smoothedAdaptive':
+        elif pde_information['pde_type'] == 'HME' or pde_information['pde_type'] == 'Grad':
+            if numerical_method_information['method'] == 'spatially_adaptive' or\
+                numerical_method_information['method'] == 'smoothedAdaptive' or\
+                    numerical_method_information['method'] == 'interpolatedAdaptive':
                 _plotting = plotting.HME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.HME1DPlotClassical(_pde,_mesh,_simulation)
@@ -176,7 +191,7 @@ def main():
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
         _plotting.plot(data_array)
-        # data_frame.to_csv('Data-processing/Output/test.csv', index=False,header=False)
+        data_frame.to_csv('Data-processing/Output/test.csv', index=False,header=False)
         # data_frame.to_csv('Data-processing/Output/HonoursProject-Cyril/smooth_constantVelocity_lambda1.0_nu1.0_order0.csv', index=False,header=False)
 
     else:
