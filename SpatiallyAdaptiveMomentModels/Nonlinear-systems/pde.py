@@ -4421,21 +4421,23 @@ class HermiteMomentEquations(PDE):
                 if order > 9:
                     initial_values[10] = 0
         elif initial_condition == 'smooth_densityWave_noVelocity':
-            initial_values[0] = 1 + 2*np.exp(-2*position**2)
-            initial_values[1] = 0.5
+            initial_values[0] = 1.0 + 2*np.exp(-2*position**2)
+            initial_values[1] = 0
             initial_values[2] = 1
+            if order > 2:
+                initial_values[3] = 0
             if order > 3:
-                initial_values[3] = 0.1
+                initial_values[4] = 0.1
             if order > 4:
-                initial_values[4] = 0.1 
+                initial_values[5] = 0 
             if order > 5:
-                initial_values[5] = 0.1 
-            if order > 6:
                 initial_values[6] = 0.1 
+            if order > 6:
+                initial_values[7] = 0 
             if order > 7:
-                initial_values[7] = 0.1 
-            if order > 8:
                 initial_values[8] = 0.1  
+            if order > 8:
+                initial_values[9] = 0
             if order > 9:
                 initial_values[10] = 0.1
         elif initial_condition == 'symmetric_shockTube':
@@ -4486,7 +4488,7 @@ class HermiteMomentEquations(PDE):
             x1 = 0.5
             if x0 < position < x1:
                 initial_values[0] = 2
-                initial_values[1] = -0.1
+                initial_values[1] = 0.1
                 initial_values[2] = 1 
                 if order > 2:
                     initial_values[3] = 0 
@@ -4628,6 +4630,46 @@ class HermiteMomentEquations(PDE):
                         initial_values[8] = 0   
                     if order > 9:
                         initial_values[10] = 0                  
+        elif initial_condition == 'smooth_expit_rightgoing':
+            initial_values[0] = 2.0 - 1/(1+np.exp(-15*position))
+            initial_values[1] = 0
+            initial_values[2] = 1
+            if order > 2:
+                initial_values[3] = 0
+            if order > 3:
+                initial_values[4] = 0 
+            if order > 4:
+                initial_values[5] = 0 
+            if order > 5:
+                initial_values[6] = 0
+            if order > 6:
+                initial_values[7] = 0
+            if order > 7:
+                initial_values[8] = 0 
+            if order > 8:
+                initial_values[9] = 0
+            if order > 9:
+                initial_values[10] = 0    
+        elif initial_condition == 'smooth_expit_leftgoing':
+            initial_values[0] = 1.0 + 1/(1+np.exp(-15*position))
+            initial_values[1] = 0
+            initial_values[2] = 1
+            if order > 2:
+                initial_values[3] = 0
+            if order > 3:
+                initial_values[4] = 0.1 
+            if order > 4:
+                initial_values[5] = 0 
+            if order > 5:
+                initial_values[6] = 0.1 
+            if order > 6:
+                initial_values[7] = 0 
+            if order > 7:
+                initial_values[8] = 0.1  
+            if order > 8:
+                initial_values[9] = 0
+            if order > 9:
+                initial_values[10] = 0.1   
         return initial_values
     
     def compute_number_of_variables(self,
@@ -4664,8 +4706,8 @@ class HermiteMomentEquations(PDE):
                                    numbers_of_variables_cellwise: list,
                                    dom_decomp_val_res1: np.ndarray,
                                    dom_decomp_val_res2: np.ndarray,
-                                   tolerance_up_flow_gradient = 0.00005,
-                                   tolerance_down_last_moment = 0.00005) -> tuple[np.ndarray,np.ndarray]:       
+                                   tolerance_up_flow_gradient = 0.001,
+                                   tolerance_down_last_moment = 0.0001) -> tuple[np.ndarray,np.ndarray]:       
         """
         computes the breakdown criteria for adaptive simulation
 
@@ -4706,7 +4748,8 @@ class HermiteMomentEquations(PDE):
         # print(np.abs((values[2,0] - values[0,0]))/(2*delta_x*max(0.1,np.abs(values[1,0]))))
         for i in range(n):
             loc_M = orders_cellwise[i+1]-1
-            breakdown_estimators[i,0] = np.abs(values[i+1,loc_M]) 
+            breakdown_estimators[i,0] = max(np.abs(values[i+1,loc_M+1]),np.abs(values[i+1,loc_M]))
+            # breakdown_estimators[i,0] = np.sqrt(values[i+1,loc_M+1]**2+values[i+1,loc_M]**2)
             # for j in range(numbers_of_variables_cellwise[i+1]):
             #     # breakdown_estimators[i,1] += (max(np.abs((values[i+1,j] - values[i,j])),np.abs((values[i+2,j] - values[i+1,j])))/(delta_x))**2
             #     breakdown_estimators[i,1] += (np.abs((values[i+2,j] - values[i,j]))/(2*delta_x))**2 
@@ -4740,7 +4783,7 @@ class HermiteMomentEquations(PDE):
                                                         -values[i+1,2]*(values[i+2,loc_M]-values[i,loc_M]
                                                                         )
                                                         )          
-        # breakdown_estimators[:,1] = np.sqrt(breakdown_estimators[:,1])
+        breakdown_estimators[:,1] = breakdown_estimators[:,1]
         for i in range(n):
             if orders_cellwise[i+1] < max_order-1 and breakdown_estimators[i,1] > tolerance_up_flow_gradient:
                 breakdown_criterion_flags[i] = 2

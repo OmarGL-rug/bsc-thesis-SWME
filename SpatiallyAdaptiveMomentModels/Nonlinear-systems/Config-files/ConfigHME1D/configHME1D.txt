@@ -14,7 +14,7 @@ pde_type = HME
 frictionModel = Newton
         # Newton #
         # Specify friction parameters
-relaxation_time = 1.0
+relaxation_time = 0.1
 
 linear_source = True
 
@@ -37,11 +37,11 @@ structuredGrid = True
 
     # structuredGrid #
     # Number of grid points in x-direction and y-direction (if the simulation is 1D: only resolutionX is used)
-resolutionX = 200
+resolutionX = 400
 resolutionY = 800
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
-x1boundary = -1
-x2boundary = 1
+x1boundary = -2
+x2boundary = 2
 y1boundary = -2
 y2boundary = 2
 
@@ -52,25 +52,25 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 0.2
+t_end = 1.0
 
-# spatially_adaptive, classical, micro_macro
+# spatially_adaptive, classical, micro_macro, smoothedAdaptive
 method = spatially_adaptive
     ### SPATIALLYADAPTIVE ###
     # spatial coupling: conservative, nonconservative
-coupling = conservative
+coupling = nonconservative
     # Starting order of the adaptive simulation
-start_order = 8
+start_order = 10
     ### CLASSICAL ###
     # Order of the model
-order = 8
+order = 10
 
 
 # Finite volume method type. Implemented: PVM
 fvm_type = PVM
 
     # PVM #
-    # Polynomial viscosity method. Implemented: PRICE, LF
+    # Polynomial viscosity method. Implemented: PRICE, LF, Roe
 pvm = PRICE
 
 # Time integration for source term. Implemented: ExplicitEuler, ImplicitEuler, Exact
