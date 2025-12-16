@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from collections.abc import Callable
+import mpmath as mp
 
 class SpatialDiscretization(ABC):
 

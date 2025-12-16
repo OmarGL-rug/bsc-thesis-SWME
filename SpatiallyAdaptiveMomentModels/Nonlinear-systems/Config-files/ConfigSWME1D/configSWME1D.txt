@@ -14,8 +14,8 @@ pde_type = SWME1D
 frictionModel = Newton
         # Newton #
         # Specify friction parameters
-slipLength = 1.0
-viscosity = 1.0
+slipLength = 0
+viscosity = 0.001
 
 linear_source = True
 
@@ -23,9 +23,9 @@ linear_source = True
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
                    #linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave, symmetric_damBreak,
                    #smooth_plus_damBreak
-initialCondition = smooth_constantVelocity
+initialCondition = smooth_wave
 
-breakdown_criterion = damBreak_constantVelocity
+breakdown_criterion = nothing
 
 ###############################
 ###### GRID INFORMATION #######
@@ -38,7 +38,7 @@ structuredGrid = True
 
     # structuredGrid #
     # Number of grid points in x-direction and y-direction (if the simulation is 1D: only resolutionX is used)
-resolutionX = 200
+resolutionX = 500
 resolutionY = 800
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
 x1boundary = -0.5
@@ -53,7 +53,7 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end = 3.0
+t_end = 1.0
 
 # spatially_adaptive, classical, micro_macro
 method = classical
@@ -72,7 +72,7 @@ fvm_type = PVM
 
     # PVM #
     # Polynomial viscosity method. Implemented: PRICE, LF
-pvm = PRICE
+pvm = Roe
 
 # Time integration for source term. Implemented: ExplicitEuler, ImplicitEuler, Exact
 timeIntegrator = ImplicitEuler

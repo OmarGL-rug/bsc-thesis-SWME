@@ -2715,20 +2715,20 @@ class SWME1D(PDE):
             if order > 6:
                 initial_values[8] = 0
         elif initial_condition == 'smooth_wave':
-            initial_values[0] = 1 + 0.5*np.exp(-15*position**2)
-            initial_values[1] = 0*initial_values[0]
+            initial_values[0] = 1 + 0.5*np.exp(-5*position**2)
+            initial_values[1] = 1.0*initial_values[0]
             if order > 0:
-                initial_values[2] = 0 
+                initial_values[2] = 1.0 
             if order > 1:
-                initial_values[3] = 0 
+                initial_values[3] = 1.0 
             if order > 2:
-                initial_values[4] = 0 
+                initial_values[4] = 1.0 
             if order > 3:
-                initial_values[5] = 0 
+                initial_values[5] = 1.0 
             if order > 4:
-                initial_values[6] = 0 
+                initial_values[6] = 1.0 
             if order > 5:
-                initial_values[7] = 0  
+                initial_values[7] = 1.0  
         elif initial_condition == 'smooth_constantVelocity':
             initial_values[0] = 1 + 0.5*np.exp(-15*position**2)
             initial_values[1] = 0.2*initial_values[0]
@@ -2843,6 +2843,54 @@ class SWME1D(PDE):
                     initial_values[6] = 0 
                 if order > 5:
                     initial_values[7] = 0 
+        elif initial_condition == 'colliding_damBreak':
+            x0 = -0.5
+            x1 = 0.5
+            if position < x0 or position > x1:
+                initial_values[0] = 3
+                initial_values[1] = 0.5*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0
+                if order > 5:
+                    initial_values[7] = 0 
+            else:
+                initial_values[0] = 1
+                initial_values[1] = 0.5*initial_values[0]
+                if order > 0:
+                    initial_values[2] = 0 
+                if order > 1:
+                    initial_values[3] = 0 
+                if order > 2:
+                    initial_values[4] = 0 
+                if order > 3:
+                    initial_values[5] = 0 
+                if order > 4:
+                    initial_values[6] = 0 
+                if order > 5:
+                    initial_values[7] = 0
+        elif initial_condition == 'smooth_wave_smallHeightGradient':
+            initial_values[0] = 1 + 0.5*np.exp(-3*position**2)
+            initial_values[1] = 1.0*initial_values[0]
+            if order > 0:
+                initial_values[2] = 1.0 
+            if order > 1:
+                initial_values[3] = 1.0 
+            if order > 2:
+                initial_values[4] = 1.0 
+            if order > 3:
+                initial_values[5] = 1.0 
+            if order > 4:
+                initial_values[6] = 1.0 
+            if order > 5:
+                initial_values[7] = 1.0  
         return initial_values
     
     def compute_number_of_variables(self,
@@ -4706,8 +4754,8 @@ class HermiteMomentEquations(PDE):
                                    numbers_of_variables_cellwise: list,
                                    dom_decomp_val_res1: np.ndarray,
                                    dom_decomp_val_res2: np.ndarray,
-                                   tolerance_up_flow_gradient = 0.001,
-                                   tolerance_down_last_moment = 0.0001) -> tuple[np.ndarray,np.ndarray]:       
+                                   tolerance_up_flow_gradient = 0.00001,
+                                   tolerance_down_last_moment = 0.00001) -> tuple[np.ndarray,np.ndarray]:       
         """
         computes the breakdown criteria for adaptive simulation
 
@@ -4758,31 +4806,122 @@ class HermiteMomentEquations(PDE):
             if loc_M == 2:
                 breakdown_estimators[i,1] = np.abs(delta_t/(4*delta_x)*values[i+1,0]*values[i+1,2]*(values[i+2,2]-values[i,2]))
             elif loc_M == 3:
-                breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
-                                                   (\
-                                                       values[i+1,3]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                                                        +values[i+1,3]*(values[i+2,2]-values[i,2]))\
-                                                        -values[i+1,2]*(values[i+2,3]-values[i,3]
-                                                                        )
+                # breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                #                                    (\
+                #                                        values[i+1,3]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
+                #                                         +values[i+1,3]*(values[i+2,2]-values[i,2]))\
+                #                                         -values[i+1,2]*(values[i+2,3]-values[i,3]
+                #                                                         )
+                #                                         )
+                breakdown_estimators[i,1] = max(
+                    np.abs(delta_t/(2*delta_x)*\
+                                    (\
+                                        values[i+1,3]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
+                                        -3/2*values[i+1,3]*(values[i+2,2]-values[i,2]))\
+                                        -values[i+1,2]*(values[i+2,3]-values[i,3]
                                                         )
+                                        ),
+                    np.abs(delta_t/(2*delta_x)*(3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])))
+                )
             elif loc_M == 4:
-                breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                # breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                #                                    (\
+                #                                        values[i+1,4]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
+                #                                         +values[i+1,4]*(values[i+2,2]-values[i,2]))\
+                #                                         +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                #                                         -values[i+1,2]*(values[i+2,4]-values[i,4]
+                #                                                         )
+                #                                         )
+                breakdown_estimators[i,1] = max(
+                                                np.abs(delta_t/(2*delta_x)*\
                                                    (\
                                                        values[i+1,4]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                                                        +values[i+1,4]*(values[i+2,2]-values[i,2]))\
-                                                        +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                                                        -values[i+1,2]*(values[i+2,4]-values[i,4]
+                                                        -2*values[i+1,4]*(values[i+2,2]-values[i,2]))\
+                                                        -values[i+1,2]*(values[i+2,4]-values[i,4]\
+                                                        +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])
                                                                         )
-                                                        )
+                                                        ),
+                                                np.abs(delta_t/(2*delta_x)*(1/2*values[i+1,2]*values[i+1,3])*(values[i+2,2]-values[i,2])\
+                                                       -3*values[i+1,4]/values[i+1,0]*(values[i+2,3]-values[i,3]))
+                ) 
+                breakdown_estimators[i,0] = max(
+                    delta_t/(2*delta_x)*np.abs(4*values[i+1,3]*(values[i+2,1]-values[i,1])\
+                                                +values[i+1,0]*values[i+1,2]/2*(values[i+2,2]-values[i,2])\
+                                                +values[i+1,1]*(values[i+2,3]-values[i,3])\
+                                                +4*(values[i+2,4]-values[i,4])),
+                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,3]/values[i+1,0]*(values[i+2,0]-values[i,0])\
+                                                -values[i+1,3]*(values[i+2,2]-values[i,2])\
+                                                +values[i+1,2]*(values[i+2,3]-values[i,3])\
+                                                +values[i+1,1]*(values[i+2,4]-values[i,4])),
+                    delta_t/(2*delta_x)*np.abs(6/values[i+1,0])
+                )                      
             else:
-                breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                # breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
+                #                                    (\
+                #                                        values[i+1,loc_M]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
+                #                                         -(values[i+1,2]*values[i+1,loc_M-2]/2-values[i+1,loc_M])*(values[i+2,2]-values[i,2]))\
+                #                                         +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                #                                         -values[i+1,2]*(values[i+2,loc_M]-values[i,loc_M]
+                #                                                         )
+                breakdown_estimators[i,1] = max(
+                                                np.abs(delta_t/(2*delta_x)*\
                                                    (\
                                                        values[i+1,loc_M]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
                                                         -(values[i+1,2]*values[i+1,loc_M-2]/2-values[i+1,loc_M])*(values[i+2,2]-values[i,2]))\
                                                         +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
                                                         -values[i+1,2]*(values[i+2,loc_M]-values[i,loc_M]
                                                                         )
-                                                        )          
+                                                        ),
+                                                np.abs(delta_t/(2*delta_x)*(1/2*values[i+1,2]*values[i+1,loc_M-1])*(values[i+2,2]-values[i,2])\
+                                                       -3*values[i+1,loc_M]/values[i+1,0]*(values[i+2,3]-values[i,3]))
+                )
+            if loc_M == 5:
+                breakdown_estimators[i,0] = max(
+                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,3]/values[i+1,0]*(values[i+2,0]-values[i,0])\
+                                                +5*values[i+1,4]*(values[i+2,1]-values[i,1])\
+                                                +3*values[i+1,3]/2*(values[i+2,2]-values[i,2])\
+                                                +values[i+1,2]*(values[i+2,3]-values[i,3])\
+                                                +values[i+1,1]*(values[i+2,4]-values[i,4])\
+                                                +5*(values[i+2,5]-values[i,5])),
+                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,4]/values[i+1,0]*(values[i+2,0]-values[i,0])\
+                                                -values[i+1,4]*(values[i+2,2]-values[i,2])\
+                                                -3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                                                +values[i+1,2]*(values[i+2,4]-values[i,4])\
+                                                +values[i+1,1]*(values[i+2,5]-values[i,5])),
+                    delta_t/(2*delta_x)*np.abs(4*(values[i+2,4]-values[i,4]))
+                )   
+            elif loc_M == 6:
+                breakdown_estimators[i,0] = max(
+                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,4]/values[i+1,0]*(values[i+2,0]-values[i,0])\
+                                                +6*values[i+1,5]*(values[i+2,1]-values[i,1])\
+                                                +2*values[i+1,4]*(values[i+2,2]-values[i,2])\
+                                                -3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                                                +values[i+1,2]*(values[i+2,4]-values[i,4])\
+                                                +values[i+1,1]*(values[i+2,5]-values[i,5])\
+                                                +6*(values[i+2,6]-values[i,6])),
+                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,5]/values[i+1,0]*(values[i+2,0]-values[i,0])\
+                                                +(values[i+1,2]*values[i+1,3]/2-values[i+1,5])*(values[i+2,2]-values[i,2])\
+                                                -3*values[i+1,4]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                                                +values[i+1,2]*(values[i+2,5]-values[i,5])\
+                                                +values[i+1,1]*(values[i+2,6]-values[i,6])),
+                    delta_t/(2*delta_x)*np.abs(5*(values[i+2,5]-values[i,5]))
+                )  
+            elif loc_M > 6:
+                breakdown_estimators[i,0] = max(
+                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,loc_M-2]/values[i+1,0]*(values[i+2,0]-values[i,0])\
+                                                +loc_M*values[i+1,loc_M-1]*(values[i+2,1]-values[i,1])\
+                                                +(values[i+1,2]*values[i+1,loc_M-4]/2+(loc_M-2)/2*values[i+1,loc_M-2])*(values[i+2,2]-values[i,2])\
+                                                -3*values[i+1,loc_M-3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                                                +values[i+1,2]*(values[i+2,loc_M-2]-values[i,loc_M-2])\
+                                                +values[i+1,1]*(values[i+2,loc_M-1]-values[i,loc_M-1])\
+                                                +loc_M*(values[i+2,loc_M]-values[i,loc_M])),
+                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,loc_M-1]/values[i+1,0]*(values[i+2,0]-values[i,0])\
+                                                +(values[i+1,2]*values[i+1,loc_M-3]/2-values[i+1,loc_M-1])*(values[i+2,2]-values[i,2])\
+                                                -3*values[i+1,loc_M-2]/values[i+1,0]*(values[i+2,3]-values[i,3])\
+                                                +values[i+1,2]*(values[i+2,loc_M-1]-values[i,loc_M-1])\
+                                                +values[i+1,1]*(values[i+2,loc_M]-values[i,loc_M])),
+                    delta_t/(2*delta_x)*np.abs((loc_M-1)*(values[i+2,loc_M-1]-values[i,loc_M-1]))
+                )                   
         breakdown_estimators[:,1] = breakdown_estimators[:,1]
         for i in range(n):
             if orders_cellwise[i+1] < max_order-1 and breakdown_estimators[i,1] > tolerance_up_flow_gradient:

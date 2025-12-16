@@ -191,9 +191,11 @@ def main():
         print('Time: ', stop - start)
         data_frame = pd.DataFrame(data_array)
         _plotting.plot(data_array)
-        data_frame.to_csv('Data-processing/Output/test.csv', index=False,header=False)
-        # data_frame.to_csv('Data-processing/Output/HonoursProject-Cyril/smooth_constantVelocity_lambda1.0_nu1.0_order0.csv', index=False,header=False)
-
+        # data_frame.to_csv('Data-processing/Output/test.csv', index=False,header=False)
+        # data_frame.to_csv(
+        #     'Data-processing/Results/KineticMomentEquations/smoothAndShockTube_order10_relaxation0.1_time1.0_3000.csv',
+        #     index=False,
+        #     header=False)
     else:
         print('2D not implemented yet')
 

@@ -192,7 +192,7 @@ class ClassicalSimulation1D(Simulation):
         fluctuations_min = np.zeros((self.mesh.resolution+1,self.number_of_variables))
         fluctuations_plus = np.zeros((self.mesh.resolution+1,self.number_of_variables))
 
-        CFL = 0.9 #TODO: put CFL number in config file
+        CFL = 0.5 #TODO: put CFL number in config file
         t = 0
 
         def system_matrix(cell_values):
@@ -225,7 +225,10 @@ class ClassicalSimulation1D(Simulation):
             for i in range(1,self.mesh.resolution+1):
                 values[i,:] = values[i,:] - delta_t/delta_x*(fluctuations_plus[i-1,:]+fluctuations_min[i,:])
                 values[i,:] = self.time_integration.integrate(values[i,:],source_term,delta_t)
-            print(t)
+            print()
+            print('time: '+str(t))
+            print('step size: '+str(delta_t))
+            print()
             t += delta_t
             step += 1
 
@@ -1525,7 +1528,7 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
         reconstruct_subdomains = self._reconstruct_subdomains()
         interpolate_added_moments = self._interpolate_subdomains()
 
-        CFL = 0.9
+        CFL = 0.8
         
         step_count = 0
         t = 0
@@ -1551,12 +1554,12 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
 
                 r_bound_subdom = self.boundary_interfaces[m]
 
-                if order_left < order_right:
-                    prev_values[r_bound_subdom,n_variables_left:n_variables_right]=\
-                    prev_values[r_bound_subdom+1,n_variables_left:n_variables_right]                
-                elif order_left > order_right:
-                    prev_values[r_bound_subdom+1,n_variables_right:n_variables_left]=\
-                    prev_values[r_bound_subdom,n_variables_right:n_variables_left]             
+                # if order_left < order_right:
+                #     prev_values[r_bound_subdom,n_variables_left:n_variables_right]=\
+                #     prev_values[r_bound_subdom+1,n_variables_left:n_variables_right]                
+                # elif order_left > order_right:
+                #     prev_values[r_bound_subdom+1,n_variables_right:n_variables_left]=\
+                #     prev_values[r_bound_subdom,n_variables_right:n_variables_left]             
 
                 def system_matrix(cell_values):
                     return self.pde_type.compute_system_matrix(order_left,cell_values)
@@ -1638,6 +1641,8 @@ class InterpolatedAdaptiveSimulation1D(SpatiallyAdaptiveSimulation1D):
             
             step_count += 1
             print(t)
+            # if min(self.orders) == 8:
+            #     break
             values = reconstruct_subdomains(values,delta_x,delta_t)
             # values = interpolate_added_moments(values)
             self.dom_decomp_val_res1 = self.dom_decomp_val_res1/delta_x
