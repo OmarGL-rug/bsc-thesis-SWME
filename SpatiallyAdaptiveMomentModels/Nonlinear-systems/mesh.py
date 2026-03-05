@@ -88,7 +88,8 @@ class UniformRectangularMesh1D(RectangularMesh):
         self.cell_center_positions = self._compute_cell_centers()
 
     def _compute_cell_centers(self):
-        cell_centers = np.linspace(self.boundaries[0], self.boundaries[1], self.resolution)
+        # cell_centers = np.linspace(self.boundaries[0], self.boundaries[1], self.resolution)
+        cell_centers = self.boundaries[0] + (np.arange(self.resolution) + 0.5)*(self.boundaries[1] - self.boundaries[0])/self.resolution
         return cell_centers
     
 class UniformRectangularMesh2D(RectangularMesh):

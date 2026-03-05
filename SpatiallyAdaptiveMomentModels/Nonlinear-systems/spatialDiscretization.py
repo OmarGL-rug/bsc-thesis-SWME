@@ -71,6 +71,9 @@ class PVM(SpatialDiscretization,ABC):
 
     """
 
+    def __init__(self,nr_of_quadrature_points):
+        self.nr_of_quadrature_points = nr_of_quadrature_points
+
     def compute_fluctuation(self,
                             value_left: np.ndarray,
                             value_right: np.ndarray,
@@ -102,26 +105,28 @@ class PVM(SpatialDiscretization,ABC):
             fluctuation between two cells containing the values value_left and value_right in positive direction
 
         """
-        # Nodes on [0, 1]
-        quadrature_nodes = [
-            (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
-            (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
-            1/2,
-            (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
-            (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
-        ]
+        # # Nodes on [0, 1]
+        # quadrature_nodes = [
+        #     (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
+        #     (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+        #     1/2,
+        #     (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+        #     (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
+        # ]
 
-        # Weights on [0, 1]
-        quadrature_weights = [
-            (322 - 13*np.sqrt(70)) / 1800,
-            (322 + 13*np.sqrt(70)) / 1800,
-            128 / 450,
-            (322 + 13*np.sqrt(70)) / 1800,
-            (322 - 13*np.sqrt(70)) / 1800
-        ]
+        # # Weights on [0, 1]
+        # quadrature_weights = [
+        #     (322 - 13*np.sqrt(70)) / 1800,
+        #     (322 + 13*np.sqrt(70)) / 1800,
+        #     128 / 450,
+        #     (322 + 13*np.sqrt(70)) / 1800,
+        #     (322 - 13*np.sqrt(70)) / 1800
+        # ]
 
-        # quadrature_nodes = [1/2]
-        # quadrature_weights = [1]
+        # # quadrature_nodes = [1/2]
+        # # quadrature_weights = [1]
+
+        quadrature_nodes,quadrature_weights = self._compute_quadrature_points(self.nr_of_quadrature_points)
 
         generalized_roe = 0
         for i in range(len(quadrature_nodes)):
@@ -167,26 +172,42 @@ class PVM(SpatialDiscretization,ABC):
 
         """
 
-        # Nodes on [0, 1]
-        quadrature_nodes = [
-            (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
-            (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
-            1/2,
-            (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
-            (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
-        ]
+        # # # Nodes on [0, 1]
+        # # quadrature_nodes = [
+        # #     (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
+        # #     (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+        # #     1/2,
+        # #     (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+        # #     (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
+        # # ]
 
-        # Weights on [0, 1]
-        quadrature_weights = [
-            (322 - 13*np.sqrt(70)) / 1800,
-            (322 + 13*np.sqrt(70)) / 1800,
-            128 / 450,
-            (322 + 13*np.sqrt(70)) / 1800,
-            (322 - 13*np.sqrt(70)) / 1800
-        ]
+        # # # Weights on [0, 1]
+        # # quadrature_weights = [
+        # #     (322 - 13*np.sqrt(70)) / 1800,
+        # #     (322 + 13*np.sqrt(70)) / 1800,
+        # #     128 / 450,
+        # #     (322 + 13*np.sqrt(70)) / 1800,
+        # #     (322 - 13*np.sqrt(70)) / 1800
+        # # ]
 
-        # quadrature_nodes = [1/2]
-        # quadrature_weights = [1]
+        # # Nodes on [0, 1]
+        # quadrature_nodes = [
+        #     (1 - np.sqrt(3/5)) / 2,
+        #     1/2,
+        #     (1 + np.sqrt(3/5)) / 2
+        # ]
+
+        # # Weights on [0, 1]
+        # quadrature_weights = [
+        #     5/18,   # = (5/9)/2
+        #     4/9,    # = (8/9)/2
+        #     5/18
+        # ]
+
+        # # quadrature_nodes = [1/2]
+        # # quadrature_weights = [1]
+
+        quadrature_nodes,quadrature_weights = self._compute_quadrature_points(self.nr_of_quadrature_points)
 
         generalized_roe = 0
         for i in range(len(quadrature_nodes)):
@@ -196,6 +217,44 @@ class PVM(SpatialDiscretization,ABC):
         fluct_matrix_plus = (generalized_roe + viscosity)/2
 
         return fluct_matrix_min, fluct_matrix_plus
+
+    def _compute_quadrature_points(self,nr_of_quadrature_points):
+        if nr_of_quadrature_points == 1:
+            quadrature_nodes = [1/2]
+            quadrature_weights = [1]
+        elif nr_of_quadrature_points == 3:
+            quadrature_nodes = [
+                (1 - np.sqrt(3/5)) / 2,
+                1/2,
+                (1 + np.sqrt(3/5)) / 2
+            ]
+
+            # Weights on [0, 1]
+            quadrature_weights = [
+                5/18,   # = (5/9)/2
+                4/9,    # = (8/9)/2
+                5/18
+            ]
+        elif nr_of_quadrature_points == 5:
+            quadrature_nodes = [
+                (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
+                (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+                1/2,
+                (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+                (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
+            ]
+
+            quadrature_weights = [
+                (322 - 13*np.sqrt(70)) / 1800,
+                (322 + 13*np.sqrt(70)) / 1800,
+                128 / 450,
+                (322 + 13*np.sqrt(70)) / 1800,
+                (322 - 13*np.sqrt(70)) / 1800
+            ]
+        else:
+            print("This number of quadrature points is not implemented yet!")
+    
+        return quadrature_nodes, quadrature_weights
 
     @abstractmethod
     def compute_viscosity(self,
@@ -338,6 +397,11 @@ class Osher(PVM):
 
     """
 
+    def __init__(self,nr_of_quadrature_points,eigenstructure_available, compute_eigenvalues_and_eigenvectors):
+        self.nr_of_quadrature_points = nr_of_quadrature_points
+        self.eigenstructure_available = eigenstructure_available
+        self.compute_eigenvalues_and_eigenvectors = compute_eigenvalues_and_eigenvectors
+
     def compute_fluctuation(self,
                             value_left: np.ndarray,
                             value_right: np.ndarray,
@@ -345,33 +409,51 @@ class Osher(PVM):
                             delta_t: float,
                             delta_x: float) -> tuple[np.ndarray,np.ndarray]:
         
-        # Nodes on [0, 1]
-        quadrature_nodes = [
-            (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
-            (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
-            1/2,
-            (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
-            (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
-        ]
+        # # # Nodes on [0, 1]
+        # # quadrature_nodes = [
+        # #     (1 - (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2,
+        # #     (1 - (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+        # #     1/2,
+        # #     (1 + (1/3) * np.sqrt((5 - 2*np.sqrt(10/7))/3)) / 2,
+        # #     (1 + (1/3) * np.sqrt((5 + 2*np.sqrt(10/7))/3)) / 2
+        # # ]
 
-        # Weights on [0, 1]
-        quadrature_weights = [
-            (322 - 13*np.sqrt(70)) / 1800,
-            (322 + 13*np.sqrt(70)) / 1800,
-            128 / 450,
-            (322 + 13*np.sqrt(70)) / 1800,
-            (322 - 13*np.sqrt(70)) / 1800
-        ]
+        # # # Weights on [0, 1]
+        # # quadrature_weights = [
+        # #     (322 - 13*np.sqrt(70)) / 1800,
+        # #     (322 + 13*np.sqrt(70)) / 1800,
+        # #     128 / 450,
+        # #     (322 + 13*np.sqrt(70)) / 1800,
+        # #     (322 - 13*np.sqrt(70)) / 1800
+        # # ]
 
-        # quadrature_nodes = [1/2]
-        # quadrature_weights = [1]
+        # # Nodes on [0, 1]
+        # quadrature_nodes = [
+        #     (1 - np.sqrt(3/5)) / 2,
+        #     1/2,
+        #     (1 + np.sqrt(3/5)) / 2
+        # ]
+
+        # # Weights on [0, 1]
+        # quadrature_weights = [
+        #     5/18,   # = (5/9)/2
+        #     4/9,    # = (8/9)/2
+        #     5/18
+        # ]
+
+        # # quadrature_nodes = [1/2]
+        # # quadrature_weights = [1]
+
+        quadrature_nodes,quadrature_weights = self._compute_quadrature_points(self.nr_of_quadrature_points)
 
         generalized_roe = 0
         viscosity = 0
         for i in range(len(quadrature_nodes)):
-            generalized_roe_point = quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
-            generalized_roe += generalized_roe_point
-            viscosity += self.compute_viscosity(generalized_roe_point,delta_t,delta_x)
+            quadrature_point = (1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right
+            generalized_roe_point = system_matrix(quadrature_point)
+            generalized_roe += quadrature_weights[i]*generalized_roe_point
+            viscosity_point = self.compute_viscosity(generalized_roe_point,quadrature_point,delta_t,delta_x)
+            viscosity += quadrature_weights[i]*viscosity_point
         viscosity = np.dot(viscosity,value_right-value_left)
         generalized_roe = np.dot(generalized_roe,value_right-value_left)
         fluctuation_min = (generalized_roe - viscosity)/2
@@ -410,9 +492,11 @@ class Osher(PVM):
         generalized_roe = 0
         viscosity = 0
         for i in range(len(quadrature_nodes)):
-            generalized_roe_point = quadrature_weights[i]*(system_matrix((1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right))
-            generalized_roe += generalized_roe_point
-            viscosity += self.compute_viscosity(generalized_roe_point,delta_t,delta_x)
+            quadrature_point = (1-quadrature_nodes[i])*value_left+(quadrature_nodes[i])*value_right
+            generalized_roe_point = system_matrix(quadrature_point)
+            generalized_roe += quadrature_weights[i]*generalized_roe_point
+            viscosity_point = self.compute_viscosity(generalized_roe_point,quadrature_point,delta_t,delta_x)
+            viscosity += quadrature_weights[i]*viscosity_point
         fluct_matrix_min = (generalized_roe - viscosity)/2
         fluct_matrix_plus = (generalized_roe + viscosity)/2
 
@@ -421,19 +505,28 @@ class Osher(PVM):
 
     def compute_viscosity(self,
                           roe_matrix: np.ndarray,
+                          values: np.ndarray,
                           delta_t: float,
                           delta_x: float):
 
-        # Eigen-decomposition: A = R D R^-1
-        eigenvalues, R = np.linalg.eig(roe_matrix)
-        
-        # Construct |D|
-        D_abs = np.diag(np.abs(eigenvalues))
-        
-        # Compute inverse of R
-        R_inv = np.linalg.inv(R)
-        
-        # Return B = R |D| R^-1
-        viscosity = R @ D_abs @ R_inv
+        if self.eigenstructure_available:
+            eigenvalue_diag_entries, right_eigenvectors_matrix = self.compute_eigenvalues_and_eigenvectors(values)
+
+            D_abs = np.array(np.abs(eigenvalue_diag_entries))
+            left_eigenvectors_matrix = np.linalg.inv(right_eigenvectors_matrix)
+            viscosity = (right_eigenvectors_matrix*D_abs[None,:])@left_eigenvectors_matrix
+
+        else:
+            # Eigen-decomposition: A = R D R^-1
+            eigenvalues, R = np.linalg.eig(roe_matrix)
+            
+            # Construct |D|
+            D_abs = np.array(np.abs(eigenvalues))
+            
+            # Compute inverse of R
+            R_inv = np.linalg.inv(R)
+            
+            # Return B = R |D| R^-1
+            viscosity = (R*D_abs[None,:]) @ R_inv
 
         return viscosity

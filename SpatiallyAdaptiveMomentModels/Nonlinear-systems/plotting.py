@@ -354,7 +354,7 @@ class HME1DPlotClassical(Plotting):
         plt.title('Temperature')
 
         k = 4
-        for i in range(3,order+1):
+        for i in range(3,min(order+1,11)):
             plt.subplot(4,4,k)
             plt.plot(self.mesh.cell_center_positions, data_array[:,i+1])
             plt.title('f_'+str(i))
@@ -444,7 +444,7 @@ class HME1DPlotAdaptive(Plotting):
         plt.title('Temperature')
 
         k = 4
-        for i in range(3,order+1):
+        for i in range(3,min(order+1,13)):
             plt.subplot(4,4,k)
             plt.plot(self.mesh.cell_center_positions, data_array[:,i+1])
             plt.title('f_'+str(i))
@@ -452,11 +452,11 @@ class HME1DPlotAdaptive(Plotting):
 
         plt.subplot(4,4,k)
         plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,0])
-        plt.title('Absolute value last moment')
+        plt.title('Decrease estimator')
 
         plt.subplot(4,4,k+1)
         plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,1])
-        plt.title('Density gradient')
+        plt.title('Increase estimator')
 
         plt.subplot(4,4,k+2)
         plt.plot(self.mesh.cell_center_positions,data_array[:,0])

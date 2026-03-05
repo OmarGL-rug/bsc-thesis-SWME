@@ -148,7 +148,7 @@ if(strcmp(plotting,'alpha1'))
     ylabel('\alpha_1')
     
     linewidth1 = 2;
-    set(plot1(1:4),'LineWidth',linewidth1);
+    set(plot1(1:3),'LineWidth',linewidth1);
 
     grey = [0.4,0.4,0.4];
     set(plot1(1),'LineStyle','-');

@@ -48,10 +48,10 @@ name10 = 'smoothAndShockTube_order10_relaxation0.1_time1.0_10000';
 % ax3 = subplot(4,2,1);
 % ax4 = subplot(4,2,2);
 
-% plotting = 'all';
 % plotting = 'rho';
 % plotting = 'u';
 plotting = 'T';
+
 
  blue = [0, 0.4470, 0.7410];
  green = [0.4660, 0.6740, 0.1880];

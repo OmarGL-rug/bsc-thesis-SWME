@@ -7,6 +7,8 @@ import plotting
 import pandas as pd
 import configparser
 import timeit
+from pathlib import Path
+import numpy as np
 
 def main():
 
@@ -20,6 +22,9 @@ def main():
     time_integrator = numerical_method_information['timeIntegrator']
     linear_source_implicit = linear_source and time_integrator == 'ImplicitEuler'
     exact_source_computation = time_integrator == 'Exact'
+
+    eigenstructure_available = False
+    compute_eigenvalues_and_eigenvectors = None
 
     if pde_information['pde_type'] == 'SWME1D':
         _pde = pde.SWME1D(pde_information['initialCondition'],
@@ -51,6 +56,8 @@ def main():
                         True,
                         True,
                         exact_source_computation)
+        eigenstructure_available = True
+        compute_eigenvalues_and_eigenvectors = _pde.compute_eigenvalues_and_eigenvectors
     elif pde_information['pde_type'] == 'Grad':
         _pde = pde.HermiteMomentEquations(
                         pde_information['initialCondition'],
@@ -64,14 +71,15 @@ def main():
     ##########################################################################
 
     if numerical_method_information['fvm_type'] == 'PVM':
+        nr_of_quadrature_points = numerical_method_information.getint('nr_of_quadrature_points')
         if numerical_method_information['pvm'] == 'PRICE':
-            _spatialDiscretization = spatialDiscretization.PRICE()
+            _spatialDiscretization = spatialDiscretization.PRICE(nr_of_quadrature_points)
         elif numerical_method_information['pvm'] == 'LF':
-            _spatialDiscretization = spatialDiscretization.LF()
+            _spatialDiscretization = spatialDiscretization.LF(nr_of_quadrature_points)
         elif numerical_method_information['pvm'] == 'Roe':
-            _spatialDiscretization = spatialDiscretization.Roe()
+            _spatialDiscretization = spatialDiscretization.Roe(nr_of_quadrature_points)
         elif numerical_method_information['pvm'] == 'Osher':
-            _spatialDiscretization = spatialDiscretization.Osher()
+            _spatialDiscretization = spatialDiscretization.Osher(nr_of_quadrature_points,eigenstructure_available,compute_eigenvalues_and_eigenvectors)
         else:
             print('this pvm method is not implemented yet')
     else:
@@ -150,6 +158,48 @@ def main():
                 pde_information['breakdown_criterion'],
                 _spatialDiscretization,
                 _time_integration) 
+        elif numerical_method_information['method'] == 'modelAdaptiveSimulation1D':
+            start_order = int(numerical_method_information['start_order'])
+            _simulation = simulation.ModelAdaptiveSimulation1D(
+                start_order,
+                _pde,
+                _mesh,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
+                pde_information['breakdown_criterion'],
+                _spatialDiscretization,
+                _time_integration) 
+        elif numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1D':
+            start_order = int(numerical_method_information['start_order'])
+            _simulation = simulation.SmoothedModelAdaptiveSimulation1D(
+                start_order,
+                _pde,
+                _mesh,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
+                pde_information['breakdown_criterion'],
+                numerical_method_information.getint('smooth_par'),
+                _spatialDiscretization,
+                spatialDiscretization.Osher(nr_of_quadrature_points,eigenstructure_available,compute_eigenvalues_and_eigenvectors),
+                # spatialDiscretization.LF(numerical_method_information.getint('nr_of_quadrature_points')),
+                spatialDiscretization.LF(1),
+                _time_integration) 
+        elif numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1DWithInterpolation':
+            start_order = int(numerical_method_information['start_order'])
+            _simulation = simulation.SmoothedModelAdaptiveSimulationWithInterpolation1D(
+                start_order,
+                _pde,
+                _mesh,
+                numerical_method_information['boundaryCondition'],
+                pde_information['initialCondition'],
+                pde_information['breakdown_criterion'],
+                numerical_method_information.getint('smooth_par'),
+                _spatialDiscretization,
+                spatialDiscretization.Osher(numerical_method_information.getint('nr_of_quadrature_points'),
+                                            eigenstructure_available,
+                                            compute_eigenvalues_and_eigenvectors),
+                spatialDiscretization.PRICE(1),
+                _time_integration) 
         elif numerical_method_information['method'] == 'classical':
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
@@ -173,14 +223,18 @@ def main():
         if pde_information['pde_type'] == 'SWME1D' or pde_information['pde_type'] == 'HSWME1D':
             if numerical_method_information['method'] == 'spatially_adaptive' or\
                 numerical_method_information['method'] == 'smoothedAdaptive' or\
-                    numerical_method_information['method'] == 'interpolatedAdaptive':
+                    numerical_method_information['method'] == 'interpolatedAdaptive' or\
+                        numerical_method_information['method'] == 'modelAdaptiveSimulation1D':
                 _plotting = plotting.SWME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.SWME1DPlotClassical(_pde,_mesh,_simulation)
         elif pde_information['pde_type'] == 'HME' or pde_information['pde_type'] == 'Grad':
             if numerical_method_information['method'] == 'spatially_adaptive' or\
                 numerical_method_information['method'] == 'smoothedAdaptive' or\
-                    numerical_method_information['method'] == 'interpolatedAdaptive':
+                    numerical_method_information['method'] == 'interpolatedAdaptive' or\
+                        numerical_method_information['method'] == 'modelAdaptiveSimulation1D' or\
+                            numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1D' or\
+                                numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1DWithInterpolation':
                 _plotting = plotting.HME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.HME1DPlotClassical(_pde,_mesh,_simulation)
@@ -188,14 +242,27 @@ def main():
         start = timeit.default_timer()
         data_array = _simulation.run_simulation(numerical_method_information.getfloat('t_end'))
         stop = timeit.default_timer()
-        print('Time: ', stop - start)
+        time = np.full(1,stop-start)
+        print('Time: ', time)
         data_frame = pd.DataFrame(data_array)
         _plotting.plot(data_array)
-        # data_frame.to_csv('Data-processing/Output/test.csv', index=False,header=False)
-        # data_frame.to_csv(
-        #     'Data-processing/Results/KineticMomentEquations/smoothAndShockTube_order10_relaxation0.1_time1.0_3000.csv',
-        #     index=False,
-        #     header=False)
+        data_frame_time = pd.DataFrame(time)
+
+        foldername = "Data-processing/Results/KineticMomentEquations/Paper"                               
+        output_dir = Path(foldername)
+
+        # Create folders if they don't exist
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        # filename = 'smoothPlusDam'+'.csv'
+        filename = 'shockPlusSmooth_order12_t0_Kn0p5.csv'
+        
+        filename_time = 'time_'+filename
+
+        outputname = output_dir / filename
+        outputname_time = output_dir / filename_time
+        # data_frame.to_csv(outputname,index=False,header=False)
+        # data_frame_time.to_csv(outputname_time,index=False,header=False)
     else:
         print('2D not implemented yet')
 

@@ -65,7 +65,7 @@ MinusRecon[list_,opt_]:=Transpose[Map[Map[Function[{um,u,up},u-1/2 rc[up-u,u-um]
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Full Grid Flux Calculation*)
 
 
@@ -98,7 +98,7 @@ Transpose[Differences[-(1/dy)Table[1/2 W[[i]](HUtop[[i]]+HUbottom[[i+1]])+1/2 Ab
 
 
 
-(* ::Subsection:: *)
+(* ::Subsection::Closed:: *)
 (*Simulation Setup and Time Integration*)
 
 
@@ -148,7 +148,7 @@ HUraw=Hraw*Uraw;
 time+=dt;
 step++;
 
-dt=0.7dx/cMax;
+dt=0.8dx/cMax;
 CFL=cMax dt/dx;
 If[time+dt>=tend&&time<tend,dt=tend-time+10^-8];
 ];
@@ -168,7 +168,7 @@ Visual[H_,HU_,iSize_]:=Block[{nx,ny,U},
 U=H^-1 HU;
 
 Grid[{{
-Show[Plot[0,{x,x1,x2},PlotLabel->"h(x,t) at time: "<>ToString[time]<>" (step: "<>ToString[step]<>", \[CapitalDelta]t = "<>ToString[dt]<>", CFL = "<>ToString[CFL]<>")",PlotRange->{{x1,x2},{0.8,5.5}},Frame->True,ImageSize->iSize],
+Show[Plot[0,{x,x1,x2},PlotLabel->"h(x,t) at time: "<>ToString[time]<>" (step: "<>ToString[step]<>", \[CapitalDelta]t = "<>ToString[dt]<>", CFL = "<>ToString[CFL]<>")",PlotRange->{{x1,x2},{0.8,2.0}},Frame->True,ImageSize->iSize],
 ListPlot[{
 Thread[{pts[[All,1,1]],H[[All,1]]}],
 Thread[{pts[[All,1,1]],H[[All,Floor[ny/2]]]}],
@@ -189,42 +189,42 @@ Thread[{U[[3Floor[nx/4],All]],pts[[1,All,2]]}]
 
 
 (* ::Input::Initialization:: *)
-x1=-2.0;
-x2=2.5;
+x1=-1.0;
+x2=1.0;
 y1=0.0;
 y2=1.0;
 
 (* Initial height profiles *)
-xOffset1=-0.5;
-xOffset2=0.5;
-hdamLarge[x_]:=If[-0.5<x<0.5,1,3];
-hdamSmall[x_]:=If[-0.5<x<0.5,1,1.5];
-hsmoothSteep[x_]:=1+0.5*Exp[-30*x*x];
-hsmoothMid[x_]:=1+0.5*Exp[-10*x*x];
-hsmoothSmall[x_]:=1+0.5*Exp[-3*x*x];
-initialHeightNames={"damLarge","damSmall","smoothSteep","smoothMid","smoothSmall"};
-
+xOffset1=-0.2;
+xOffset2=0.2;
+hDamLarge[x_]:=If[xOffset1<x<xOffset2,1,3];
+hDamMid[x_]:=If[xOffset1<x<xOffset2,1,2];
+hDamSmall[x_]:=If[xOffset1<x<xOffset2,1,1.5];
+hSmoothSteep[x_]:=1+1.0*Exp[-10*(x+0.1)*(x+0.1)];
+hSmoothMid[x_]:=1+0.5*Exp[-5*(x+0.1)*(x+0.1)];
+hSmoothSmall[x_]:=1+0.2*Exp[-2*(x+0.1)*(x+0.1)];
+initialHeightNames={"hSmoothSmall","hSmoothMid","hSmoothSteep","hDamSmall","hDamMid","hDamLarge"};
+initialVelocityNames={"uConst","uVarXnotvarZ","uVarZnotvarX","uVarXvarZ"};
+initialVelocityMagnitudeNames={"uFast","uMid","uSlow"};
 (* Initial velocity profiles *)
+start=-0.4;
+end=0.4;
+rangeFactor=end-start;
 phi1[\[Zeta]_]:=-LegendreP[1,2*\[Zeta]-1];phi2[\[Zeta]_]:=LegendreP[2,2*\[Zeta]-1];phi3[\[Zeta]_]:=-LegendreP[3,2*\[Zeta]-1];phi4[\[Zeta]_]:=LegendreP[4,2*\[Zeta]-1];phi5[\[Zeta]_]:=-LegendreP[5,2*\[Zeta]-1];phi6[\[Zeta]_]:=LegendreP[6,2*\[Zeta]-1];
-uconstFast[x_,y_]:=1.0;
-uvarXnotvarZ[x_,y_]:=(x-x1)/(x2-x1);
-alpha1[x_,y_]:=-uvarXnotvarZ[x,y]/2;
-alpha2[x_,y_]:=uvarXnotvarZ[x,y]/2;
-alpha3[x_,y_]:=uvarXnotvarZ[x,y]/2;
-alpha4[x_,y_]:=-uvarXnotvarZ[x,y]/2;
-alpha5[x_,y_]:=-uvarXnotvarZ[x,y]/2;
-alpha6[x_,y_]:=uvarXnotvarZ[x,y]/2;
-uvarZnotvarX[x_,y_]:=1-4 y+78y^2-500 y^3+1225 y^4-1260 y^5+462 y^6;
-uvarXvarZ[x_,y_]:=uvarXnotvarZ[x,y]+alpha1[x,y]*phi1[y]+alpha2[x,y]*phi2[y]+alpha3[x,y]*phi3[y]+alpha4[x,y]*phi4[y]+alpha5[x,y]*phi5[y]+alpha6[x,y]*phi6[y];
-initialVelocityNames={"constFast","varXnotvarZ","varZnotvarX","varXvarZ"};
+uconstFast[x_,y_,mag_]:=1.0*mag;
+uvarXnotvarZ[x_,y_,mag_]:=If[start<x<end,mag*(x-start)/(end-start),0];
+uvarZnotvarX[x_,y_,mag_]:=(1-4 y+78y^2-500 y^3+1225 y^4-1260 y^5+462 y^6)*mag;
+uvarXvarZ[x_,y_,mag_]:=uvarXnotvarZ[x,y,mag]-If[start<x<end,mag*(x-start)/(end-start),0]*0.5*phi1[y]+If[start<x<end,mag*(x-start)/(end-start),0]*0.5*phi2[y]+If[start<x<end,mag*(x-start)/(end-start),0]*0.5*phi3[y]-If[start<x<end,mag*(x-start)/(end-start),0]*0.5*phi4[y]-If[start<x<end,mag*(x-start)/(end-start),0]*0.5*phi5[y]+If[start<x<end,mag*(x-start)/(end-start),0]*0.5*phi6[y];
 
 (* viscosities and slip lengths *)
-viscosities={0.05,0.5,5};
-slipLengths={0.05,0.5,5};
+(*viscosities={0.05,0.5,5.0};*)
+(*slipLengths={0.05,0.5,5.0};*)
+viscosities={5.0};
+slipLengths={0.5,5.0};
 
-nx=900;  
-ny=200;
-tend=0.5;
+nx=400;  
+ny=70;
+tend=0.2;
 
 
 (* ::Subsection:: *)
@@ -247,30 +247,32 @@ For[i=1,i<=Length[viscosities],i++,
 For[j=1,j<=Length[slipLengths],j++,
 For[m=1,m<=Length[initialHeightNames],m++,
 For[n=1,n<=Length[initialVelocityNames],n++,
-Print[initialHeightNames[[m]]=="damLarge"];
-Which[initialHeightNames[[m]]=="damLarge",h0[x_]:=hdamLarge[x],
-initialHeightNames[[m]]=="damSmall",h0[x_]:=hdamSmall[x],
-initialHeightNames[[m]]=="smoothSteep",h0[x_]:=hsmoothSteep[x],
-initialHeightNames[[m]]=="smoothMid",h0[x_]:=hsmoothMid[x],
-initialHeightNames[[m]]=="smoothSmall",h0[x_]:=hsmoothSmall[x]];
-{"constFast","varXnotvarZ","varZnotvarX","varXvarZ"};
-Which[initialVelocityNames[[n]]=="constFast",u0[x_,y_]:=uconstFast[x,y],
-initialHeightNames[[n]]=="varXnotvarZ",u0[x_,y_]:=uvarXnotvarZ[x,y],
-initialHeightNames[[n]]=="varZnotvarX",u0[x_,y_]:=uvarZnotvarX[x,y],
-initialHeightNames[[n]]=="varXvarZ",u0[x_,y_]:=uvarXvarZ[x,y]];
+For[o=1,o<=Length[initialVelocityMagnitudeNames],o++,
+Which[initialHeightNames[[m]]=="hDamLarge",h0[x_]:=hDamLarge[x],
+initialHeightNames[[m]]=="hDamMid",h0[x_]:=hDamMid[x],
+initialHeightNames[[m]]=="hDamSmall",h0[x_]:=hDamSmall[x],
+initialHeightNames[[m]]=="hSmoothSteep",h0[x_]:=hSmoothSteep[x],
+initialHeightNames[[m]]=="hSmoothMid",h0[x_]:=hSmoothMid[x],
+initialHeightNames[[m]]=="hSmoothSmall",h0[x_]:=hSmoothSmall[x]];
+mag=0;
+Which[initialVelocityMagnitudeNames[[o]]=="uFast",mag=1.0,
+initialVelocityMagnitudeNames[[o]]=="uMid",mag=0.5,initialVelocityMagnitudeNames[[o]]=="uSlow",mag=0.2];
+Which[initialVelocityNames[[n]]=="uConst",u0[x_,y_]:=uconstFast[x,y,mag],
+initialVelocityNames[[n]]=="uVarXnotvarZ",u0[x_,y_]:=uvarXnotvarZ[x,y,mag],
+initialVelocityNames[[n]]=="uVarZnotvarX",u0[x_,y_]:=uvarZnotvarX[x,y,mag],
+initialVelocityNames[[n]]=="uVarXvarZ",u0[x_,y_]:=uvarXvarZ[x,y,mag]];
 \[Chi]=slipLengths[[j]];
 R=viscosities[[i]];
 FiniteVolumeRun[nx,ny,tend];
 Uraw=Hraw^-1 HUraw;
 Referencevalues=Table[{xs[i],Hraw[[i,1]],Map[Mean,Uraw][[i]],Map[alpha1Mean . #&,Uraw][[i]],Map[alpha2Mean . #&,Uraw][[i]],Map[alpha3Mean . #&,Uraw][[i]],Map[alpha4Mean . #&,Uraw][[i]],Map[alpha5Mean . #&,Uraw][[i]],Map[alpha6Mean . #&,Uraw][[i]]},{i,1,nx}]//MatrixForm;
 dataset=Flatten[Referencevalues];
-foldername="error_trainingData/"<>initialHeightNames[[m]]<>"_"<>initialVelocityNames[[n]]<>"/";
-filename="lambda"<>ToString[slipLengths[[j]]]<>"_"<>"viscosity"<>ToString[viscosities[[i]]]<>".csv";
+foldername="error_trainingData/"<>initialHeightNames[[m]]<>"_"<>initialVelocityNames[[n]]<>"_"<>initialVelocityMagnitudeNames[[o]]<>"/";
+filename="lambda"<>ToString[slipLengths[[j]]]<>"_"<>"viscosity"<>ToString[viscosities[[i]]]<>"_ref.csv";
 outputname=foldername<>filename;
 Export[outputname,dataset,"CSV"];
 ];
 ];
 ];
 ];
-
-
+];

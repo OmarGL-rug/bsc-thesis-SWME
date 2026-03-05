@@ -1,5 +1,8 @@
 from abc import ABC, abstractmethod
 import numpy as np
+from scipy.special import roots_hermitenorm
+from scipy.special import eval_hermitenorm
+import math
 
 #TODO: implement MomentModel as a subclass of PDE and include the possibility of simulating PDEs that are not moment models (and don't have an order)
 class PDE(ABC):
@@ -20,8 +23,14 @@ class PDE(ABC):
         initializes the pde object
     def compute_system_matrix(self,order,values):
         computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
+    def compute_system_matrix_augmented(self,order,values):
+        computes the system matrix of the augmented model equation, which is the equation that is solved
+        to predict the defined moments as well as the undefined higher-order moments
     def compute_source_term(self,order,values):
         computes the system matrix of the partial differential equation evaluated in the given values, for the given order.
+    def compute_source_term_augmented(self,order,values):
+        computes the source term of the augmented model equation, which is the equation that is solved
+        to predict the defined moments as well as the undefined higher-order moments
     def compute_source_term_lastentry(self,order,values,last_moment_zero)
         computes the last entry of the source term vector
     def get_initial_values(self,order,initial_condition,position):
@@ -67,7 +76,32 @@ class PDE(ABC):
         """
 
         pass
-    
+
+    @abstractmethod
+    def compute_system_matrix_augmented(self,
+                              order: int,
+                              values: np.ndarray) -> np.ndarray:
+        """
+        Computes the system matrix of the augmented model equation, which is the equation that is used to compute
+        predictions of the defined moments as well as the undefined moments.
+
+        Parameters
+        ----------
+        order : int
+            order of the moment model PDE (TODO: create MomentModel as a subclass of PDE)
+        values : numpy 1D array
+            values of the variables
+
+        
+        Returns
+        -------
+        A_aug: np.ndarray
+            augmented system matrix
+
+        """
+
+        pass   
+
     @abstractmethod
     def compute_source_term(self,
                             order: int,
@@ -86,6 +120,32 @@ class PDE(ABC):
         Returns
         -------
         S: numpy 1D array or numpy 2D array
+            source term vector if the moment model has a non-linear source term, 
+            source term matrix if the moment model has a linear source term
+
+        """
+
+        pass
+
+    @abstractmethod
+    def compute_source_term_augmented(self,
+                            order: int,
+                            values: np.ndarray) -> np.ndarray:
+        """
+        Computes the source term of the augmented model equation, which is the equation that is used to compute
+        predictions of the defined moments as well as the undefined moments.
+
+        Parameters
+        ----------
+        order : int
+            order of the moment model PDE (TODO: create MomentModel as a subclass of PDE)
+        values : numpy 1D array
+            values of the variables
+        
+        
+        Returns
+        -------
+        S_aug: numpy 1D array or numpy 2D array
             source term vector if the moment model has a non-linear source term, 
             source term matrix if the moment model has a linear source term
 
@@ -216,9 +276,117 @@ class PDE(ABC):
         """
 
     @abstractmethod
+    def compute_breakdown_quantity_decrease(self,
+                                            value_central: np.ndarray, 
+                                            value_left: np.ndarray,
+                                            value_right: np.ndarray,
+                                            order: int) -> float:
+        
+        """
+        Numerically approximates the model-error for model-coarsening in cell i, using the values in cells i-1,i,i+1
+
+        Parameters
+        ----------
+        value_central : np.ndarray
+            the values in cell i
+        value_left : np.ndarray
+            the values in cell i-1
+        value_right : np.ndarray
+            the values in cell i+1
+        order: integer
+            the current order in cell i
+        
+        Returns
+        -------
+        decrease_quantity : float
+            the numerical approximation of the model-error estimator for model-coarsening
+
+        """
+
+    @abstractmethod
+    def compute_breakdown_quantity_increase(self,
+                                            value_central: np.ndarray, 
+                                            value_left: np.ndarray,
+                                            value_right: np.ndarray,
+                                            order: int) -> float:
+        
+        """
+        Numerically approximates the model-error for model-refinement in cell i, using the values in cells i-1,i,i+1
+
+        Parameters
+        ----------
+        value_central : np.ndarray
+            the values in cell i
+        value_left : np.ndarray
+            the values in cell i-1
+        value_right : np.ndarray
+            the values in cell i+1
+        order: integer
+            the current order in cell i
+        
+        Returns
+        -------
+        decrease_quantity : float
+            the numerical approximation of the model-error estimator for model-refinement
+
+        """
+
+    @abstractmethod
     def compute_breakdown_criteria_full(self) -> np.ndarray:        
         """
         Documented in the child classes
+
+        """
+
+    @abstractmethod
+    def decompose_domain(self,
+                        n: int,
+                        max_order: int,
+                        orders_cellwise: np.ndarray,
+                        flags_decrease: np.ndarray,
+                        flags_increase: np.ndarray) -> np.ndarray:       
+        """
+        given the model-error estimators for model-coarsening (flags_decrease) and the model-error estimators 
+        for model-refinement (flags_increase), compute the final domain decomposition
+
+        Parameters
+        ----------
+        n : integer
+            the mesh resolution
+        max_order : integer
+            the maximum order of the adaptive moment model simulation
+        orders_cellwise : list
+            the cellwise orders (currently)
+        flags_decrease: np.ndarray
+            the computed flags for model-coarsening (decreasing the order)
+        flags_inrease: np.ndarray
+            the computed flags for model-refinement (increasing the order)
+            
+        Returns
+        -------
+        domain_decomposition_flags : np.ndarray
+            numpy array where entry with index i contains the computed order differen
+            (positive if increase, negative if decrease)
+
+        """
+
+    @abstractmethod
+    def compute_eigenvalues_and_eigenvectors(self,
+                                             values: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+        """
+        computes (exactly) the eigenvalues and the eigenvectors of the system matrix
+
+        Parameters
+        ----------
+        values: np.ndarray
+            the values of the state variables
+            
+        Returns
+        -------
+        eigenvectors : np.ndarray
+            the eigenvectors of the system matrix
+        eigenvalues : np.ndarray
+            the eigenvalues of the system matrix, the ith eigenvalue corresponds to the ith eigenvector
 
         """
 
@@ -2603,6 +2771,10 @@ class SWME1D(PDE):
                            initial_condition: str,
                            position: float) -> np.ndarray:
         initial_values = np.zeros(self.compute_number_of_variables(order))
+        start = -0.4
+        end = 0.4
+        range_factor = end - start
+        mag=1.0
         if initial_condition == 'constantHeight_noVelocity':
             initial_values[0] = 1
             initial_values[1] = 0
@@ -2844,53 +3016,42 @@ class SWME1D(PDE):
                 if order > 5:
                     initial_values[7] = 0 
         elif initial_condition == 'colliding_damBreak':
-            x0 = -0.5
-            x1 = 0.5
+            x0 = -0.2
+            x1 = 0.2
             if position < x0 or position > x1:
-                initial_values[0] = 3
-                initial_values[1] = 0.5*initial_values[0]
-                if order > 0:
-                    initial_values[2] = 0 
-                if order > 1:
-                    initial_values[3] = 0 
-                if order > 2:
-                    initial_values[4] = 0 
-                if order > 3:
-                    initial_values[5] = 0 
-                if order > 4:
-                    initial_values[6] = 0
-                if order > 5:
-                    initial_values[7] = 0 
+                initial_values[0] = 1.5
             else:
                 initial_values[0] = 1
-                initial_values[1] = 0.5*initial_values[0]
+            if start < position < end:
+                initial_values[1] = (position+start)/range_factor*initial_values[0]
                 if order > 0:
-                    initial_values[2] = 0 
+                    initial_values[2] = -0.5*(position+start)/range_factor*initial_values[0]
                 if order > 1:
-                    initial_values[3] = 0 
+                    initial_values[3] = 0.5*(position+start)/range_factor*initial_values[0]
                 if order > 2:
-                    initial_values[4] = 0 
+                    initial_values[4] = 0.5*(position+start)/range_factor*initial_values[0]
                 if order > 3:
-                    initial_values[5] = 0 
+                    initial_values[5] = -0.5*(position+start)/range_factor*initial_values[0]
                 if order > 4:
-                    initial_values[6] = 0 
+                    initial_values[6] = -0.5*(position+start)/range_factor*initial_values[0]
                 if order > 5:
-                    initial_values[7] = 0
+                    initial_values[7] = 0.5*(position+start)/range_factor*initial_values[0]
         elif initial_condition == 'smooth_wave_smallHeightGradient':
-            initial_values[0] = 1 + 0.5*np.exp(-3*position**2)
-            initial_values[1] = 1.0*initial_values[0]
-            if order > 0:
-                initial_values[2] = 1.0 
-            if order > 1:
-                initial_values[3] = 1.0 
-            if order > 2:
-                initial_values[4] = 1.0 
-            if order > 3:
-                initial_values[5] = 1.0 
-            if order > 4:
-                initial_values[6] = 1.0 
-            if order > 5:
-                initial_values[7] = 1.0  
+            initial_values[0] = 1 + np.exp(-10*(position+0.1)**2)
+            if start < position < end:
+                initial_values[1] = (position-start)/range_factor*initial_values[0]*mag
+                if order > 0:
+                    initial_values[2] = -0.5*initial_values[1]*0
+                if order > 1:
+                    initial_values[3] = 0.5*initial_values[1]*0
+                if order > 2:
+                    initial_values[4] = 0.5*initial_values[1]*0
+                if order > 3:
+                    initial_values[5] = -0.5*initial_values[1]*0
+                if order > 4:
+                    initial_values[6] = -0.5*initial_values[1]*0
+                if order > 5:
+                    initial_values[7] = 0.5*initial_values[1]*0
         return initial_values
     
     def compute_number_of_variables(self,
@@ -3922,8 +4083,8 @@ class HermiteMomentEquations(PDE):
         hyperbolic : boolean
             true if hyperbolic, false if not hyperbolic
         linear source : boolean
-            whether the source term can be writtn as a constantmatrix-vector multiplication
-            true if the source term can be writtn as a constantmatrix-vector multiplication, false if not
+            whether the source term can be written as a constantmatrix-vector multiplication
+            true if the source term can be written as a constantmatrix-vector multiplication, false if not
         exact_source_computation : boolean
             whether the source term is computed exactly
             true if the source term is computed exactly, false if not
@@ -3944,9 +4105,9 @@ class HermiteMomentEquations(PDE):
         theta = values[2]
         if order == 0:
             print("The order should be greater than or equal to 2!")
-        if order == 1:
+        elif order == 1:
             print("The order should be greater than or equal to 2!")
-        if order == 2:
+        elif order == 2:
             A[0][0] = u
             A[0][1] = rho
             A[1][0] = theta/rho
@@ -3954,7 +4115,7 @@ class HermiteMomentEquations(PDE):
             A[1][2] = 1
             A[2][1] = 2*theta
             A[2][2] = u
-        if order == 3:
+        elif order == 3:
             f3 = values[3]
 
             A[0][0] = u
@@ -3971,7 +4132,7 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[3][1] = 0
                 A[3][2] = (theta*rho)/2.
-        if order == 4:
+        elif order == 4:
             f3 = values[3]
             f4 = values[4]
 
@@ -3996,7 +4157,7 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[4][1] = 0
                 A[4][2] = -f3
-        if order == 5:
+        elif order == 5:
             f3 = values[3]
             f4 = values[4]
             f5 = values[5]
@@ -4029,7 +4190,7 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[5][1] = 0
                 A[5][2] = -f4
-        if order == 6:
+        elif order == 6:
             f3 = values[3]
             f4 = values[4]
             f5 = values[5]
@@ -4071,7 +4232,7 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[6][1] = 0
                 A[6][2] = (theta*f3)/2. - f5
-        if order == 7:
+        elif order == 7:
             f3 = values[3]
             f4 = values[4]
             f5 = values[5]
@@ -4120,7 +4281,7 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[7][1] = 0
                 A[7][2] = (theta*f4)/2. - f6
-        if order == 8:
+        elif order == 8:
             f3 = values[3]
             f4 = values[4]
             f5 = values[5]
@@ -4177,7 +4338,7 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[8][1] = 0
                 A[8][2] = (theta*f5)/2. - f7
-        if order == 9:
+        elif order == 9:
             f3 = values[3]
             f4 = values[4]
             f5 = values[5]
@@ -4242,7 +4403,7 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[9][1] = 0
                 A[9][2] = (theta*f6)/2. - f8
-        if order == 10:
+        elif order == 10:
             f3 = values[3]
             f4 = values[4]
             f5 = values[5]
@@ -4315,7 +4476,1673 @@ class HermiteMomentEquations(PDE):
             if self.hyperbolic:
                 A[10][1] = 0
                 A[10][2] = (theta*f7)/2. - f9
+        elif order == 11:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+            A[9][10] = 10
+            A[10][0] = -((theta*f9)/rho)
+            A[10][1] = 11*f10
+            A[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A[10][3] = (-3*f8)/rho
+            A[10][9] = theta
+            A[10][10] = u
+            A[10][11] = 11
+            A[11][0] = -((theta*f10)/rho)
+            A[11][1] = 12*f11
+            A[11][2] = (theta*f8)/2. + 5*f10
+            A[11][3] = (-3*f9)/rho
+            A[11][10] = theta
+            A[11][11] = u
+
+            if self.hyperbolic: 
+                A[11][1] = 0
+                A[11][2] = (theta*f8)/2. - f10
+        elif order == 12:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][4] = 0
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+            A[9][10] = 10
+            A[10][0] = -((theta*f9)/rho)
+            A[10][1] = 11*f10
+            A[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A[10][3] = (-3*f8)/rho
+            A[10][9] = theta
+            A[10][10] = u
+            A[10][11] = 11
+            A[11][0] = -((theta*f10)/rho)
+            A[11][1] = 12*f11
+            A[11][2] = (theta*f8)/2. + 5*f10
+            A[11][3] = (-3*f9)/rho
+            A[11][10] = theta
+            A[11][11] = u
+            A[11][12] = 12
+            A[12][0] = -((theta*f11)/rho)
+            A[12][1] = 13*f12
+            A[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A[12][3] = (-3*f10)/rho
+            A[12][11] = theta
+            A[12][12] = u
+
+            if self.hyperbolic:  
+                A[12][1] = 0
+                A[12][2] = (theta*f9)/2. - f11
+        elif order == 13:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][4] = 0
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+            A[9][10] = 10
+            A[10][0] = -((theta*f9)/rho)
+            A[10][1] = 11*f10
+            A[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A[10][3] = (-3*f8)/rho
+            A[10][9] = theta
+            A[10][10] = u
+            A[10][11] = 11
+            A[11][0] = -((theta*f10)/rho)
+            A[11][1] = 12*f11
+            A[11][2] = (theta*f8)/2. + 5*f10
+            A[11][3] = (-3*f9)/rho
+            A[11][10] = theta
+            A[11][11] = u
+            A[11][12] = 12
+            A[12][0] = -((theta*f11)/rho)
+            A[12][1] = 13*f12
+            A[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A[12][3] = (-3*f10)/rho
+            A[12][11] = theta
+            A[12][12] = u
+            A[12][13] = 13
+            A[13][0] = -((theta*f12)/rho)
+            A[13][1] = 14*f13
+            A[13][2] = (theta*f10)/2. + 6*f12
+            A[13][3] = (-3*f11)/rho
+            A[13][12] = theta
+            A[13][13] = u
+
+            if self.hyperbolic:
+                A[13][1] = 0
+                A[13][2] = (theta*f10)/2. - f12  
+        elif order == 14:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+            f14 = values[14]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+            A[9][10] = 10
+            A[10][0] = -((theta*f9)/rho)
+            A[10][1] = 11*f10
+            A[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A[10][3] = (-3*f8)/rho
+            A[10][9] = theta
+            A[10][10] = u
+            A[10][11] = 11
+            A[11][0] = -((theta*f10)/rho)
+            A[11][1] = 12*f11
+            A[11][2] = (theta*f8)/2. + 5*f10
+            A[11][3] = (-3*f9)/rho
+            A[11][10] = theta
+            A[11][11] = u
+            A[11][12] = 12
+            A[12][0] = -((theta*f11)/rho)
+            A[12][1] = 13*f12
+            A[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A[12][3] = (-3*f10)/rho
+            A[12][11] = theta
+            A[12][12] = u
+            A[12][13] = 13
+            A[13][0] = -((theta*f12)/rho)
+            A[13][1] = 14*f13
+            A[13][2] = (theta*f10)/2. + 6*f12
+            A[13][3] = (-3*f11)/rho
+            A[13][12] = theta
+            A[13][13] = u
+            A[13][14] = 14
+            A[14][0] = -((theta*f13)/rho)
+            A[14][1] = 15*f14
+            A[14][2] = (theta*f11)/2. + (13*f13)/2.
+            A[14][3] = (-3*f12)/rho
+            A[14][13] = theta
+            A[14][14] = u
+
+            if self.hyperbolic: 
+                A[14][1] = 0
+                A[14][2] = (theta*f11)/2. - f13 
+        elif order == 15:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+            f14 = values[14]
+            f15 = values[15]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+            A[9][10] = 10
+            A[10][0] = -((theta*f9)/rho)
+            A[10][1] = 11*f10
+            A[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A[10][3] = (-3*f8)/rho
+            A[10][9] = theta
+            A[10][10] = u
+            A[10][11] = 11
+            A[11][0] = -((theta*f10)/rho)
+            A[11][1] = 12*f11
+            A[11][2] = (theta*f8)/2. + 5*f10
+            A[11][3] = (-3*f9)/rho
+            A[11][10] = theta
+            A[11][11] = u
+            A[11][12] = 12
+            A[12][0] = -((theta*f11)/rho)
+            A[12][1] = 13*f12
+            A[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A[12][3] = (-3*f10)/rho
+            A[12][11] = theta
+            A[12][12] = u
+            A[12][13] = 13
+            A[13][0] = -((theta*f12)/rho)
+            A[13][1] = 14*f13
+            A[13][2] = (theta*f10)/2. + 6*f12
+            A[13][3] = (-3*f11)/rho
+            A[13][12] = theta
+            A[13][13] = u
+            A[13][14] = 14
+            A[14][0] = -((theta*f13)/rho)
+            A[14][1] = 15*f14
+            A[14][2] = (theta*f11)/2. + (13*f13)/2.
+            A[14][3] = (-3*f12)/rho
+            A[14][13] = theta
+            A[14][14] = u
+            A[14][15] = 15
+            A[15][0] = -((theta*f14)/rho)
+            A[15][1] = 16*f15
+            A[15][2] = (theta*f12)/2. + 7*f14
+            A[15][3] = (-3*f13)/rho
+            A[15][14] = theta
+            A[15][15] = u
+
+            if self.hyperbolic:  
+                A[15][1] = 0
+                A[15][2] = (theta*f12)/2. - f14
+        elif order == 16:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+            f14 = values[14]
+            f15 = values[15]
+            f16 = values[16]
+
+            A[0][0] = u
+            A[0][1] = rho
+            A[1][0] = theta/rho
+            A[1][1] = u
+            A[1][2] = 1
+            A[2][1] = 2*theta
+            A[2][2] = u
+            A[2][3] = 6/rho
+            A[3][1] = 4*f3
+            A[3][2] = (theta*rho)/2.
+            A[3][3] = u
+            A[3][4] = 4
+            A[4][0] = -((theta*f3)/rho)
+            A[4][1] = 5*f4
+            A[4][2] = (3*f3)/2.
+            A[4][3] = theta
+            A[4][4] = u
+            A[4][5] = 5
+            A[5][0] = -((theta*f4)/rho)
+            A[5][1] = 6*f5
+            A[5][2] = 2*f4
+            A[5][3] = (-3*f3)/rho
+            A[5][4] = theta
+            A[5][5] = u
+            A[5][6] = 6
+            A[6][0] = -((theta*f5)/rho)
+            A[6][1] = 7*f6
+            A[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A[6][3] = (-3*f4)/rho
+            A[6][5] = theta
+            A[6][6] = u
+            A[6][7] = 7
+            A[7][0] = -((theta*f6)/rho)
+            A[7][1] = 8*f7
+            A[7][2] = (theta*f4)/2. + 3*f6
+            A[7][3] = (-3*f5)/rho
+            A[7][6] = theta
+            A[7][7] = u
+            A[7][8] = 8
+            A[8][0] = -((theta*f7)/rho)
+            A[8][1] = 9*f8
+            A[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A[8][3] = (-3*f6)/rho
+            A[8][7] = theta
+            A[8][8] = u
+            A[8][9] = 9
+            A[9][0] = -((theta*f8)/rho)
+            A[9][1] = 10*f9
+            A[9][2] = (theta*f6)/2. + 4*f8
+            A[9][3] = (-3*f7)/rho
+            A[9][8] = theta
+            A[9][9] = u
+            A[9][10] = 10
+            A[10][0] = -((theta*f9)/rho)
+            A[10][1] = 11*f10
+            A[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A[10][3] = (-3*f8)/rho
+            A[10][9] = theta
+            A[10][10] = u
+            A[10][11] = 11
+            A[11][0] = -((theta*f10)/rho)
+            A[11][1] = 12*f11
+            A[11][2] = (theta*f8)/2. + 5*f10
+            A[11][3] = (-3*f9)/rho
+            A[11][10] = theta
+            A[11][11] = u
+            A[11][12] = 12
+            A[12][0] = -((theta*f11)/rho)
+            A[12][1] = 13*f12
+            A[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A[12][3] = (-3*f10)/rho
+            A[12][11] = theta
+            A[12][12] = u
+            A[12][13] = 13
+            A[13][0] = -((theta*f12)/rho)
+            A[13][1] = 14*f13
+            A[13][2] = (theta*f10)/2. + 6*f12
+            A[13][3] = (-3*f11)/rho
+            A[13][12] = theta
+            A[13][13] = u
+            A[13][14] = 14
+            A[14][0] = -((theta*f13)/rho)
+            A[14][1] = 15*f14
+            A[14][2] = (theta*f11)/2. + (13*f13)/2.
+            A[14][3] = (-3*f12)/rho
+            A[14][13] = theta
+            A[14][14] = u
+            A[14][15] = 15
+            A[15][0] = -((theta*f14)/rho)
+            A[15][1] = 16*f15
+            A[15][2] = (theta*f12)/2. + 7*f14
+            A[15][3] = (-3*f13)/rho
+            A[15][14] = theta
+            A[15][15] = u
+            A[15][16] = 16
+            A[16][0] = -((theta*f15)/rho)
+            A[16][1] = 17*f16
+            A[16][2] = (theta*f13)/2. + (15*f15)/2.
+            A[16][3] = (-3*f14)/rho
+            A[16][15] = theta
+            A[16][16] = u
+
+            if self.hyperbolic:  
+                A[16][1] = 0
+                A[16][2] = (theta*f13)/2. - f15
+        elif order > 16:
+            print("This order is not implemented yet!")      
+
         return A
+
+    def compute_system_matrix_augmented(self,
+                                        order: int,
+                                        values: np.ndarray) -> np.ndarray:
+
+        A_aug = np.zeros((self.compute_number_of_variables(order)+1,self.compute_number_of_variables(order)+1))
+
+        rho = values[0]
+        u = values[1]
+        theta = values[2]
+        if order == 0:
+            print("The order should be greater than or equal to 2!")
+        elif order == 1:
+            print("The order should be greater than or equal to 2!")
+        elif order == 2:
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[3][2] = (theta*rho)/2.
+        elif order == 3:
+            f3 = values[3]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            if self.hyperbolic:
+                A_aug[3][1] = 0
+                A_aug[3][2] = (theta*rho)/2.
+
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+        elif order == 4:
+            f3 = values[3]
+            f4 = values[4]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+
+            if self.hyperbolic:
+                A_aug[4][1] = 0
+                A_aug[4][2] = -f3
+
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+        elif order == 5:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+
+            if self.hyperbolic:
+                A_aug[5][1] = 0
+                A_aug[5][2] = -f4
+
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+        elif order == 6:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[4][6] = 0
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+
+            if self.hyperbolic:
+                A_aug[6][1] = 0
+                A_aug[6][2] = (theta*f3)/2. - f5
+
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+        elif order == 7:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+
+            if self.hyperbolic:
+                A_aug[7][1] = 0
+                A_aug[7][2] = (theta*f4)/2. - f6
+
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+        elif order == 8:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+
+            if self.hyperbolic:
+                A_aug[8][1] = 0
+                A_aug[8][2] = (theta*f5)/2. - f7
+
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+        elif order == 9:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+
+            if self.hyperbolic:
+                A_aug[9][1] = 0
+                A_aug[9][2] = (theta*f6)/2. - f8
+
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+        elif order == 10:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+            A_aug[9][10] = 10
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][1] = 11*f10
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+            A_aug[10][10] = u
+
+            if self.hyperbolic:
+                A_aug[10][1] = 0
+                A_aug[10][2] = (theta*f7)/2. - f9
+
+            A_aug[11][0] = -((theta*f10)/rho)
+            A_aug[11][2] = (theta*f8)/2. + 5*f10
+            A_aug[11][3] = (-3*f9)/rho
+            A_aug[11][10] = theta
+        elif order == 11:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+            A_aug[9][10] = 10
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][1] = 11*f10
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+            A_aug[10][10] = u
+            A_aug[10][11] = 11
+            A_aug[11][0] = -((theta*f10)/rho)
+            A_aug[11][1] = 12*f11
+            A_aug[11][2] = (theta*f8)/2. + 5*f10
+            A_aug[11][3] = (-3*f9)/rho
+            A_aug[11][10] = theta
+            A_aug[11][11] = u
+
+            if self.hyperbolic: 
+                A_aug[11][1] = 0
+                A_aug[11][2] = (theta*f8)/2. - f10
+
+            A_aug[12][0] = -((theta*f11)/rho)
+            A_aug[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A_aug[12][3] = (-3*f10)/rho
+            A_aug[12][11] = theta
+        elif order == 12:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][4] = 0
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+            A_aug[9][10] = 10
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][1] = 11*f10
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+            A_aug[10][10] = u
+            A_aug[10][11] = 11
+            A_aug[11][0] = -((theta*f10)/rho)
+            A_aug[11][1] = 12*f11
+            A_aug[11][2] = (theta*f8)/2. + 5*f10
+            A_aug[11][3] = (-3*f9)/rho
+            A_aug[11][10] = theta
+            A_aug[11][11] = u
+            A_aug[11][12] = 12
+            A_aug[12][0] = -((theta*f11)/rho)
+            A_aug[12][1] = 13*f12
+            A_aug[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A_aug[12][3] = (-3*f10)/rho
+            A_aug[12][11] = theta
+            A_aug[12][12] = u
+
+            if self.hyperbolic:  
+                A_aug[12][1] = 0
+                A_aug[12][2] = (theta*f9)/2. - f11
+
+            A_aug[13][0] = -((theta*f12)/rho)
+            A_aug[13][2] = (theta*f10)/2. + 6*f12
+            A_aug[13][3] = (-3*f11)/rho
+            A_aug[13][12] = theta
+        elif order == 13:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][4] = 0
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+            A_aug[9][10] = 10
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][1] = 11*f10
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+            A_aug[10][10] = u
+            A_aug[10][11] = 11
+            A_aug[11][0] = -((theta*f10)/rho)
+            A_aug[11][1] = 12*f11
+            A_aug[11][2] = (theta*f8)/2. + 5*f10
+            A_aug[11][3] = (-3*f9)/rho
+            A_aug[11][10] = theta
+            A_aug[11][11] = u
+            A_aug[11][12] = 12
+            A_aug[12][0] = -((theta*f11)/rho)
+            A_aug[12][1] = 13*f12
+            A_aug[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A_aug[12][3] = (-3*f10)/rho
+            A_aug[12][11] = theta
+            A_aug[12][12] = u
+            A_aug[12][13] = 13
+            A_aug[13][0] = -((theta*f12)/rho)
+            A_aug[13][1] = 14*f13
+            A_aug[13][2] = (theta*f10)/2. + 6*f12
+            A_aug[13][3] = (-3*f11)/rho
+            A_aug[13][12] = theta
+            A_aug[13][13] = u
+
+            if self.hyperbolic:
+                A_aug[13][1] = 0
+                A_aug[13][2] = (theta*f10)/2. - f12  
+
+            A_aug[14][0] = -((theta*f13)/rho)
+            A_aug[14][2] = (theta*f11)/2. + (13*f13)/2.
+            A_aug[14][3] = (-3*f12)/rho
+            A_aug[14][13] = theta
+        elif order == 14:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+            f14 = values[14]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+            A_aug[9][10] = 10
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][1] = 11*f10
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+            A_aug[10][10] = u
+            A_aug[10][11] = 11
+            A_aug[11][0] = -((theta*f10)/rho)
+            A_aug[11][1] = 12*f11
+            A_aug[11][2] = (theta*f8)/2. + 5*f10
+            A_aug[11][3] = (-3*f9)/rho
+            A_aug[11][10] = theta
+            A_aug[11][11] = u
+            A_aug[11][12] = 12
+            A_aug[12][0] = -((theta*f11)/rho)
+            A_aug[12][1] = 13*f12
+            A_aug[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A_aug[12][3] = (-3*f10)/rho
+            A_aug[12][11] = theta
+            A_aug[12][12] = u
+            A_aug[12][13] = 13
+            A_aug[13][0] = -((theta*f12)/rho)
+            A_aug[13][1] = 14*f13
+            A_aug[13][2] = (theta*f10)/2. + 6*f12
+            A_aug[13][3] = (-3*f11)/rho
+            A_aug[13][12] = theta
+            A_aug[13][13] = u
+            A_aug[13][14] = 14
+            A_aug[14][0] = -((theta*f13)/rho)
+            A_aug[14][1] = 15*f14
+            A_aug[14][2] = (theta*f11)/2. + (13*f13)/2.
+            A_aug[14][3] = (-3*f12)/rho
+            A_aug[14][13] = theta
+            A_aug[14][14] = u
+
+            if self.hyperbolic: 
+                A_aug[14][1] = 0
+                A_aug[14][2] = (theta*f11)/2. - f13 
+
+            A_aug[15][0] = -((theta*f14)/rho)
+            A_aug[15][2] = (theta*f12)/2. + 7*f14
+            A_aug[15][3] = (-3*f13)/rho
+            A_aug[15][14] = theta
+        elif order == 15:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+            f14 = values[14]
+            f15 = values[15]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+            A_aug[9][10] = 10
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][1] = 11*f10
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+            A_aug[10][10] = u
+            A_aug[10][11] = 11
+            A_aug[11][0] = -((theta*f10)/rho)
+            A_aug[11][1] = 12*f11
+            A_aug[11][2] = (theta*f8)/2. + 5*f10
+            A_aug[11][3] = (-3*f9)/rho
+            A_aug[11][10] = theta
+            A_aug[11][11] = u
+            A_aug[11][12] = 12
+            A_aug[12][0] = -((theta*f11)/rho)
+            A_aug[12][1] = 13*f12
+            A_aug[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A_aug[12][3] = (-3*f10)/rho
+            A_aug[12][11] = theta
+            A_aug[12][12] = u
+            A_aug[12][13] = 13
+            A_aug[13][0] = -((theta*f12)/rho)
+            A_aug[13][1] = 14*f13
+            A_aug[13][2] = (theta*f10)/2. + 6*f12
+            A_aug[13][3] = (-3*f11)/rho
+            A_aug[13][12] = theta
+            A_aug[13][13] = u
+            A_aug[13][14] = 14
+            A_aug[14][0] = -((theta*f13)/rho)
+            A_aug[14][1] = 15*f14
+            A_aug[14][2] = (theta*f11)/2. + (13*f13)/2.
+            A_aug[14][3] = (-3*f12)/rho
+            A_aug[14][13] = theta
+            A_aug[14][14] = u
+            A_aug[14][15] = 15
+            A_aug[15][0] = -((theta*f14)/rho)
+            A_aug[15][1] = 16*f15
+            A_aug[15][2] = (theta*f12)/2. + 7*f14
+            A_aug[15][3] = (-3*f13)/rho
+            A_aug[15][14] = theta
+            A_aug[15][15] = u
+
+            if self.hyperbolic:  
+                A_aug[15][1] = 0
+                A_aug[15][2] = (theta*f12)/2. - f14
+        elif order == 16:
+            f3 = values[3]
+            f4 = values[4]
+            f5 = values[5]
+            f6 = values[6]
+            f7 = values[7]
+            f8 = values[8]
+            f9 = values[9]
+            f10 = values[10]
+            f11 = values[11]
+            f12 = values[12]
+            f13 = values[13]
+            f14 = values[14]
+            f15 = values[15]
+            f16 = values[16]
+
+            A_aug[0][0] = u
+            A_aug[0][1] = rho
+            A_aug[1][0] = theta/rho
+            A_aug[1][1] = u
+            A_aug[1][2] = 1
+            A_aug[2][1] = 2*theta
+            A_aug[2][2] = u
+            A_aug[2][3] = 6/rho
+            A_aug[3][1] = 4*f3
+            A_aug[3][2] = (theta*rho)/2.
+            A_aug[3][3] = u
+            A_aug[3][4] = 4
+            A_aug[4][0] = -((theta*f3)/rho)
+            A_aug[4][1] = 5*f4
+            A_aug[4][2] = (3*f3)/2.
+            A_aug[4][3] = theta
+            A_aug[4][4] = u
+            A_aug[4][5] = 5
+            A_aug[5][0] = -((theta*f4)/rho)
+            A_aug[5][1] = 6*f5
+            A_aug[5][2] = 2*f4
+            A_aug[5][3] = (-3*f3)/rho
+            A_aug[5][4] = theta
+            A_aug[5][5] = u
+            A_aug[5][6] = 6
+            A_aug[6][0] = -((theta*f5)/rho)
+            A_aug[6][1] = 7*f6
+            A_aug[6][2] = (theta*f3)/2. + (5*f5)/2.
+            A_aug[6][3] = (-3*f4)/rho
+            A_aug[6][5] = theta
+            A_aug[6][6] = u
+            A_aug[6][7] = 7
+            A_aug[7][0] = -((theta*f6)/rho)
+            A_aug[7][1] = 8*f7
+            A_aug[7][2] = (theta*f4)/2. + 3*f6
+            A_aug[7][3] = (-3*f5)/rho
+            A_aug[7][6] = theta
+            A_aug[7][7] = u
+            A_aug[7][8] = 8
+            A_aug[8][0] = -((theta*f7)/rho)
+            A_aug[8][1] = 9*f8
+            A_aug[8][2] = (theta*f5)/2. + (7*f7)/2.
+            A_aug[8][3] = (-3*f6)/rho
+            A_aug[8][7] = theta
+            A_aug[8][8] = u
+            A_aug[8][9] = 9
+            A_aug[9][0] = -((theta*f8)/rho)
+            A_aug[9][1] = 10*f9
+            A_aug[9][2] = (theta*f6)/2. + 4*f8
+            A_aug[9][3] = (-3*f7)/rho
+            A_aug[9][8] = theta
+            A_aug[9][9] = u
+            A_aug[9][10] = 10
+            A_aug[10][0] = -((theta*f9)/rho)
+            A_aug[10][1] = 11*f10
+            A_aug[10][2] = (theta*f7)/2. + (9*f9)/2.
+            A_aug[10][3] = (-3*f8)/rho
+            A_aug[10][9] = theta
+            A_aug[10][10] = u
+            A_aug[10][11] = 11
+            A_aug[11][0] = -((theta*f10)/rho)
+            A_aug[11][1] = 12*f11
+            A_aug[11][2] = (theta*f8)/2. + 5*f10
+            A_aug[11][3] = (-3*f9)/rho
+            A_aug[11][10] = theta
+            A_aug[11][11] = u
+            A_aug[11][12] = 12
+            A_aug[12][0] = -((theta*f11)/rho)
+            A_aug[12][1] = 13*f12
+            A_aug[12][2] = (theta*f9)/2. + (11*f11)/2.
+            A_aug[12][3] = (-3*f10)/rho
+            A_aug[12][11] = theta
+            A_aug[12][12] = u
+            A_aug[12][13] = 13
+            A_aug[13][0] = -((theta*f12)/rho)
+            A_aug[13][1] = 14*f13
+            A_aug[13][2] = (theta*f10)/2. + 6*f12
+            A_aug[13][3] = (-3*f11)/rho
+            A_aug[13][12] = theta
+            A_aug[13][13] = u
+            A_aug[13][14] = 14
+            A_aug[14][0] = -((theta*f13)/rho)
+            A_aug[14][1] = 15*f14
+            A_aug[14][2] = (theta*f11)/2. + (13*f13)/2.
+            A_aug[14][3] = (-3*f12)/rho
+            A_aug[14][13] = theta
+            A_aug[14][14] = u
+            A_aug[14][15] = 15
+            A_aug[15][0] = -((theta*f14)/rho)
+            A_aug[15][1] = 16*f15
+            A_aug[15][2] = (theta*f12)/2. + 7*f14
+            A_aug[15][3] = (-3*f13)/rho
+            A_aug[15][14] = theta
+            A_aug[15][15] = u
+            A_aug[15][16] = 16
+            A_aug[16][0] = -((theta*f15)/rho)
+            A_aug[16][1] = 17*f16
+            A_aug[16][2] = (theta*f13)/2. + (15*f15)/2.
+            A_aug[16][3] = (-3*f14)/rho
+            A_aug[16][15] = theta
+            A_aug[16][16] = u
+
+            if self.hyperbolic:  
+                A_aug[16][1] = 0
+                A_aug[16][2] = (theta*f13)/2. - f15   
+        elif order > 16:
+            print('This order is not implemented yet!')
+
+        return A_aug
 
     def compute_source_term(self,
                             order: int,
@@ -4329,13 +6156,29 @@ class HermiteMomentEquations(PDE):
         else:
             S = np.zeros(self.compute_number_of_variables(order)) 
             for i in range(3,self.compute_number_of_variables(order)+1):
-                S[i] = -1.0/self.relaxation_time*values[i]
+                S[i] = -1.0/(self.relaxation_time/values[0]*values[i])
 
         return S
 
+    def compute_source_term_augmented(self,
+                            order: int,
+                            values: np.ndarray,
+                            delta_t: float) -> np.ndarray:
+        
+        if self.exact_source_computation:
+            S_aug = self._compute_source_exact(order+1,values,delta_t)
+        elif self.linear_source:
+            S_aug = self._compute_source_matrix_inverse(order+1,values,delta_t)
+        else:
+            S_aug = np.zeros(self.compute_number_of_variables(order)) 
+            for i in range(3,self.compute_number_of_variables(order)+1):
+                S_aug[i] = -1.0/self.relaxation_time*values[i]
+
+        return S_aug
+
     def _compute_source_exact(self,
                                order: int,
-                               initial_values: np.ndarray,
+                               values: np.ndarray,
                                delta_t: float) -> np.ndarray:
         """
         Exactly solves the ordinary differential equation w'(t) = S_matrix.w(t), with initial condition w^n
@@ -4345,7 +6188,7 @@ class HermiteMomentEquations(PDE):
         order : integer
             order of the model
         values : numpy array
-            values of the variables
+            values of the variables before the source term step
         delta_t : float
             current time step
         
@@ -4357,26 +6200,47 @@ class HermiteMomentEquations(PDE):
         """
 
         S_exact = np.zeros(self.compute_number_of_variables(order))
-        S_exact[0] = initial_values[0]
-        S_exact[1] = initial_values[1]
-        S_exact[2] = initial_values[2]
+        S_exact[0] = values[0]
+        S_exact[1] = values[1]
+        S_exact[2] = values[2]
         for i in range(3,self.compute_number_of_variables(order)):
-            S_exact[i] = initial_values[i]*np.exp(-1.0/self.relaxation_time*delta_t)
+            S_exact[i] = values[i]*np.exp(-1.0/(self.relaxation_time/values[0])*delta_t)
 
         return S_exact
+
+    def _compute_source_exact_augmented(self,
+                               order: int,
+                               values: np.ndarray,
+                               delta_t: float) -> np.ndarray:
+        if order < 15:
+            order = order+1
+
+        S_exact_augmented = np.zeros(self.compute_number_of_variables(order))
+
+        S_exact_augmented[0] = values[0]
+        S_exact_augmented[1] = values[1]
+        S_exact_augmented[2] = values[2]
+        for i in range(3,self.compute_number_of_variables(order)):
+            S_exact_augmented[i] = values[i]*np.exp(-1.0/(self.relaxation_time/values[0])*delta_t)
+
+        return S_exact_augmented
 
     def _compute_source_matrix_inverse(self,
                                       order: int,
                                       values: np.ndarray,
-                                      delta_t,
-                                      g = 1) -> np.ndarray:
+                                      delta_t) -> np.ndarray:
         pass
-    
+
+    def _compute_source_matrix_inverse_augmented(self,
+                                      order: int,
+                                      values: np.ndarray,
+                                      delta_t) -> np.ndarray:
+        pass
+
     def compute_source_term_lastentry(self,
                             order: int,
                             values: np.ndarray,
-                            last_moment_zero: bool,
-                            g = 1) -> np.ndarray:
+                            last_moment_zero: bool) -> np.ndarray:
         
         pass
 
@@ -4429,7 +6293,7 @@ class HermiteMomentEquations(PDE):
         elif initial_condition == 'shockTube_noVelocity':
             x0 = 0
             if position < x0:
-                initial_values[0] = 2
+                initial_values[0] = 7
                 initial_values[1] = 0
                 initial_values[2] = 1 
                 if order > 2:
@@ -4469,7 +6333,7 @@ class HermiteMomentEquations(PDE):
                 if order > 9:
                     initial_values[10] = 0
         elif initial_condition == 'smooth_densityWave_noVelocity':
-            initial_values[0] = 1.0 + 2*np.exp(-2*position**2)
+            initial_values[0] = 1.0 + np.exp(-2*position**2)
             initial_values[1] = 0
             initial_values[2] = 1
             if order > 2:
@@ -4619,13 +6483,12 @@ class HermiteMomentEquations(PDE):
                     initial_values[9] = 0
                 if order > 9:
                     initial_values[10] = 0
-        elif initial_condition == 'smooth_and_dam':
-            x0 = 0.5
-            x1 = -0.25
-            x2 = -0.75
+        elif initial_condition == 'smooth_and_shockTube':
+            x0 = 0.25
+            x1 = -1
             if position > x1:
-                initial_values[0] = 1 + 2*np.exp(-20*(position-x0)**2)
-                initial_values[1] = 0
+                initial_values[0] = 1 + np.exp(-5*(position-x0)**2)
+                initial_values[1] = 0.5
                 initial_values[2] = 1
                 if order > 3:
                     initial_values[3] = 0
@@ -4642,42 +6505,23 @@ class HermiteMomentEquations(PDE):
                 if order > 9:
                     initial_values[10] = 0
             else:
-                if x2 < position < x1:
-                    initial_values[0] = 3
-                    initial_values[1] = 0
-                    initial_values[2] = 1
-                    if order > 3:
-                        initial_values[3] = 0
-                    if order > 4:
-                        initial_values[4] = 0 
-                    if order > 5:
-                        initial_values[5] = 0 
-                    if order > 6:
-                        initial_values[6] = 0 
-                    if order > 7:
-                        initial_values[7] = 0 
-                    if order > 8:
-                        initial_values[8] = 0 
-                    if order > 9:
-                        initial_values[10] = 0
-                else:
-                    initial_values[0] = 1
-                    initial_values[1] = 0
-                    initial_values[2] = 1
-                    if order > 3:
-                        initial_values[3] = 0
-                    if order > 4:
-                        initial_values[4] = 0 
-                    if order > 5:
-                        initial_values[5] = 0 
-                    if order > 6:
-                        initial_values[6] = 0 
-                    if order > 7:
-                        initial_values[7] = 0 
-                    if order > 8:
-                        initial_values[8] = 0   
-                    if order > 9:
-                        initial_values[10] = 0                  
+                initial_values[0] = 2
+                initial_values[1] = 0.5
+                initial_values[2] = 1
+                if order > 3:
+                    initial_values[3] = 0
+                if order > 4:
+                    initial_values[4] = 0 
+                if order > 5:
+                    initial_values[5] = 0 
+                if order > 6:
+                    initial_values[6] = 0 
+                if order > 7:
+                    initial_values[7] = 0 
+                if order > 8:
+                    initial_values[8] = 0 
+                if order > 9:
+                    initial_values[10] = 0                
         elif initial_condition == 'smooth_expit_rightgoing':
             initial_values[0] = 2.0 - 1/(1+np.exp(-15*position))
             initial_values[1] = 0
@@ -4718,6 +6562,26 @@ class HermiteMomentEquations(PDE):
                 initial_values[9] = 0
             if order > 9:
                 initial_values[10] = 0.1   
+        elif initial_condition == 'smooth_densityWave_initialVelocity':
+            initial_values[0] = 1.0 + 0.5*np.exp(-10*position**2)
+            initial_values[1] = 0.5
+            initial_values[2] = 1
+            if order > 2:
+                initial_values[3] = 0
+            if order > 3:
+                initial_values[4] = 0
+            if order > 4:
+                initial_values[5] = 0 
+            if order > 5:
+                initial_values[6] = 0 
+            if order > 6:
+                initial_values[7] = 0 
+            if order > 7:
+                initial_values[8] = 0  
+            if order > 8:
+                initial_values[9] = 0
+            if order > 9:
+                initial_values[10] = 0
         return initial_values
     
     def compute_number_of_variables(self,
@@ -4728,7 +6592,9 @@ class HermiteMomentEquations(PDE):
     def compute_max_wavespeed(self,
                            order: int,
                            values: np.ndarray,
-                           max_hermite_roots = [1.73205,2.33441,2.85697,3,3.2426,3.75044,4.14455,4.51275,4.85946,5.188]) -> float:
+                           max_hermite_roots = [1.73205,2.33441,2.85697,3.2426,3.75044,4.14455,4.51275,
+                                                4.85946,5.188,5.5009,5.80017,6.08741,6.36395,
+                                                6.63088,6.88912]) -> float:
 
         max_wave_speed_plus = np.max(values[:,1]+np.sqrt(values[:,2])*max_hermite_roots[order-2])
         max_wave_speed_min = np.min(values[:,1]-np.sqrt(values[:,2])*max_hermite_roots[order-2])
@@ -4743,191 +6609,309 @@ class HermiteMomentEquations(PDE):
         data_matrix_primitive = data_matrix_convective
 
         return data_matrix_primitive 
+
+    def compute_breakdown_quantity_decrease(self,
+                                            value_central: np.ndarray, 
+                                            value_left: np.ndarray,
+                                            value_right: np.ndarray,
+                                            order: int) -> float:
+        
+        decrease_quantity = 0
     
-    def compute_breakdown_criteria_full(self,
-                                   values: np.ndarray,
-                                   n: int,
-                                   delta_x: float,
-                                   delta_t: float,
-                                   max_order: int,
-                                   orders_cellwise: list,
-                                   numbers_of_variables_cellwise: list,
-                                   dom_decomp_val_res1: np.ndarray,
-                                   dom_decomp_val_res2: np.ndarray,
-                                   tolerance_up_flow_gradient = 0.00001,
-                                   tolerance_down_last_moment = 0.00001) -> tuple[np.ndarray,np.ndarray]:       
-        """
-        computes the breakdown criteria for adaptive simulation
+        if order == 4:
+            decrease_quantity = 6/value_central[0]*(value_right[3]-value_left[3])
+        elif order == 5:
+            decrease_quantity = 4*value_central[3]*(value_right[1]-value_left[1])+4*(value_right[4]-value_left[4])
+            # decrease_quantity = 4*value_central[3]*(value_right[1]-value_left[1])
+        else:
+            decrease_quantity = (order-1)*(value_right[order-1]-value_left[order-1])+\
+                                (order-1)/2*(2*value_central[order-2]*(value_right[1]-value_left[1])+\
+                                value_central[order-3]*(value_right[2]-value_left[2]))
+            # decrease_quantity = (order-1)/2*(2*value_central[order-2]*(value_right[1]-value_left[1])+\
+            #                     value_central[order-3]*(value_right[2]-value_left[2]))
 
-        Parameters
-        ----------
-        values : list of numpy 1D arrays
-            the values of the variables in each mesh cell
-        delta_x : float
-            grid cell size
-        delta_t : float
-            current time step
-        max_order : integer
-            max order of the moment model
-        orders_cellwise : list of integers
-            the order in each cell
-        number_of_variables_cellwise : list of integers
-            the number of variables in each cell
-        dom_decomp_val_res1 : np.ndarray
-            value of res1 in each grid cell
-        dom_decomp_val_res2 : np.ndarray
-            value of res2 in each grid cell
-        tolerance_up_flow_gradient : float
-            threshold for increase-criterion related to the flow gradients
-        tolerance_down_last_moment : float
-            threshold for decrease-criterion related to the magnitude of the last moment
-        
-        Returns
-        -------
-        breakdown_estimators : np.ndarray
-            values of the breakdown estimators in each grid cell
-        breakdown_criterion_flags : np.ndarray
-            flags for increasing or reducing the order in each grid cell
-            this array is filled with the values of the changes in order in each grid cell
-        """
-        breakdown_criterion_flags = np.zeros(n,dtype=int)
-        breakdown_estimators = np.zeros((n,2))
+        return decrease_quantity
 
-        # print(np.abs((values[2,0] - values[0,0]))/(2*delta_x*max(0.1,np.abs(values[1,0]))))
-        for i in range(n):
-            loc_M = orders_cellwise[i+1]-1
-            breakdown_estimators[i,0] = max(np.abs(values[i+1,loc_M+1]),np.abs(values[i+1,loc_M]))
-            # breakdown_estimators[i,0] = np.sqrt(values[i+1,loc_M+1]**2+values[i+1,loc_M]**2)
-            # for j in range(numbers_of_variables_cellwise[i+1]):
-            #     # breakdown_estimators[i,1] += (max(np.abs((values[i+1,j] - values[i,j])),np.abs((values[i+2,j] - values[i+1,j])))/(delta_x))**2
-            #     breakdown_estimators[i,1] += (np.abs((values[i+2,j] - values[i,j]))/(2*delta_x))**2 
-            # j = 0
-            # breakdown_estimators[i,1] = (np.abs((values[i+2,j] - values[i,j]))/(2*delta_x*max(1,np.abs(values[i+1,j]))))**2
-            if loc_M == 2:
-                breakdown_estimators[i,1] = np.abs(delta_t/(4*delta_x)*values[i+1,0]*values[i+1,2]*(values[i+2,2]-values[i,2]))
-            elif loc_M == 3:
-                # breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
-                #                                    (\
-                #                                        values[i+1,3]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                #                                         +values[i+1,3]*(values[i+2,2]-values[i,2]))\
-                #                                         -values[i+1,2]*(values[i+2,3]-values[i,3]
-                #                                                         )
-                #                                         )
-                breakdown_estimators[i,1] = max(
-                    np.abs(delta_t/(2*delta_x)*\
-                                    (\
-                                        values[i+1,3]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                                        -3/2*values[i+1,3]*(values[i+2,2]-values[i,2]))\
-                                        -values[i+1,2]*(values[i+2,3]-values[i,3]
-                                                        )
-                                        ),
-                    np.abs(delta_t/(2*delta_x)*(3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])))
-                )
-            elif loc_M == 4:
-                # breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
-                #                                    (\
-                #                                        values[i+1,4]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                #                                         +values[i+1,4]*(values[i+2,2]-values[i,2]))\
-                #                                         +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                #                                         -values[i+1,2]*(values[i+2,4]-values[i,4]
-                #                                                         )
-                #                                         )
-                breakdown_estimators[i,1] = max(
-                                                np.abs(delta_t/(2*delta_x)*\
-                                                   (\
-                                                       values[i+1,4]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                                                        -2*values[i+1,4]*(values[i+2,2]-values[i,2]))\
-                                                        -values[i+1,2]*(values[i+2,4]-values[i,4]\
-                                                        +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])
-                                                                        )
-                                                        ),
-                                                np.abs(delta_t/(2*delta_x)*(1/2*values[i+1,2]*values[i+1,3])*(values[i+2,2]-values[i,2])\
-                                                       -3*values[i+1,4]/values[i+1,0]*(values[i+2,3]-values[i,3]))
-                ) 
-                breakdown_estimators[i,0] = max(
-                    delta_t/(2*delta_x)*np.abs(4*values[i+1,3]*(values[i+2,1]-values[i,1])\
-                                                +values[i+1,0]*values[i+1,2]/2*(values[i+2,2]-values[i,2])\
-                                                +values[i+1,1]*(values[i+2,3]-values[i,3])\
-                                                +4*(values[i+2,4]-values[i,4])),
-                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,3]/values[i+1,0]*(values[i+2,0]-values[i,0])\
-                                                -values[i+1,3]*(values[i+2,2]-values[i,2])\
-                                                +values[i+1,2]*(values[i+2,3]-values[i,3])\
-                                                +values[i+1,1]*(values[i+2,4]-values[i,4])),
-                    delta_t/(2*delta_x)*np.abs(6/values[i+1,0])
-                )                      
-            else:
-                # breakdown_estimators[i,1] = np.abs(delta_t/(2*delta_x)*\
-                #                                    (\
-                #                                        values[i+1,loc_M]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                #                                         -(values[i+1,2]*values[i+1,loc_M-2]/2-values[i+1,loc_M])*(values[i+2,2]-values[i,2]))\
-                #                                         +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                #                                         -values[i+1,2]*(values[i+2,loc_M]-values[i,loc_M]
-                #                                                         )
-                breakdown_estimators[i,1] = max(
-                                                np.abs(delta_t/(2*delta_x)*\
-                                                   (\
-                                                       values[i+1,loc_M]*values[i+1,2]*(values[i+2,0]-values[i,0])/values[i+1,0]\
-                                                        -(values[i+1,2]*values[i+1,loc_M-2]/2-values[i+1,loc_M])*(values[i+2,2]-values[i,2]))\
-                                                        +3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                                                        -values[i+1,2]*(values[i+2,loc_M]-values[i,loc_M]
-                                                                        )
-                                                        ),
-                                                np.abs(delta_t/(2*delta_x)*(1/2*values[i+1,2]*values[i+1,loc_M-1])*(values[i+2,2]-values[i,2])\
-                                                       -3*values[i+1,loc_M]/values[i+1,0]*(values[i+2,3]-values[i,3]))
-                )
-            if loc_M == 5:
-                breakdown_estimators[i,0] = max(
-                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,3]/values[i+1,0]*(values[i+2,0]-values[i,0])\
-                                                +5*values[i+1,4]*(values[i+2,1]-values[i,1])\
-                                                +3*values[i+1,3]/2*(values[i+2,2]-values[i,2])\
-                                                +values[i+1,2]*(values[i+2,3]-values[i,3])\
-                                                +values[i+1,1]*(values[i+2,4]-values[i,4])\
-                                                +5*(values[i+2,5]-values[i,5])),
-                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,4]/values[i+1,0]*(values[i+2,0]-values[i,0])\
-                                                -values[i+1,4]*(values[i+2,2]-values[i,2])\
-                                                -3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                                                +values[i+1,2]*(values[i+2,4]-values[i,4])\
-                                                +values[i+1,1]*(values[i+2,5]-values[i,5])),
-                    delta_t/(2*delta_x)*np.abs(4*(values[i+2,4]-values[i,4]))
-                )   
-            elif loc_M == 6:
-                breakdown_estimators[i,0] = max(
-                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,4]/values[i+1,0]*(values[i+2,0]-values[i,0])\
-                                                +6*values[i+1,5]*(values[i+2,1]-values[i,1])\
-                                                +2*values[i+1,4]*(values[i+2,2]-values[i,2])\
-                                                -3*values[i+1,3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                                                +values[i+1,2]*(values[i+2,4]-values[i,4])\
-                                                +values[i+1,1]*(values[i+2,5]-values[i,5])\
-                                                +6*(values[i+2,6]-values[i,6])),
-                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,5]/values[i+1,0]*(values[i+2,0]-values[i,0])\
-                                                +(values[i+1,2]*values[i+1,3]/2-values[i+1,5])*(values[i+2,2]-values[i,2])\
-                                                -3*values[i+1,4]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                                                +values[i+1,2]*(values[i+2,5]-values[i,5])\
-                                                +values[i+1,1]*(values[i+2,6]-values[i,6])),
-                    delta_t/(2*delta_x)*np.abs(5*(values[i+2,5]-values[i,5]))
-                )  
-            elif loc_M > 6:
-                breakdown_estimators[i,0] = max(
-                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,loc_M-2]/values[i+1,0]*(values[i+2,0]-values[i,0])\
-                                                +loc_M*values[i+1,loc_M-1]*(values[i+2,1]-values[i,1])\
-                                                +(values[i+1,2]*values[i+1,loc_M-4]/2+(loc_M-2)/2*values[i+1,loc_M-2])*(values[i+2,2]-values[i,2])\
-                                                -3*values[i+1,loc_M-3]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                                                +values[i+1,2]*(values[i+2,loc_M-2]-values[i,loc_M-2])\
-                                                +values[i+1,1]*(values[i+2,loc_M-1]-values[i,loc_M-1])\
-                                                +loc_M*(values[i+2,loc_M]-values[i,loc_M])),
-                    delta_t/(2*delta_x)*np.abs(-values[i+1,2]*values[i+1,loc_M-1]/values[i+1,0]*(values[i+2,0]-values[i,0])\
-                                                +(values[i+1,2]*values[i+1,loc_M-3]/2-values[i+1,loc_M-1])*(values[i+2,2]-values[i,2])\
-                                                -3*values[i+1,loc_M-2]/values[i+1,0]*(values[i+2,3]-values[i,3])\
-                                                +values[i+1,2]*(values[i+2,loc_M-1]-values[i,loc_M-1])\
-                                                +values[i+1,1]*(values[i+2,loc_M]-values[i,loc_M])),
-                    delta_t/(2*delta_x)*np.abs((loc_M-1)*(values[i+2,loc_M-1]-values[i,loc_M-1]))
-                )                   
-        breakdown_estimators[:,1] = breakdown_estimators[:,1]
-        for i in range(n):
-            if orders_cellwise[i+1] < max_order-1 and breakdown_estimators[i,1] > tolerance_up_flow_gradient:
-                breakdown_criterion_flags[i] = 2
-            else:
-                if orders_cellwise[i+1] > 3 and breakdown_estimators[i,0] < tolerance_down_last_moment: 
-                    breakdown_criterion_flags[i] = -2
+    def compute_breakdown_quantity_increase(self,
+                                   value_central: np.ndarray, 
+                                   value_left: np.ndarray,
+                                   value_right: np.ndarray,
+                                   order,
+                                   max_order):
         
-        return breakdown_estimators, breakdown_criterion_flags
+        increase_quantity = 0
+        if order == 2:
+            increase_quantity = 6/value_central[0]*(value_right[3]-value_left[3])
+        elif order == 3:
+            increase_quantity = 4*value_central[3]*(value_right[1]-value_left[1])+4*(value_right[4]-value_left[4])
+        elif order == max_order:
+            increase_quantity = (order+1)/2*(2*value_central[order]*(value_right[1]-value_left[1])+\
+                                value_central[order-1]*(value_right[2]-value_left[2]))  
+        else:
+            increase_quantity = (order+1)*(value_right[order+1]-value_left[order+1])+\
+                                (order+1)/2*(2*value_central[order]*(value_right[1]-value_left[1])+\
+                                value_central[order-1]*(value_right[2]-value_left[2]))
+        return increase_quantity
+
+    def compute_refinement_criterion(self,
+                                    values: np.ndarray,
+                                    orders: list,
+                                    max_order: int,
+                                    numbers_of_variables: list,
+                                    n: int,
+                                    boundary_interfaces: list,
+                                    delta_x: float,
+                                    tolerance_increase = 0.0015) -> np.ndarray:
+        
+        increase_criterion_flags = np.zeros(n,dtype=int)
+        breakdown_estimators_increase = np.zeros(n)
+
+        backward_differences = np.zeros(n)
+        forward_differences = np.zeros(n)
+
+        input_values = np.copy(values) 
+
+        r = 0
+
+        order = orders[0]
+        n_variables = numbers_of_variables[0]
+        for m in range(len(boundary_interfaces)):
+            n_variables_prev = n_variables
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+            n_variables_next = numbers_of_variables[m+1]
+            l = r+1
+            r = boundary_interfaces[m]  
+
+            n_left = min(n_variables_prev,n_variables)
+            n_right = min(n_variables,n_variables_next)
+
+            left_boundary_value = input_values[l,:]
+            right_boundary_value = input_values[r,:]
+            left_boundary_value[:n_left] = input_values[l-1,:n_left]
+            right_boundary_value[:n_right] = input_values[r+1,:n_right]
+
+            backward_differences[l-1] = np.abs(self.compute_breakdown_quantity_increase(values[l,:],
+                                                                                        left_boundary_value,
+                                                                                        values[l,:],
+                                                                                        order,
+                                                                                        max_order)) 
+            forward_differences[l-1] = np.abs(self.compute_breakdown_quantity_increase(values[l,:],
+                                                                                        values[l,:],
+                                                                                        values[l+1,:],
+                                                                                        order,
+                                                                                        max_order))                  
+                                                    
+            for i in range(l+1,r):
+                backward_differences[i-1] = np.abs(self.compute_breakdown_quantity_increase(values[i,:],
+                                                                                            values[i-1,:],
+                                                                                            values[i,:],
+                                                                                            order,
+                                                                                            max_order)) 
+                forward_differences[i-1] = np.abs(self.compute_breakdown_quantity_increase(values[i,:],
+                                                                                            values[i,:],
+                                                                                            values[i+1,:],
+                                                                                            order,
+                                                                                            max_order))        
+            backward_differences[r-1] = np.abs(self.compute_breakdown_quantity_increase(values[r,:],
+                                                                                        values[r-1,:],
+                                                                                        values[r,:],
+                                                                                        order,
+                                                                                        max_order)) 
+            forward_differences[r-1] = np.abs(self.compute_breakdown_quantity_increase(values[r,:],
+                                                                                        values[r,:],
+                                                                                        right_boundary_value,
+                                                                                        order,
+                                                                                        max_order)) 
+
+        n_variables_prev = n_variables
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        n_left = min(n_variables_prev,n_variables)
+
+        l = r+1  
+
+        left_boundary_value = input_values[l,:]            
+        left_boundary_value[:n_left] = input_values[l-1,:n_left]  
+
+        backward_differences[l-1] = np.abs(self.compute_breakdown_quantity_increase(values[l,:],
+                                                                                    left_boundary_value,
+                                                                                    values[l,:],
+                                                                                    order,
+                                                                                    max_order)) 
+        forward_differences[l-1] = np.abs(self.compute_breakdown_quantity_increase(values[l,:],
+                                                                                    values[l,:],
+                                                                                    values[l+1,:],
+                                                                                    order,
+                                                                                    max_order))                  
+                                                
+        for i in range(l+1,n+1):
+            backward_differences[i-1] = np.abs(self.compute_breakdown_quantity_increase(values[i,:],
+                                                                                        values[i-1,:],
+                                                                                        values[i,:],
+                                                                                        order,
+                                                                                        max_order)) 
+            forward_differences[i-1] = np.abs(self.compute_breakdown_quantity_increase(values[i,:],
+                                                                                        values[i,:],
+                                                                                        values[i+1,:],
+                                                                                        order,
+                                                                                        max_order)) 
+
+        breakdown_estimators_increase = np.maximum(forward_differences,backward_differences)/delta_x
+
+        for i in range(n):
+            if breakdown_estimators_increase[i] > tolerance_increase: 
+                increase_criterion_flags[i] = 2            
+        return breakdown_estimators_increase, increase_criterion_flags
+
+    def compute_coarsening_criterion(self,
+                                    values: np.ndarray,
+                                    orders: list,
+                                    numbers_of_variables: list,
+                                    n: int,
+                                    boundary_interfaces: list,
+                                    delta_x: float,
+                                    increase_criterion_flags: np.ndarray,
+                                    tolerance_decrease = 0.001) -> np.ndarray:
+
+        decrease_criterion_flags = np.zeros(n,dtype=int)
+        breakdown_estimators_decrease = np.zeros(n)
+
+        backward_differences = np.zeros(n)
+        forward_differences = np.zeros(n)
+
+        input_values = np.copy(values)
+
+        r = 0
+
+        order = orders[0]
+        n_variables = numbers_of_variables[0]
+        for m in range(len(boundary_interfaces)):
+            n_variables_prev = n_variables
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+            n_variables_next = numbers_of_variables[m+1]
+            l = r+1
+            r = boundary_interfaces[m]  
+
+            n_left = min(n_variables_prev,n_variables)
+            n_right = min(n_variables,n_variables_next)
+
+            left_boundary_value = input_values[l,:]
+            right_boundary_value = input_values[r,:]
+            left_boundary_value[:n_left] = input_values[l-1,:n_left]
+            right_boundary_value[:n_right] = input_values[r+1,:n_right]
+
+            if order > 3:
+                backward_differences[l-1] = np.abs(self.compute_breakdown_quantity_decrease(values[l,:],
+                                                                                            left_boundary_value,
+                                                                                            values[l,:],
+                                                                                            order)) 
+                forward_differences[l-1] = np.abs(self.compute_breakdown_quantity_decrease(values[l,:],
+                                                                                            values[l,:],
+                                                                                            values[l+1,:],
+                                                                                            order))                                                        
+                for i in range(l+1,r):
+                    backward_differences[i-1] = np.abs(self.compute_breakdown_quantity_decrease(values[i,:],
+                                                                                                values[i-1,:],
+                                                                                                values[i,:],
+                                                                                                order)) 
+                    forward_differences[i-1] = np.abs(self.compute_breakdown_quantity_decrease(values[i,:],
+                                                                                                values[i,:],
+                                                                                                values[i+1,:],
+                                                                                                order))           
+                backward_differences[r-1] = np.abs(self.compute_breakdown_quantity_decrease(values[r,:],
+                                                                                            values[r-1,:],
+                                                                                            values[r,:],
+                                                                                            order)) 
+                forward_differences[r-1] = np.abs(self.compute_breakdown_quantity_decrease(values[r,:],
+                                                                                            values[r,:],
+                                                                                            right_boundary_value,
+                                                                                            order)) 
+        n_variables_prev = n_variables
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        n_left = min(n_variables_prev,n_variables)
+
+        l = r+1  
+
+        left_boundary_value = input_values[l,:]            
+        left_boundary_value[:n_left] = input_values[l-1,:n_left]  
+
+        if order > 3:
+            backward_differences[l-1] = np.abs(self.compute_breakdown_quantity_decrease(values[l,:],
+                                                                                        left_boundary_value,
+                                                                                        values[l,:],
+                                                                                        order)) 
+            forward_differences[l-1] = np.abs(self.compute_breakdown_quantity_decrease(values[l,:],
+                                                                                        values[l,:],
+                                                                                        values[l+1,:],
+                                                                                        order))                                                        
+            for i in range(l+1,n+1):
+                backward_differences[i-1] = np.abs(self.compute_breakdown_quantity_decrease(values[i,:],
+                                                                                            values[i-1,:],
+                                                                                            values[i,:],
+                                                                                            order)) 
+                forward_differences[i-1] = np.abs(self.compute_breakdown_quantity_decrease(values[i,:],
+                                                                                            values[i,:],
+                                                                                            values[i+1,:],
+                                                                                            order)) 
+
+        breakdown_estimators_decrease = np.maximum(backward_differences,forward_differences)/delta_x
+
+        for i in range(n):
+            if increase_criterion_flags[i] == 0 and breakdown_estimators_decrease[i] < tolerance_decrease:
+                decrease_criterion_flags[i] = -2
+
+        return breakdown_estimators_decrease, decrease_criterion_flags
+
+    def decompose_domain(self,
+                        n: int,
+                        max_order: int,
+                        orders_cellwise: list,
+                        flags_decrease: np.ndarray,
+                        flags_increase: np.ndarray) -> np.ndarray:       
+        
+        domain_decomposition_flags = np.zeros(n,dtype=int)
+        for i in range(n):
+            if flags_increase[i] > 0:
+                if orders_cellwise[i+1] < max_order - 1:
+                    domain_decomposition_flags[i] = flags_increase[i]
+            else:
+                if flags_decrease[i] < 0:
+                    if orders_cellwise[i+1] > 2:
+                        domain_decomposition_flags[i] = flags_decrease[i]
+
+        return domain_decomposition_flags
+
+    def compute_breakdown_criteria_full(self):
+        pass
+
+    def compute_eigenvalues_and_eigenvectors(self,
+                                             values: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+
+        order = values.size-1
+
+        rho = values[0]
+        u = values[1]
+        theta = values[2]
+
+        values[1] = 0
+        values[2] = 0
+
+        roots, weights = roots_hermitenorm(order+1)
+        eigenvalues = u + roots*np.sqrt(theta)
+        eigenvectors = np.zeros((order+1,order+1))
+
+        for j in range(order+1):
+            eigenvectors[0,j] = rho
+            eigenvectors[1,j] = roots[j]*np.sqrt(theta)
+            eigenvectors[2,j] = (roots[j]**2-1)*theta
+            for i in range(3,order+1):
+                eigenvectors[i,j] = eval_hermitenorm(i,roots[j])*rho*theta**(i/2)/math.factorial(i)\
+                -(roots[j]**2-1)*theta*values[i-2]/2-roots[j]*np.sqrt(theta)*values[i-1]
+                                   
+        return eigenvalues, eigenvectors
+        
