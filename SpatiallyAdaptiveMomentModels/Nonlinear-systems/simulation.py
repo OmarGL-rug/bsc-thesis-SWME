@@ -4217,16 +4217,21 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
                  start_order: list,
                  pde_type: pde.PDE,
                  mesh: mesh.RectangularMesh,
+                 CFL_number : float,
                  boundary_condition: str,
                  initial_condition: str,
                  breakdown_criterion: str,
                  smoothing: bool,
                  smooth_par: int,
                  interpolation: bool,
+                 path_conservation: bool,
                  spatial_discretization_interior: spatialDiscretization.SpatialDiscretization,
                  spatial_discretization_interface: spatialDiscretization.SpatialDiscretization,
                  spatial_discretization_predictor: spatialDiscretization.SpatialDiscretization,
-                 time_integration: timeIntegration.TimeIntegration):
+                 time_integration: timeIntegration.TimeIntegration,
+                 two_step_domdecomp_approx: bool,
+                 hierarchical: bool,
+                 time_step_splitting: bool):
 
         """
         TODO
@@ -4234,6 +4239,8 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         self.pde_type = pde_type
         self.mesh = mesh
+
+        self.CFL_number = CFL_number
 
         self.boundary_condition = boundary_condition
         self.initial_condition = initial_condition
@@ -4265,32 +4272,22 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         self.breakdown_estimators = np.zeros((self.mesh.resolution,self.max_order+4))
 
+        self.subdomainReconstruction = CellwiseSubdomainReconstruction1D(boundary_condition)
         if smoothing:
-            # Define subdomain reconstruction class that has smoothing parameter
-            self.smooth_par = smooth_par
-            self.orders_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
-            self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par+1,fill_value=0,dtype=int)
-            self.breakdown_criteria_flags = np.full(shape=self.mesh.resolution,dtype=int,fill_value=0)
-            self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par+1,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
-            self.boundary_interfaces_subdomains = np.zeros(self.smooth_par,dtype=int)  
+            self.subdomainReconstruction = SmoothedSubdomainReconstruction1D(boundary_condition,smooth_par)
 
-            self.n_cells_subdomain = int(np.floor(self.mesh.resolution/self.smooth_par))
-            self.subdomain_start = int(np.ceil(self.n_cells_subdomain/2))+1
-            self.boundary_interfaces_subdomains[0] = self.subdomain_start - 1
-            for i in range(1,self.smooth_par):
-                self.boundary_interfaces_subdomains[i] = self.subdomain_start + i*self.n_cells_subdomain - 1
+        self.domainDecomposition = OneStepModelErrorApproximation()
+        if two_step_domdecomp_approx:
+            self.domainDecomposition = TwoStepModelErrorApproximation()
 
-            if self.boundary_condition != 'PERIODIC':
-                self.increase_flags_subdomains = np.full(shape=self.smooth_par,fill_value=0,dtype=int)  
-                self.orders_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
-                self.increase_flags_subdomains = np.full(shape=self.smooth_par,fill_value=0,dtype=int)
-                self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par,fill_value=self.pde_type.compute_number_of_variables(start_order),dtype=int)
-                self.boundary_interfaces_subdomains = np.zeros(self.smooth_par-1,dtype=int)
-                for i in range(self.smooth_par-1):
-                    self.boundary_interfaces_subdomains[i] = (i+1)*self.n_cells_subdomain - 1 
+        self.interface_coupling = PaddedBufferCell1D(path_conservation,spatial_discretization_interface)
 
-            self._reconstruct_subdomains = self._reconstruct_subdomains()
-            self._interpolate_subdomains = self._interpolate_subdomains()
+        if time_step_splitting:
+            self.AdaptiveFVMStep1D = SplittedNonHierarchicalAdaptiveFVMStep1D()
+            if hierarchical:
+                self.AdaptiveFVMStep1D = SplittedHierarchicalAdaptiveFVMStep1D()
+        else:
+            print("Only time splitting methods implemented so far!")
 
     def run_simulation(self,
                        t_end: float) -> np.ndarray:
@@ -4300,8 +4297,6 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
         print("Orders at the beginning of the simulation:",self.orders)
         
         values = self._get_initial_conditions(self.mesh.cell_center_positions)
-
-        CFL = 0.7
         
         step_count = 0
         t = 0
@@ -4313,118 +4308,17 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
             # max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
             max_speed = self.pde_type.compute_max_wavespeed(max(self.orders),values)
       
-            delta_t = CFL*delta_x/max_speed 
+            delta_t = self.CFL_number*delta_x/max_speed 
 
-            prev_values = np.copy(values)
-            predicted_values = np.copy(values)
+            # prev_values = np.copy(values)
+            # predicted_values = np.copy(values)
 
-            padded_vectors_left,padded_vectors_right = self._construct_padded_vectors(prev_values)
+            # padded_vectors_left,padded_vectors_right = self._construct_padded_vectors(prev_values)
             
             if t > 0:
-                predicted_values_transport = self._transport_step_augmented(values,
-                                                        delta_t,
-                                                        delta_x,
-                                                        self.spatial_discretization_predictor)
-                predicted_values = self._source_step_augmented(predicted_values_transport,
-                                                    delta_t,
-                                                    delta_x)
 
-                # padded_vectors_predicted_left,padded_vectors_predicted_right = self._construct_padded_vectors(predicted_values)
-
-                # estimators_increase_prev,flags_increase_prev = self.pde_type.compute_breakdown_criteria_increase(
-                #                                                             prev_values,
-                #                                                             # padded_vectors_left,
-                #                                                             # padded_vectors_right,
-                #                                                             self.mesh.resolution,
-                #                                                             delta_x,
-                #                                                             delta_t,
-                #                                                             self.max_order,
-                #                                                             self.orders_cellwise,
-                #                                                             self.orders,
-                #                                                             self.numbers_of_variables,
-                #                                                             self.boundary_interfaces_discretized)
-                # estimators_increase_next,flags_increase_next = self.pde_type.compute_breakdown_criteria_increase(
-                #                                                             predicted_values,
-                #                                                             # padded_vectors_predicted_left,
-                #                                                             # padded_vectors_predicted_right,
-                #                                                             self.mesh.resolution,
-                #                                                             delta_x,
-                #                                                             delta_t,
-                #                                                             self.max_order,
-                #                                                             self.orders_cellwise,
-                #                                                             self.orders,
-                #                                                             self.numbers_of_variables,
-                #                                                             self.boundary_interfaces_discretized)
-
-                estimators_increase_prev,flags_increase_prev = self.pde_type.compute_refinement_criterion(
-                                                                    prev_values,
-                                                                    self.orders,
-                                                                    self.max_order,
-                                                                    self.numbers_of_variables,
-                                                                    self.mesh.resolution,
-                                                                    self.boundary_interfaces_discretized,
-                                                                    delta_x)
-
-                estimators_increase_next,flags_increase_next = self.pde_type.compute_refinement_criterion(
-                                                                    predicted_values,
-                                                                    self.orders,
-                                                                    self.max_order,
-                                                                    self.numbers_of_variables,
-                                                                    self.mesh.resolution,
-                                                                    self.boundary_interfaces_discretized,
-                                                                    delta_x)
-
-                flags_increase_max = np.maximum(flags_increase_next,flags_increase_prev)
-                estimators_increase_max = np.maximum(estimators_increase_next,estimators_increase_prev)
-
-                # estimators_decrease_prev,flags_decrease_prev = self.pde_type.compute_breakdown_criteria_decrease(
-                #                                                             prev_values,
-                #                                                             # padded_vectors_left,
-                #                                                             # padded_vectors_right,
-                #                                                             self.mesh.resolution,
-                #                                                             delta_x,
-                #                                                             delta_t,
-                #                                                             self.max_order,
-                #                                                             self.orders_cellwise,
-                #                                                             self.orders,
-                #                                                             self.numbers_of_variables,
-                #                                                             self.boundary_interfaces_discretized,
-                #                                                             flags_increase_max)
-
-                # estimators_decrease_next,flags_decrease_next = self.pde_type.compute_breakdown_criteria_decrease(
-                #                                                             predicted_values,
-                #                                                             # padded_vectors_predicted_left,
-                #                                                             # padded_vectors_predicted_right,
-                #                                                             self.mesh.resolution,
-                #                                                             delta_x,
-                #                                                             delta_t,
-                #                                                             self.max_order,
-                #                                                             self.orders_cellwise,
-                #                                                             self.orders,
-                #                                                             self.numbers_of_variables,
-                #                                                             self.boundary_interfaces_discretized,
-                #                                                             flags_increase_max)
-
-                estimators_decrease_prev,flags_decrease_prev = self.pde_type.compute_coarsening_criterion(
-                                                                    prev_values,
-                                                                    self.orders,
-                                                                    self.numbers_of_variables,
-                                                                    self.mesh.resolution,
-                                                                    self.boundary_interfaces_discretized,
-                                                                    delta_x,
-                                                                    flags_increase_max)
-
-                estimators_decrease_next,flags_decrease_next = self.pde_type.compute_coarsening_criterion(
-                                                                    predicted_values,
-                                                                    self.orders,
-                                                                    self.numbers_of_variables,
-                                                                    self.mesh.resolution,
-                                                                    self.boundary_interfaces_discretized,
-                                                                    delta_x,
-                                                                    flags_increase_max)
-
-                flags_decrease_min = np.minimum(flags_decrease_next,flags_decrease_prev)
-                estimators_decrease_max = np.maximum(estimators_decrease_next,estimators_decrease_prev)
+                flags_increase_max,flags_decrease_min,estimators_increase_max,estimators_decrease_max =\
+                    self.domainDecomposition.compute_domain_decomposition()
 
                 self.breakdown_estimators = np.stack((estimators_decrease_max, estimators_increase_max),axis=1)
                 self.breakdown_criteria_flags = self.pde_type.decompose_domain(self.mesh.resolution,
@@ -4433,22 +4327,10 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
                                                                                 flags_decrease_min,
                                                                                 flags_increase_max)
                 
-                values = self._reconstruct_subdomains(values,delta_x,delta_t,not self.path_conservative_interface_coupling)
-                padded_vectors_left,padded_vectors_right = self._construct_padded_vectors(values)
+                values = self.subdomainReconstruction.reconstruct_subdomains()
+                # padded_vectors_left,padded_vectors_right = self._construct_padded_vectors(values)
 
-            values = self._transport_step(values,
-                                          padded_vectors_left,
-                                          padded_vectors_right,
-                                          delta_t,
-                                          delta_x,
-                                          self.spatial_discretization,
-                                          not self.path_conservative_interface_coupling)
-            values = self._source_step(values,
-                                       padded_vectors_left,
-                                       padded_vectors_right,
-                                       delta_t,
-                                       delta_x,
-                                       not self.path_conservative_interface_coupling)
+            values = self.AdaptiveFVMStep1D.runFVMStep()
             
             step_count += 1
 
@@ -4484,22 +4366,26 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
             def system_matrix(cell_values):
                 return self.pde_type.compute_system_matrix(order,cell_values)               
 
-            left_boundary_subdomain = right_boundary_subdomain+1
+            left_boundary_subdomain = right_boundary_subdomain + 1
             right_boundary_subdomain = self.boundary_interfaces_discretized[m]                 
 
             if padding:
-                # if order > self.orders[m+1]:
-                #     prev_values[right_boundary_subdomain+1,:] = padded_vectors_right[m]
-                #     prev_values[right_boundary_subdomain,:] = values[right_boundary_subdomain,:]
-                # else:
-                #     prev_values[right_boundary_subdomain,:] = padded_vectors_left[m]
-                #     prev_values[right_boundary_subdomain+1,:] = values[right_boundary_subdomain+1,:]
                 if order < self.orders[m+1]:
                     prev_values[right_boundary_subdomain,:] = padded_vectors_left[m,:]
                 else:
                     prev_values[right_boundary_subdomain+1,:] = padded_vectors_right[m,:]    
 
-            for i in range(left_boundary_subdomain,right_boundary_subdomain):
+            if m > 0:
+                j = left_boundary_subdomain
+                fluctuations_min[j-1,:n_variables], fluctuations_plus[j-1,:n_variables],  =\
+                    self.interface_coupling.compute_fluctuations_interface(
+                                                        prev_values[j-1,:n_variables],
+                                                        prev_values[j,:n_variables],
+                                                        system_matrix,
+                                                        delta_t,
+                                                        delta_x) 
+                left_boundary_subdomain += 1
+            for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
                 fluctuations_min[i-1,:n_variables], fluctuations_plus[i-1,:n_variables] =\
                     spatial_discretization.compute_fluctuation(
                                                         prev_values[i-1,:n_variables],
@@ -4507,24 +4393,8 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
                                                         system_matrix,
                                                         delta_t,
                                                         delta_x)   
-            i = right_boundary_subdomain
-            fluctuations_min[i-1,:n_variables], fluctuations_plus[i-1,:n_variables] =\
-                self.spatial_discretization_interface.compute_fluctuation(
-                                                    prev_values[i-1,:n_variables],
-                                                    prev_values[i,:n_variables],
-                                                    system_matrix,
-                                                    delta_t,
-                                                    delta_x) 
         order = self.orders[-1]
         n_variables = self.numbers_of_variables[-1]
-
-        # if padding:
-        #     if order < self.orders[-2]:
-        #         prev_values[left_boundary_subdomain,:] = padded_vectors_right[-1]
-        #         prev_values[left_boundary_subdomain-1,:] = values[right_boundary_subdomain-1,:]
-        #     else:
-        #         prev_values[left_boundary_subdomain-1,:] = padded_vectors_left[-1]
-        #         prev_values[left_boundary_subdomain,:] = values[left_boundary_subdomain,:]
 
         def system_matrix(cell_values):
             return self.pde_type.compute_system_matrix(order,cell_values)
@@ -4998,11 +4868,41 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
         return self.breakdown_estimators[:,0], self.breakdown_estimators[:,1]
 
 
-
-class SplittedAdaptiveFVMStep1D(ABC):
+class AdaptiveFVMStep1D(ABC):
     @abstractmethod
     def init(self):
         pass
+
+    @abstractmethod
+    def runFVMStep(self):
+        pass
+class SplittedAdaptiveFVMStep1D(AdaptiveFVMStep1D):
+    @abstractmethod
+    def init(self):
+        pass
+
+    def runFVMStep(self,
+                   padded_vectors_left,
+                   padded_vectors_right,
+                   delta_t,
+                   delta_x,
+                   spatial_discretization,
+                   path_conservation):
+        values = self.simulate_transport_step(values,
+                                        padded_vectors_left,
+                                        padded_vectors_right,
+                                        delta_t,
+                                        delta_x,
+                                        spatial_discretization,
+                                        path_conservation)
+        values = self.simulate_source_step(values,
+                                       padded_vectors_left,
+                                       padded_vectors_right,
+                                       delta_t,
+                                       delta_x,
+                                       path_conservation)
+        
+        return values
 
     @abstractmethod
     def simulate_transport_step(self):
@@ -5011,7 +4911,7 @@ class SplittedAdaptiveFVMStep1D(ABC):
     @abstractmethod
     def simulate_source_step(self):
         pass
-class NonHierarchicalAdaptiveFVMStep1D(SplittedAdaptiveFVMStep1D):
+class SplittedHierarchicalAdaptiveFVMStep1D(SplittedAdaptiveFVMStep1D):
     def init(self):
         pass
 
@@ -5020,16 +4920,446 @@ class NonHierarchicalAdaptiveFVMStep1D(SplittedAdaptiveFVMStep1D):
 
     def simulate_source_step(self):
         pass    
-class HierarchicalAdaptiveFVMStep1D(SplittedAdaptiveFVMStep1D):
+class SplittedNonHierarchicalAdaptiveFVMStep1D(SplittedAdaptiveFVMStep1D):
     def init(self):
         pass
 
-    def simulate_transport_step(self):
+    def simulate_transport_step(self,
+                        values,
+                        padded_vectors_left,
+                        padded_vectors_right,
+                        delta_t,
+                        delta_x,
+                        spatial_discretization,
+                        interface_coupling,
+                        transport_system_matrix,
+                        padding,
+                        orders,
+                        numbers_of_variables,
+                        mesh_resolution,
+                        boundary_interfaces_discretized,
+                        max_number_of_variables) -> np.ndarray:
+        fluctuations_min = np.zeros((mesh_resolution+1,max_number_of_variables))
+        fluctuations_plus = np.zeros((mesh_resolution+1,max_number_of_variables))
+
+        prev_values = np.copy(values)
+
+        right_boundary_subdomain = 0
+
+        for m in range(len(boundary_interfaces_discretized)):
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+            def system_matrix(cell_values):
+                return transport_system_matrix(order,cell_values)               
+
+            left_boundary_subdomain = right_boundary_subdomain + 1
+            right_boundary_subdomain = boundary_interfaces_discretized[m]                 
+
+            if padding:
+                if order < orders[m+1]:
+                    prev_values[right_boundary_subdomain,:] = padded_vectors_left[m,:]
+                else:
+                    prev_values[right_boundary_subdomain+1,:] = padded_vectors_right[m,:]    
+
+            if m > 0:
+                j = left_boundary_subdomain
+                fluctuations_min[j-1,:n_variables], fluctuations_plus[j-1,:n_variables],  =\
+                    interface_coupling.compute_fluctuations_interface(
+                                                        prev_values[j-1,:n_variables],
+                                                        prev_values[j,:n_variables],
+                                                        system_matrix,
+                                                        delta_t,
+                                                        delta_x) 
+                left_boundary_subdomain += 1
+            for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
+                fluctuations_min[i-1,:n_variables], fluctuations_plus[i-1,:n_variables] =\
+                    spatial_discretization.compute_fluctuation(
+                                                        prev_values[i-1,:n_variables],
+                                                        prev_values[i,:n_variables],
+                                                        system_matrix,
+                                                        delta_t,
+                                                        delta_x)   
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        def system_matrix(cell_values):
+            return transport_system_matrix(order,cell_values)
+        
+        for i in range(right_boundary_subdomain+1,mesh_resolution+2):
+                fluctuations_min[i-1,:n_variables], fluctuations_plus[i-1,:n_variables] =\
+                    spatial_discretization.compute_fluctuation(
+                                                        prev_values[i-1,:n_variables],
+                                                        prev_values[i,:n_variables],
+                                                        system_matrix,
+                                                        delta_t,
+                                                        delta_x) 
+
+        right_boundary_subdomain = 0
+
+        for m in range(len(boundary_interfaces_discretized)):
+            n_variables = numbers_of_variables[m]
+
+            left_boundary_subdomain = right_boundary_subdomain+1
+            right_boundary_subdomain = boundary_interfaces_discretized[m]
+            
+            for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
+                values[i,:n_variables] = prev_values[i,:n_variables]\
+                    - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables]+fluctuations_min[i,:n_variables]) 
+
+        n_variables = numbers_of_variables[-1]
+
+        for i in range(right_boundary_subdomain+1,mesh_resolution+1):
+            values[i,:n_variables] = prev_values[i,:n_variables]\
+                - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables]+fluctuations_min[i,:n_variables]) 
+
+        return values      
+
+    def simulate_source_step(self,
+                        values,
+                        padded_vectors_left,
+                        padded_vectors_right,
+                        delta_t,
+                        delta_x,
+                        time_integration,
+                        interface_coupling,
+                        source_term_fun,
+                        padding,
+                        orders,
+                        numbers_of_variables,
+                        mesh_resolution,
+                        boundary_interfaces_discretized,
+                        max_number_of_variables) -> np.ndarray:
+
+        right_boundary_subdomain = 0
+
+        for m in range(len(boundary_interfaces_discretized)):
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+
+            def source_term(cell_values,delta_t):
+                return source_term_fun(order,cell_values,delta_t)
+
+            left_boundary_subdomain = right_boundary_subdomain+1
+            right_boundary_subdomain = boundary_interfaces_discretized[m]
+            
+            for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
+                values[i,:n_variables] = time_integration.integrate(values[i,:n_variables],source_term,delta_t)
+            
+            if padding:
+                if order < orders[m+1]:
+                    values[right_boundary_subdomain,n_variables:] = \
+                        values[right_boundary_subdomain+1,n_variables:] # update boundary interface boundary condition 
+                else:
+                    values[right_boundary_subdomain+1,numbers_of_variables[m+1]:] = \
+                        values[right_boundary_subdomain,numbers_of_variables[m+1]:] # update boundary interface boundary condition 
+
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        def source_term(cell_values,delta_t):
+            return source_term_fun(order,cell_values,delta_t)         
+                    
+        for i in range(right_boundary_subdomain+1,mesh_resolution+1): 
+            values[i,:n_variables] = time_integration.integrate(values[i,:n_variables],source_term,delta_t)
+
+        if padding:
+            if order < orders[m-1]:
+                values[right_boundary_subdomain+1,n_variables:] = \
+                    values[right_boundary_subdomain,n_variables:] # update boundary interface boundary condition 
+            else:
+                values[right_boundary_subdomain,numbers_of_variables[m-1]:] = \
+                    values[right_boundary_subdomain+1,numbers_of_variables[m-1]:] # update boundary interface boundary condition 
+
+        return values 
+
+class DomainDecomposition1D(ABC):
+    @abstractmethod
+    def init(self):
         pass
 
-    def simulate_source_step(self):
+    @abstractmethod
+    def compute_domain_decomposition(self):
+        pass
+class OneStepModelErrorApproximation(DomainDecomposition1D):
+    def init(self):
         pass
 
+    def compute_domain_decomposition(self,
+                                     values,
+                                     delta_t,
+                                     delta_x,
+                                     orders,
+                                     max_order,
+                                     numbers_of_variables,
+                                     mesh_resolution,
+                                     boundary_interfaces_discretized):
+
+        estimators_increase,flags_increase = self.pde_type.compute_refinement_criterion(
+                                                            values,
+                                                            orders,
+                                                            max_order,
+                                                            numbers_of_variables,
+                                                            mesh_resolution,
+                                                            boundary_interfaces_discretized,
+                                                            delta_x)
+
+        estimators_decrease,flags_decrease = self.pde_type.compute_coarsening_criterion(
+                                                            values,
+                                                            orders,
+                                                            numbers_of_variables,
+                                                            mesh_resolution,
+                                                            boundary_interfaces_discretized,
+                                                            delta_x,
+                                                            flags_increase)
+
+        return flags_increase,flags_decrease,estimators_increase,estimators_decrease
+    
+class TwoStepModelErrorApproximation(DomainDecomposition1D):
+    def init(self,
+             spatial_discretization_predictor,
+             time_integrator,
+             pde_type,
+             mesh_resolution,
+             max_order,
+             max_number_of_variables):
+        self.spatial_discretization_predictor = spatial_discretization_predictor
+        self.time_integrator = time_integrator
+        self.pde_type = pde_type
+        self.mesh_resolution = mesh_resolution
+        self.max_order = max_order
+        self.max_number_of_variables = max_number_of_variables
+
+    def compute_domain_decomposition(self,
+                                     values,
+                                     delta_t,
+                                     delta_x,
+                                     orders,
+                                     max_order,
+                                     numbers_of_variables,
+                                     mesh_resolution,
+                                     boundary_interfaces_discretized):
+        
+        prev_values = np.copy(values)
+
+        predicted_values = self.predict_values(values,delta_t,delta_x)
+
+        estimators_increase_prev,flags_increase_prev = self.pde_type.compute_refinement_criterion(
+                                                            prev_values,
+                                                            orders,
+                                                            max_order,
+                                                            numbers_of_variables,
+                                                            mesh_resolution,
+                                                            boundary_interfaces_discretized,
+                                                            delta_x)
+
+        estimators_increase_next,flags_increase_next = self.pde_type.compute_refinement_criterion(
+                                                            predicted_values,
+                                                            orders,
+                                                            max_order,
+                                                            numbers_of_variables,
+                                                            mesh_resolution,
+                                                            boundary_interfaces_discretized,
+                                                            delta_x)
+
+        flags_increase_max = np.maximum(flags_increase_next,flags_increase_prev)
+        estimators_increase_max = np.maximum(estimators_increase_next,estimators_increase_prev)
+
+        estimators_decrease_prev,flags_decrease_prev = self.pde_type.compute_coarsening_criterion(
+                                                            prev_values,
+                                                            orders,
+                                                            numbers_of_variables,
+                                                            mesh_resolution,
+                                                            boundary_interfaces_discretized,
+                                                            delta_x,
+                                                            flags_increase_max)
+
+        estimators_decrease_next,flags_decrease_next = self.pde_type.compute_coarsening_criterion(
+                                                            predicted_values,
+                                                            orders,
+                                                            numbers_of_variables,
+                                                            mesh_resolution,
+                                                            boundary_interfaces_discretized,
+                                                            delta_x,
+                                                            flags_increase_max)
+
+        flags_decrease_min = np.minimum(flags_decrease_next,flags_decrease_prev)
+        estimators_decrease_max = np.maximum(estimators_decrease_next,estimators_decrease_prev)
+
+        return flags_increase_max,flags_decrease_min,estimators_increase_max,estimators_decrease_max
+
+    def predict_values(self,values,delta_t,delta_x):
+        predicted_values_transport = self._transport_step_augmented(values,
+                                                                    delta_t,
+                                                                    delta_x,
+                                                                    self.spatial_discretization_predictor)
+        predicted_values = self._source_step_augmented(predicted_values_transport,
+                                                        delta_t,
+                                                        delta_x)
+        return predicted_values
+
+    def _transport_step_augmented(self,
+                                values,
+                                delta_t,
+                                delta_x,
+                                spatial_discretization,
+                                orders,
+                                numbers_of_variables,
+                                boundary_interfaces_discretized) -> np.ndarray:   
+
+        nr_augmented_variables = 1 #Generalize this such that it includes the general case
+
+        fluctuations_min = np.zeros((self.mesh_resolution+1,self.max_number_of_variables))
+        fluctuations_plus = np.zeros((self.mesh_resolution+1,self.max_number_of_variables))
+
+        prev_values = np.copy(values)
+        predicted_values_transport = np.copy(values)
+
+        right_boundary_subdomain = 0
+        for m in range(len(boundary_interfaces_discretized)):
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+
+            left_boundary_subdomain = right_boundary_subdomain + 1
+            right_boundary_subdomain = boundary_interfaces_discretized[m]                 
+
+            if order < self.max_order:
+                nr_augmented_variables = 1
+                def system_matrix(cell_values):
+                    return self.pde_type.compute_system_matrix_augmented(order,cell_values)
+            else:
+                def system_matrix(cell_values):
+                    return self.pde_type.compute_system_matrix(order,cell_values)
+                nr_augmented_variables = 0                                             
+
+            left_boundary_value = np.zeros(self.max_number_of_variables)
+            right_boundary_value = np.zeros(self.max_number_of_variables)
+            left_boundary_value[:n_variables] = prev_values[left_boundary_subdomain-1,:n_variables]
+            right_boundary_value[:n_variables] = prev_values[right_boundary_subdomain+1,:n_variables]
+
+            y,fluctuations_plus[left_boundary_subdomain-1,:n_variables+nr_augmented_variables] =\
+                self.spatial_discretization_predictor.compute_fluctuation(
+                                                    left_boundary_value[:n_variables+nr_augmented_variables],
+                                                    values[left_boundary_subdomain,:n_variables+nr_augmented_variables],
+                                                    system_matrix,
+                                                    delta_t,
+                                                    delta_x)  
+            
+            for i in range(left_boundary_subdomain+1,right_boundary_subdomain+1):
+                fluctuations_min[i-1,:n_variables+nr_augmented_variables],\
+                    fluctuations_plus[i-1,:n_variables+nr_augmented_variables] =\
+                    self.spatial_discretization_predictor.compute_fluctuation(
+                                                        values[i-1,:n_variables+nr_augmented_variables],
+                                                        values[i,:n_variables+nr_augmented_variables],
+                                                        system_matrix,
+                                                        delta_t,
+                                                        delta_x)   
+                predicted_values_transport[i-1,:n_variables+nr_augmented_variables] =\
+                    values[i-1,:n_variables+nr_augmented_variables]\
+                    - delta_t/delta_x*(fluctuations_plus[i-2,:n_variables+nr_augmented_variables]+\
+                                       fluctuations_min[i-1,:n_variables+nr_augmented_variables]) 
+            i = right_boundary_subdomain
+            fluctuations_min[right_boundary_subdomain,:n_variables+nr_augmented_variables],y =\
+                self.spatial_discretization_predictor.compute_fluctuation(
+                                                    values[i,:n_variables+nr_augmented_variables],
+                                                    right_boundary_value[:n_variables+nr_augmented_variables],
+                                                    system_matrix,
+                                                    delta_t,
+                                                    delta_x)              
+            predicted_values_transport[i,:n_variables+nr_augmented_variables] =\
+                values[i,:n_variables+nr_augmented_variables]\
+                - delta_t/delta_x*(fluctuations_plus[i-1,:n_variables+nr_augmented_variables]+\
+                                   fluctuations_min[i,:n_variables+nr_augmented_variables]) 
+
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        if order < self.max_order:
+            nr_augmented_variables = 1
+            def system_matrix(cell_values):
+                return self.pde_type.compute_system_matrix_augmented(order,cell_values)
+        else:
+            def system_matrix(cell_values):
+                return self.pde_type.compute_system_matrix(order,cell_values)
+            nr_augmented_variables = 0   
+
+        left_boundary_subdomain = right_boundary_subdomain+1 
+        left_boundary_value = np.zeros(self.max_number_of_variables)
+        left_boundary_value[:n_variables] = prev_values[left_boundary_subdomain-1,:n_variables]
+        y,fluctuations_plus[left_boundary_subdomain-1,:n_variables+nr_augmented_variables] =\
+            self.spatial_discretization_predictor.compute_fluctuation(
+                                                left_boundary_value[:n_variables+nr_augmented_variables],
+                                                values[left_boundary_subdomain,:n_variables+nr_augmented_variables],
+                                                system_matrix,
+                                                delta_t,
+                                                delta_x)  
+        # fluctuations_plus[left_boundary_subdomain-1,:] = np.zeros(self.max_number_of_variables)
+        for i in range(left_boundary_subdomain+1,self.mesh.resolution+2):
+            fluctuations_min[i-1,:n_variables+nr_augmented_variables],\
+                fluctuations_plus[i-1,:n_variables+nr_augmented_variables] =\
+                self.spatial_discretization_predictor.compute_fluctuation(
+                                                    values[i-1,:n_variables+nr_augmented_variables],
+                                                    values[i,:n_variables+nr_augmented_variables],
+                                                    system_matrix,
+                                                    delta_t,
+                                                    delta_x)   
+            predicted_values_transport[i-1,:n_variables+nr_augmented_variables] =\
+                values[i-1,:n_variables+nr_augmented_variables]\
+                - delta_t/delta_x*(fluctuations_plus[i-2,:n_variables+nr_augmented_variables]+\
+                                    fluctuations_min[i-1,:n_variables+nr_augmented_variables]) 
+
+        return predicted_values_transport 
+
+    def _source_step_augmented(self,
+                    values,
+                    delta_t,
+                    delta_x,
+                    orders,
+                    numbers_of_variables,
+                    boundary_interfaces_discretized) -> np.ndarray:
+
+        predicted_values = np.copy(values)
+
+        nr_augmented_variables = 1 #Generalize this such that it includes the general case
+
+        right_boundary_subdomain = 0
+
+        for m in range(len(boundary_interfaces_discretized)):
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+
+            if order < self.max_order:
+                nr_augmented_variables = 1
+                def source_term(cell_values,delta_t):
+                    return self.pde_type.compute_source_term_augmented(order,cell_values,delta_t)
+            else:
+                def source_term(cell_values,delta_t):
+                    return self.pde_type.compute_source_term(order,cell_values,delta_t)        
+                nr_augmented_variables = 0       
+
+            left_boundary_subdomain = right_boundary_subdomain+1
+            right_boundary_subdomain = boundary_interfaces_discretized[m]
+
+            for i in range(left_boundary_subdomain,right_boundary_subdomain+1):
+                predicted_values[i,:n_variables+nr_augmented_variables] \
+                    = self.time_integrator.integrate(values[i,:n_variables+nr_augmented_variables],source_term,delta_t)
+
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        if order < self.max_order:
+            nr_augmented_variables = 1
+            def source_term(cell_values,delta_t):
+                return self.pde_type.compute_source_term_augmented(order,cell_values,delta_t)
+        else:
+            def source_term(cell_values,delta_t):
+                return self.pde_type.compute_source_term(order,cell_values,delta_t)        
+            nr_augmented_variables = 0         
+                    
+        for i in range(right_boundary_subdomain+1,self.mesh_resolution+1): 
+            predicted_values[i,:n_variables+nr_augmented_variables] \
+                = self.time_integrator.integrate(values[i,:n_variables+nr_augmented_variables],source_term,delta_t)
+            
+        return predicted_values 
 
 class AdaptiveSimulationInterfaceCoupling1D(ABC):
     @abstractmethod
@@ -5037,7 +5367,7 @@ class AdaptiveSimulationInterfaceCoupling1D(ABC):
         pass
 
     @abstractmethod
-    def compute_fluctuation_interface(self):
+    def compute_fluctuations_interface(self):
         pass
 class PaddedBufferCell1D(AdaptiveSimulationInterfaceCoupling1D,ABC):
 
@@ -5047,9 +5377,8 @@ class PaddedBufferCell1D(AdaptiveSimulationInterfaceCoupling1D,ABC):
     def construct_padded_vector(self):
         pass
 
-    def compute_fluctuation_interface(self):
+    def compute_fluctuations_interface(self):
         pass
-
 
 class SubdomainReconstruction1D(ABC):
     @abstractmethod
@@ -5066,11 +5395,350 @@ class CellwiseSubdomainReconstruction1D(SubdomainReconstruction1D):
         pass
 class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
     
-    def init(self):
-        pass
+    def init(self,
+             boundary_condition: str,
+             smooth_par: int,
+             start_order : int,
+             start_nr_of_variables: int,
+             mesh_resolution: int,
+             interpolation: bool):
+            
+            self.smooth_par = smooth_par
+            self.orders_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
+            self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par+1,fill_value=0,dtype=int)
+            self.breakdown_criteria_flags = np.full(shape=mesh_resolution,dtype=int,fill_value=0)
+            self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_nr_of_variables,dtype=int)
+            self.boundary_interfaces_subdomains = np.zeros(self.smooth_par,dtype=int)  
 
-    def reconstruct_subdomains(self):
-        pass
+            self.nvar_min_order = start_nr_of_variables - start_order
+
+            self.n_cells_subdomain = int(np.floor(mesh_resolution/self.smooth_par))
+            self.subdomain_start = int(np.ceil(self.n_cells_subdomain/2))+1
+            self.boundary_interfaces_subdomains[0] = self.subdomain_start - 1
+            for i in range(1,self.smooth_par):
+                self.boundary_interfaces_subdomains[i] = self.subdomain_start + i*self.n_cells_subdomain - 1
+
+            self.boundary_condition = boundary_condition
+            if self.boundary_condition != 'PERIODIC':
+                self.increase_flags_subdomains = np.full(shape=self.smooth_par,fill_value=0,dtype=int)  
+                self.orders_subdomains = np.full(shape=self.smooth_par,fill_value=start_order,dtype=int)
+                self.increase_flags_subdomains = np.full(shape=self.smooth_par,fill_value=0,dtype=int)
+                self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par,fill_value=start_nr_of_variables,dtype=int)
+                self.boundary_interfaces_subdomains = np.zeros(self.smooth_par-1,dtype=int)
+                for i in range(self.smooth_par-1):
+                    self.boundary_interfaces_subdomains[i] = (i+1)*self.n_cells_subdomain - 1 
+
+            self.interpolation = interpolation
+
+            self._reconstruct_subdomains = self._reconstruct_subdomains()
+            self._interpolate_subdomains = self._interpolate_subdomains()
+
+    def _reconstruct_subdomains(self) -> np.ndarray:
+        
+        _reconstruct_subdomains_fun = self._reconstruct_subdomains_periodicBoundary if self.boundary_condition == 'PERIODIC'\
+            else self._reconstruct_subdomains_nonPeriodicBoundary
+
+        return _reconstruct_subdomains_fun
+
+    # TODO: needs modification
+    def _reconstruct_subdomains_nonPeriodicBoundary(self,
+                               values: np.ndarray,
+                               orders_cellwise: np.ndarray,
+                               numbers_of_variables_cellwise: np.ndarray,
+                               max_order: int,
+                               mesh_resolution: int,
+                               padding) -> np.ndarray:
+
+        for i in range(mesh_resolution):
+            orders_cellwise[i+1] += int(self.breakdown_criteria_flags[i])
+            numbers_of_variables_cellwise[i+1] += int(self.breakdown_criteria_flags[i])   
+        orders_cellwise[0] = orders_cellwise[1]
+        numbers_of_variables_cellwise[0] = numbers_of_variables_cellwise[1]
+        orders_cellwise[-1] = orders_cellwise[-2]
+        numbers_of_variables_cellwise[-1] = numbers_of_variables_cellwise[-2]
+
+        boundary_interfaces = []
+        orders_out = []
+        number_of_variables_out = []
+
+        values_copy = np.copy(values)
+
+        for i in range(self.smooth_par-1):
+            local_order = np.max(orders_cellwise[i*self.n_cells_subdomain:(i+1)*self.n_cells_subdomain])
+            local_number_of_variables = local_order + self.nvar_min_order
+            max_increase_flags = int(np.max(
+                self.breakdown_criteria_flags[max(i*self.n_cells_subdomain-1,0):(i+1)*self.n_cells_subdomain-1]))
+            self.increase_flags_subdomains[i] = max_increase_flags
+            self.orders_subdomains[i] = local_order
+            self.numbers_of_variables_subdomains[i] = local_number_of_variables
+            orders_cellwise[i*self.n_cells_subdomain:(i+1)*self.n_cells_subdomain] = local_order
+            numbers_of_variables_cellwise[i*self.n_cells_subdomain:(i+1)*self.n_cells_subdomain] = local_number_of_variables
+        local_order = np.max(orders_cellwise[(self.smooth_par-1)*self.n_cells_subdomain:])
+        self.orders_subdomains[-1] = local_order
+        orders_cellwise[(self.smooth_par-1)*self.n_cells_subdomain:] = local_order
+        self.numbers_of_variables_subdomains[-1] = local_order + self.nvar_min_order
+        numbers_of_variables_cellwise[(self.smooth_par-1)*self.n_cells_subdomain:] = self.numbers_of_variables_subdomains[-1]
+        max_increase_flags = int(np.max(
+            self.breakdown_criteria_flags[(self.smooth_par-1)*self.n_cells_subdomain-1:]))
+        self.increase_flags_subdomains[-1] = max_increase_flags
+
+        orders_out.append(int(self.orders_subdomains[0]))
+        number_of_variables_out.append(int(self.numbers_of_variables_subdomains[0]))
+        for i in range(self.smooth_par-1):
+            if self.orders_subdomains[i] != self.orders_subdomains[i+1]:
+                orders_out.append(int(self.orders_subdomains[i+1]))
+                number_of_variables_out.append(int(self.numbers_of_variables_subdomains[i+1]))
+                boundary_interfaces.append(self.n_cells_subdomain*(i+1)-1)
+
+        self.orders = orders_out
+        self.boundary_interfaces_discretized = boundary_interfaces
+        self.numbers_of_variables = number_of_variables_out
+        if len(self.boundary_interfaces_discretized) == 0:
+            self.orders.append(self.orders_subdomains[1])
+            self.orders.append(self.orders_subdomains[1])
+            self.numbers_of_variables.append(int(self.numbers_of_variables_subdomains[1]))
+            self.numbers_of_variables.append(int(self.numbers_of_variables_subdomains[1]))
+            self.boundary_interfaces_discretized.append(np.floor_divide(mesh_resolution,3))
+            self.boundary_interfaces_discretized.append(np.floor_divide(2*mesh_resolution,3))
+
+        # TODO: this should come in another class
+        # Set undefined moments and padded moments to zero
+        right_boundary = -1
+        for m in range(len(self.boundary_interfaces_discretized)):
+            left_boundary = right_boundary+1
+            right_boundary = self.boundary_interfaces_discretized[m]
+            values_copy[left_boundary:right_boundary+1,self.numbers_of_variables[m]:max_order+self.nvar_min_order]=0
+        values_copy[right_boundary+1:mesh_resolution+2,self.numbers_of_variables[-1]:max_order+self.nvar_min_order]=0 
+
+        if self.interpolation:
+            values_copy = self._interpolate_subdomains(values_copy)
+        print("Orders: "+str(self.orders_subdomains))
+        print("increase flags: "+str(self.increase_flags_subdomains))        
+        #TODO: this should also return the orders and numbersOfVariables, both cellwise and subdomainwise
+        return values_copy
+
+    # TODO: needs modification
+    def _reconstruct_subdomains_periodicBoundary(self,
+                               values: np.ndarray,
+                               orders_cellwise: np.ndarray,
+                               numbers_of_variables_cellwise: np.ndarray,
+                               max_order: int,
+                               mesh_resolution: int,
+                               padding) -> np.ndarray:
+
+        for i in range(mesh_resolution):
+            orders_cellwise[i+1] += int(self.breakdown_criteria_flags[i])
+            numbers_of_variables_cellwise[i+1] += int(self.breakdown_criteria_flags[i])   
+        orders_cellwise[0] = orders_cellwise[1]
+        numbers_of_variables_cellwise[0] = numbers_of_variables_cellwise[1]
+        orders_cellwise[-1] = orders_cellwise[-2]
+        numbers_of_variables_cellwise[-1] = numbers_of_variables_cellwise[-2]
+
+        boundary_interfaces = []
+        orders_out = []
+        number_of_variables_out = []
+
+        values_copy = np.copy(values)
+
+        local_order_start = np.max(orders_cellwise[:self.subdomain_start])
+        for i in range(self.smooth_par-1):
+            local_order = np.max(orders_cellwise[self.subdomain_start+i*self.n_cells_subdomain:\
+                                                      self.subdomain_start+(i+1)*self.n_cells_subdomain])
+            local_number_of_variables = local_order + self.nvar_min_order
+            self.orders_subdomains[i+1] = local_order
+            self.numbers_of_variables_subdomains[i] = local_number_of_variables
+            orders_cellwise[self.subdomain_start+i*self.n_cells_subdomain:\
+                                    self.subdomain_start+(i+1)*self.n_cells_subdomain] = local_order
+            numbers_of_variables_cellwise[self.subdomain_start+i*self.n_cells_subdomain:\
+                                                    self.subdomain_start+(i+1)*self.n_cells_subdomain] = local_number_of_variables
+        local_order_end = np.max(self.orders[self.subdomain_start+(self.smooth_par-1)*self.n_cells_subdomain:])
+        max_boundary_order = max(local_order_start,local_order_end)
+        self.orders_subdomains[0] = max_boundary_order
+        self.orders_subdomains[-1] = max_boundary_order
+        self.numbers_of_variables_subdomains[0] = max_boundary_order + self.nvar_min_order
+        self.numbers_of_variables_subdomains[-1] = max_boundary_order + self.nvar_min_order
+
+        orders_out.append(int(self.orders_subdomains[0]))
+        number_of_variables_out.append(int(self.numbers_of_variables_subdomains[0]))
+        for i in range(self.smooth_par):
+            if self.orders_subdomains[i] != self.orders_subdomains[i+1]:
+                orders_out.append(int(self.orders_subdomains[i+1]))
+                number_of_variables_out.append(int(self.numbers_of_variables_subdomains[i+1]))
+                boundary_interfaces.append(self.subdomain_start+self.n_cells_subdomain*i-1)
+
+        self.orders = orders_out
+        self.boundary_interfaces_discretized = boundary_interfaces
+        self.numbers_of_variables = number_of_variables_out
+        if len(self.boundary_interfaces_discretized) == 0:
+            self.orders.append(self.orders_subdomains[1])
+            self.orders.append(self.orders_subdomains[1])
+            self.numbers_of_variables.append(int(self.numbers_of_variables_subdomains[1]))
+            self.numbers_of_variables.append(int(self.numbers_of_variables_subdomains[1]))
+            self.boundary_interfaces_discretized.append(np.floor_divide(mesh_resolution,3))
+            self.boundary_interfaces_discretized.append(np.floor_divide(2*mesh_resolution,3))
+
+        # Set undefined moments and padded moments to zero
+        right_boundary = -1
+        for m in range(len(self.boundary_interfaces_discretized)):
+            left_boundary = right_boundary+1
+            right_boundary = self.boundary_interfaces_discretized[m]
+            values_copy[left_boundary:right_boundary+1,self.numbers_of_variables[m]:max_order+self.nvar_min_order]=0
+            if padding:
+                if self.orders[m] < self.orders[m+1]:
+                    values_copy[right_boundary,self.numbers_of_variables[m]:] = \
+                        values[right_boundary+1,self.numbers_of_variables[m]:] # update boundary interface boundary condition 
+                else:
+                    values_copy[right_boundary+1,self.numbers_of_variables[m+1]:] = \
+                        values[right_boundary,self.numbers_of_variables[m+1]:] # update boundary interface boundary condition 
+        values_copy[right_boundary+1:mesh_resolution+2,self.numbers_of_variables[-1]:max_order+self.nvar_min_order]=0 
+
+        if self.interpolation:
+            values_copy = self._interpolate_subdomains(values_copy)
+        print("Orders: "+str(self.orders_subdomains))
+        print("increase flags: "+str(self.increase_flags_subdomains))  
+
+        #TODO: this should also return the orders and numbersOfVariables, both cellwise and subdomainwise
+        return values_copy
+
+    #TODO: this should come in another class
+    def _process_domain_decomposition(self,values):
+
+        # Set undefined moments to zero
+        values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[0]:] = 0
+        for i in range(1,len(self.boundary_interfaces)):
+            values[self.boundary_interfaces[i-1]+1:self.boundary_interfaces[i]+1,self.numbers_of_variables[i]:] = 0
+        values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[-1]:] = 0
+
+        return values
+
+    #TODO: it is probably also a good idea to put the interpolate in the main class
+    def _interpolate_subdomains(self) -> np.ndarray:
+        
+        _interpolate_subdomains_fun = self._interpolate_subdomains_periodicBoundary if self.boundary_condition == 'PERIODIC' \
+            else self._interpolate_subdomains_nonPeriodicBoundary
+
+        return _interpolate_subdomains_fun   
+
+    def _interpolate_subdomains_interior(self,values):
+        
+        interpolated_values_interior = np.copy(values)
+        for i in range(1,self.smooth_par-1):
+            increase_flag = int(self.increase_flags_subdomains[i])
+            if increase_flag > 0:
+                boundary_left = self.boundary_interfaces_subdomains[i-1]+1
+                boundary_right = self.boundary_interfaces_subdomains[i]+1
+                nr_variables = self.numbers_of_variables_subdomains[i]
+                interpolated_values_interior[boundary_left:boundary_right,nr_variables-increase_flag:nr_variables] =\
+                    self._linear_interpolate(
+                        values[boundary_left-1,nr_variables-increase_flag:nr_variables],
+                        values[boundary_right,nr_variables-increase_flag:nr_variables],
+                        1+self.n_cells_subdomain
+                        )
+
+        return interpolated_values_interior
+
+    #TODO: this has to be modified
+    def _interpolate_subdomains_periodicBoundary(self,values):
+
+        values = self._interpolate_subdomains_interior(values)
+
+        if self.breakdown_criteria_flags_subdomains[0] > 0:
+            interpol_values =\
+                self._interpolate(np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[0]\
+                                            -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]],\
+                                        values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[0]\
+                                            -self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]]), axis=0),\
+                        values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                        self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                            self.numbers_of_variables[0]],\
+                        values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                        self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:\
+                            self.numbers_of_variables[0]])
+            values[self.boundary_interfaces[-1]+1:,\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
+                   interpol_values[:self.mesh.resolution+1-self.boundary_interfaces[-1],:]
+            values[:self.boundary_interfaces[0]+1,\
+                   self.numbers_of_variables[0]-self.breakdown_criteria_flags_subdomains[0]:self.numbers_of_variables[0]] =\
+                   interpol_values[self.mesh.resolution+1-self.boundary_interfaces[-1]:,:]            
+
+        if self.smooth_par > 2:
+            if self.breakdown_criteria_flags_subdomains[1] > 0:
+                values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                    self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]] =\
+                    self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]]),axis=0),
+                                      values[self.boundary_interfaces[1]+1:self.boundary_interfaces[2]+1,
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]])
+                
+            if self.breakdown_criteria_flags[-2] > 0:
+                values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,\
+                    self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]] =\
+                    self._interpolate(values[self.boundary_interfaces[-2]+1:self.boundary_interfaces[-1]+1,
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
+                                      values[self.boundary_interfaces[-3]+1:self.boundary_interfaces[-2]+1,
+                                                self.numbers_of_variables[-2]-self.breakdown_criteria_flags_subdomains[-2]:\
+                                                    self.numbers_of_variables[-2]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[-2]\
+                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[-2]\
+                                                        -self.breakdown_criteria_flags_subdomains[-2]:self.numbers_of_variables[-2]]),axis=0))
+        else:
+            if self.breakdown_criteria_flags_subdomains[1] > 0:
+                values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,\
+                    self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]] =\
+                    self._interpolate(values[self.boundary_interfaces[0]+1:self.boundary_interfaces[1]+1,
+                                                self.numbers_of_variables[1]-self.breakdown_criteria_flags_subdomains[1]:\
+                                                    self.numbers_of_variables[1]],
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]]),axis=0),
+                                      np.concatenate((values[self.boundary_interfaces[-1]+1:,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]],\
+                                                     values[:self.boundary_interfaces[0]+1,self.numbers_of_variables[1]\
+                                                        -self.breakdown_criteria_flags_subdomains[1]:self.numbers_of_variables[1]]),axis=0))
+
+        return values            
+
+    def _interpolate_subdomains_nonPeriodicBoundary(self,
+                                                    values,
+                                                    mesh_resolution):
+
+        interpolated_values = self._interpolate_subdomains_interior(values)
+
+        increase_flag = self.increase_flags_subdomains[0]
+        boundary_right = self.boundary_interfaces_subdomains[0]+1
+        nr_variables = self.numbers_of_variables_subdomains[0]
+        if increase_flag > 0:
+            interpolated_values[:boundary_right,nr_variables-increase_flag:nr_variables] =\
+                    self._linear_interpolate(np.zeros(increase_flag),
+                                             values[boundary_right,nr_variables-increase_flag:nr_variables],
+                                             self.n_cells_subdomain+1)
+        increase_flag = self.increase_flags_subdomains[-1]
+        boundary_left = self.boundary_interfaces_subdomains[-1]+1
+        nr_variables = self.numbers_of_variables_subdomains[-1]                                          
+        if increase_flag > 0:
+            interpolated_values[boundary_left:,nr_variables-increase_flag:nr_variables] =\
+                    self._linear_interpolate(values[boundary_left-1,nr_variables-increase_flag:nr_variables],
+                                             np.zeros(increase_flag),
+                                             mesh_resolution-boundary_left+3)
+
+        return interpolated_values                     
+
+    def _linear_interpolate(self,value_left,value_right,delta_i): 
+
+        slope = (value_right - value_left)/(delta_i)
+        interpolated_values = value_left + np.outer(np.arange(1,delta_i), slope)
+        # interpolated_values = np.zeros((delta_i-1,1))
+
+        return interpolated_values
 
 
 

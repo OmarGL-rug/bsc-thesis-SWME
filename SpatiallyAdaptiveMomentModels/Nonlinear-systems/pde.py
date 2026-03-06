@@ -332,6 +332,89 @@ class PDE(ABC):
         """
 
     @abstractmethod
+    def compute_refinement_criterion(self,
+                                    values: np.ndarray,
+                                    orders: list,
+                                    max_order: int,
+                                    numbers_of_variables: list,
+                                    n: int,
+                                    boundary_interfaces: list,
+                                    delta_x: float,
+                                    tolerance_increase: float) -> np.ndarray:
+        """
+        Computes whether the order of the moment should be increased
+
+        Parameters
+        ----------
+        values : np.ndarray
+            the values in all cells
+        orders : list
+            the orders in the subdomains
+        max_order : integer
+            the maximum order of the adaptive simulation
+        numbers_of_variables: list
+            the numbers of variables in the subdomains
+        n: integer
+            the mesh resolution
+        boundary_interfaces: list
+            the indices of the boundary interface positions
+        delta_x: float
+            grid size
+        tolerance_increase: float
+            the tolerance for increasing the order
+        
+        Returns
+        -------
+        breakdown_estimators_increase: float
+            the values of the breakdown estimators in each cell for increasing the order TODO: change name
+        increase_criterion_flags: float
+            the actual increases in orders in each cell
+
+        """
+
+
+    @abstractmethod
+    def compute_coarsening_criterion(self,
+                                    values: np.ndarray,
+                                    orders: list,
+                                    numbers_of_variables: list,
+                                    n: int,
+                                    boundary_interfaces: list,
+                                    delta_x: float,
+                                    increase_criterion_flags: np.ndarray,
+                                    tolerance_decrease: float) -> np.ndarray:
+        """
+        Computes whether the order of the moment should be reduced
+
+        Parameters
+        ----------
+        values : np.ndarray
+            the values in all cells
+        orders : list
+            the orders in the subdomains
+        numbers_of_variables: list
+            the numbers of variables in the subdomains
+        n: integer
+            the mesh resolution
+        boundary_interfaces: list
+            the indices of the boundary interface positions
+        delta_x: float
+            grid size
+        increase_criterion_flags: list
+            list containing the flags for increasing the order in each cell
+        tolerance_increase: float
+            the tolerance for increasing the order
+        
+        Returns
+        -------
+        breakdown_estimators_decrease: float
+            the values of the breakdown estimators in each cell for decreasing the order TODO: change name
+        decrease_criterion_flags: float
+            the actual decreases in orders in each cell
+
+        """
+
+    @abstractmethod
     def compute_breakdown_criteria_full(self) -> np.ndarray:        
         """
         Documented in the child classes
