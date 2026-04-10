@@ -5,8 +5,8 @@ format long
 
 prediction_solver = 'PRICE';
 interface_solver = 'PRICE';
-relaxation_time = '0p5';
-order_class_low = 2;
+relaxation_time = '0p05';
+order_class_low = 4;
 order_class_high= 12;
 
 % smooth_par = 200;
@@ -23,7 +23,8 @@ order_class_high= 12;
 smooth_pars = [200];
 toldowns = ["0p0003"];
 tolups = ["0p00045"];
-plottings = ["adaptiveOrders"];
+plottings = ["comparison_all"];
+% times = ["0p1","0p4","0p8"];
 times = ["0p1","0p4","0p8"];
 for i = 1:length(smooth_pars)
     for j = 1:length(toldowns)
@@ -50,6 +51,7 @@ for i = 1:length(smooth_pars)
                 % % plotting = 'T';
                 % % plotting = 'f4';
                 % plotting = 'adaptiveOrders';
+                % % plotting = 'comparison_all';
                 
                 blue = [0, 0.4470, 0.7410];
                 green = [0.4660, 0.6740, 0.1880];
@@ -78,37 +80,6 @@ for i = 1:length(smooth_pars)
                     
                     leg = legend('HME_{10}','HME_{12}','A-HME','Location','northeast');
                     set(leg,'FontSize',12); 
-
-
-                    yyaxis right
-                    plot1 = plot(x3,moments3)
-                    ylabel('Order $M$', 'FontSize',15,'Color','k', 'Interpreter','latex')
-                    ylim([1.5 12.5])
-                
-                    set(plot1(1),'LineStyle','None');
-                    set(plot1(1),'marker','.');
-                    set(plot1(1),'MarkerSize',20)
-                    set(plot1(1),'Color','k');
-                
-                    yyaxis left
-                    plot2 = plot(x3,rho3,x3,u3,x3,T3)
-                    set(plot2(1:3),'LineWidth',3)
-                    set(plot2(1),'LineStyle','-.')
-                    set(plot2(2),'LineStyle','--')    
-                    set(plot2(3),'LineStyle',':')
-                
-                    set(plot2(1),'Color',red)
-                    set(plot2(2),'Color',blue)    
-                    set(plot2(3),'Color',brown)
-                
-                    xlabel('$x$','FontSize',20,'Interpreter','latex')
-                    ylabel('\(\rho,u,\theta\)','FontSize',20,'interpreter','latex')
-                    ylim([0.25 2.25])
-                    xlim([-2.75,3.25])
-                
-                    leg = legend('$\rho$','$u$','$\theta$','$M$','Location','best','interpreter','latex');
-                    set(leg,'FontSize',12); 
-
                 end
                 
                 if(strcmp(plotting,'u'))
@@ -195,7 +166,11 @@ for i = 1:length(smooth_pars)
                     yyaxis right
                     plot1 = plot(x3,moments3)
                     % ylabel('Order $M$', 'FontSize',15,'Color','k', 'Interpreter','latex')
-                    ylabel('Order \it{M}', 'FontSize',15)
+                    ax = gca;           % current axes
+                    ax.YColor = 'k';    % make right y-axis ticks and axis label black
+                    
+                    ylabel('Order \it{M}', 'FontSize', 15, 'Color', 'k')   % ensure label is black
+                    % ylabel('Order \it{M}', 'FontSize',15)
                     ylim([1.5 12.5])
                 
                     set(plot1(1),'LineStyle','None');
@@ -206,28 +181,55 @@ for i = 1:length(smooth_pars)
                     yyaxis left
                     plot2 = plot(x3,rho3,x3,u3,x3,T3)
                     set(plot2(1:3),'LineWidth',3)
-                    % set(plot2(1),'LineStyle','-.')
-                    % set(plot2(2),'LineStyle','--')    
-                    % set(plot2(3),'LineStyle',':')
-                    set(plot2(1),'LineStyle','-')
-                    set(plot2(2),'LineStyle','-')    
-                    set(plot2(3),'LineStyle','-')
+                    set(plot2(1),'LineStyle','-.')
+                    set(plot2(2),'LineStyle','--')    
+                    set(plot2(3),'LineStyle',':')
                 
                     set(plot2(1),'Color',red)
                     set(plot2(2),'Color',blue)    
                     set(plot2(3),'Color',brown)
                 
-                    xlabel('$x$','FontSize',15,'Interpreter','latex')
-                    ylabel('\(\rho,u,\theta\)','FontSize',15,'interpreter','latex')
+                    xlabel('$x$','FontSize',20,'Interpreter','latex')
+                    ylabel('\(\rho,u,\theta\)','FontSize',20,'interpreter','latex')
                     ylim([0.25 2.25])
-                    xlim([-2.75,3.25])
+                    xlim([-2.7,3.3])
                 
                     leg = legend('$\rho$','$u$','$\theta$','$M$','Location','best','interpreter','latex');
                     set(leg,'FontSize',12); 
                 end
                 
-                % export_name = strcat('Paper\smoothPlusSmooth',plotting,'_smoothPar',string(smooth_par),...
-                %     '_toldown',toldown,'_tolup',tolup,'_Kn',relaxation_time,'_time',time,'.pdf');
+                if(strcmp(plotting,'comparison_all'))
+                    plot1 = plot(x1,rho1,x2,rho2,x3,rho3,x1,u1,x2,u2,x3,u3,x1,T1,x2,T2,x3,T3)
+                    
+                    axis([-2.7,3.3,0.25,2.25]);
+                    xlabel('$x$','FontSize', 20,'Interpreter','latex')
+                    ylabel('$\rho,u,\theta$','FontSize', 20,'Interpreter','latex')
+                    
+                    text(-2.35,1.87,'$\rho$','FontSize',20,'Interpreter','latex')
+                    text(-2.35,1.1,'$\theta$','FontSize',20,'Interpreter','latex')
+                    text(-2.35,0.41,'$u$','FontSize',20,'Interpreter','latex')
+
+                    linewidth1 = 3;
+                    set(plot1(1:9),'LineWidth',linewidth1);
+                    set(plot1(1),'LineStyle','-.');set(plot1(4),'LineStyle','-.');set(plot1(7),'LineStyle','-.');
+                    set(plot1(2),'LineStyle','--');set(plot1(5),'LineStyle','--');set(plot1(8),'LineStyle','--');
+                    set(plot1(3),'LineStyle',':');set(plot1(6),'LineStyle',':');set(plot1(9),'LineStyle',':');
+                
+                    set(plot1(1),'Color',red);set(plot1(4),'Color',red);set(plot1(7),'Color',red);
+                    set(plot1(2),'Color',blue);set(plot1(5),'Color',blue);set(plot1(8),'Color',blue);
+                    set(plot1(3),'Color','k');set(plot1(6),'Color','k');set(plot1(9),'Color','k');
+                    
+                    leg = legend(strcat('HME_{',string(order_class_low),'}'),...
+                        strcat('HME_{',string(order_class_high),'}'),'A-HME','Location','northeast');
+                    set(leg,'FontSize',12); 
+                end
+                export_name = strcat('Paper\shockPlusSmooth',plotting,'_smoothPar',string(smooth_par),...
+                    '_toldown',toldown,'_tolup',tolup,'_Kn',relaxation_time,'_time',time,'.pdf');
+
+                % % drawnow;                          % flush pending rendering
+                % % fig = gcf;
+                % % % Vector PDF (good for Illustrator / high quality)
+                % % exportgraphics(fig, export_name, 'ContentType', 'vector');
                 % 
                 % addpath('C:\Users\rikve\Github\PhD-RUG\SpatiallyAdaptiveMomentModels\Nonlinear-systems\Data-processing\Results\export_fig\', '-end');
                 % export_fig(export_name, '-pdf','-transparent');
