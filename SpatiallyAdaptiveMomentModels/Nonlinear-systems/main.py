@@ -17,29 +17,72 @@ def main():
     pde_information = config['pde_information']
     grid_information = config['grid_information']
     numerical_method_information = config['numerical_method_information']
+    adaptive_simulation_information = config['adaptive_simulation_information']
 
     linear_source = pde_information.getboolean('linear_source')
     time_integrator = numerical_method_information['timeIntegrator']
+    CFL_number = numerical_method_information.getfloat('CFL')
     linear_source_implicit = linear_source and time_integrator == 'ImplicitEuler'
     exact_source_computation = time_integrator == 'Exact'
 
     eigenstructure_available = False
     compute_eigenvalues_and_eigenvectors = None
 
+    type_model_error_estimator = adaptive_simulation_information['type_model_error_estimator']
+    time_step_splitting = adaptive_simulation_information.getboolean('time_step_splitting')
+
+    tol_coarsening_model_difference = adaptive_simulation_information.getfloat('tol_coarsening_model_difference')
+    tol_refinement_model_difference = adaptive_simulation_information.getfloat('tol_refinement_model_difference')
+
+    tol_coarsening_heur = adaptive_simulation_information.getfloat('tol_coarsening_heur')
+    tol_refinement_heur_source = adaptive_simulation_information.getfloat('tol_refinement_heur_source')
+    tol_refinement_heur_grad = adaptive_simulation_information.getfloat('tol_refinement_heur_grad') 
+
+    tol_res1 = adaptive_simulation_information.getfloat('tol_res1')
+    tol_res2 = adaptive_simulation_information.getfloat('tol_res2')    
+
+    if type_model_error_estimator == 'model_difference':
+        tols_coarsening = [tol_coarsening_model_difference]
+        tols_refinement = [tol_refinement_model_difference]
+    elif type_model_error_estimator == 'heuristics_plus_discretization':
+        tols_coarsening = [tol_res1,tol_res2,tol_coarsening_heur]
+        tols_refinement = [tol_refinement_heur_source,tol_refinement_heur_grad]
+
+    smoothing = adaptive_simulation_information.getboolean('smoothing')
+    smooth_par = adaptive_simulation_information.getint('smooth_par')
+    path_conservation = adaptive_simulation_information.getboolean('path_conservation')
+    start_order = adaptive_simulation_information.getint('start_order')
+    interpolation = adaptive_simulation_information.getboolean('interpolation')
+    spatial_discretization_predictor = adaptive_simulation_information['spatial_discretization_predictor']
+    spatial_discretization_interface = adaptive_simulation_information['spatial_discretization_interface']
+    two_step_domain_decomposition_evaluation = adaptive_simulation_information['two_step_domain_decomposition_evaluation']
+    hierarchical = adaptive_simulation_information['hierarchical']
+
+    min_order = 0
+    order_diff = 1
+
     if pde_information['pde_type'] == 'SWME1D':
+        min_order = 0
+        order_diff = 1
         _pde = pde.SWME1D(pde_information['initialCondition'],
                         pde_information.getfloat('viscosity'),
                         pde_information.getfloat('slipLength'),
                         False,
-                        linear_source_implicit)
+                        linear_source_implicit,
+                        type_model_error_estimator)
     elif pde_information['pde_type'] == 'HSWME1D':
+        min_order = 0
+        order_diff = 1
         _pde = pde.SWME1D(pde_information['initialCondition'],
                         pde_information.getfloat('viscosity'),
                         pde_information.getfloat('slipLength'),
                         True,
-                        linear_source_implicit)
+                        linear_source_implicit,
+                        type_model_error_estimator)
         
     elif pde_information['pde_type'] == 'VegetationSWME1D':
+        min_order = 0
+        order_diff = 1
         _pde = pde.VegetationSWME1D(pde_information['initialCondition'],
                                 pde_information.getfloat('viscosity'),
                                 pde_information.getfloat('slipLength'),
@@ -50,24 +93,30 @@ def main():
                                 800,
                                 0.4)
     elif pde_information['pde_type'] == 'HME':
+        min_order = 2
+        order_diff = 2
         _pde = pde.HermiteMomentEquations(
                         pde_information['initialCondition'],
                         pde_information.getfloat('relaxation_time'),
                         True,
                         True,
-                        exact_source_computation)
+                        exact_source_computation,
+                        type_model_error_estimator)
         eigenstructure_available = True
         compute_eigenvalues_and_eigenvectors = _pde.compute_eigenvalues_and_eigenvectors
     elif pde_information['pde_type'] == 'Grad':
+        min_order = 2
+        order_diff = 2
         _pde = pde.HermiteMomentEquations(
                         pde_information['initialCondition'],
                         pde_information.getfloat('relaxation_time'),
                         False,
                         True,
-                        exact_source_computation)
+                        exact_source_computation,
+                        type_model_error_estimator)
     else:
         print('PDE_type is not implemented yet')
-    
+
     ##########################################################################
 
     if numerical_method_information['fvm_type'] == 'PVM':
@@ -82,6 +131,29 @@ def main():
             _spatialDiscretization = spatialDiscretization.Osher(nr_of_quadrature_points,eigenstructure_available,compute_eigenvalues_and_eigenvectors)
         else:
             print('this pvm method is not implemented yet')
+
+        if spatial_discretization_predictor == 'PRICE':
+            _spatialDiscretizationPredictor = spatialDiscretization.PRICE(nr_of_quadrature_points)
+        elif spatial_discretization_predictor == 'LF':
+            _spatialDiscretizationPredictor = spatialDiscretization.LF(nr_of_quadrature_points)
+        elif spatial_discretization_predictor == 'Roe':
+            _spatialDiscretizationPredictor = spatialDiscretization.Roe(nr_of_quadrature_points)
+        elif spatial_discretization_predictor == 'Osher':
+            _spatialDiscretizationPredictor = spatialDiscretization.Osher(nr_of_quadrature_points,eigenstructure_available,compute_eigenvalues_and_eigenvectors)
+        else:
+            print('this pvm method is not implemented yet')
+
+        if spatial_discretization_interface == 'PRICE':
+            _spatialDiscretizationInterface = spatialDiscretization.PRICE(nr_of_quadrature_points)
+        elif spatial_discretization_interface == 'LF':
+            _spatialDiscretizationInterface = spatialDiscretization.LF(nr_of_quadrature_points)
+        elif spatial_discretization_interface == 'Roe':
+            _spatialDiscretizationInterface = spatialDiscretization.Roe(nr_of_quadrature_points)
+        elif spatial_discretization_interface == 'Osher':
+            _spatialDiscretizationInterface = spatialDiscretization.Osher(nr_of_quadrature_points,eigenstructure_available,compute_eigenvalues_and_eigenvectors)
+        else:
+            print('this pvm method is not implemented yet')
+
     else:
         print('this finite volume type is not implemented yet')
 
@@ -185,7 +257,7 @@ def main():
                 spatialDiscretization.LF(1),
                 _time_integration) 
         elif numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1DWithInterpolation':
-            start_order = int(numerical_method_information['start_order'])
+            start_order = int(adaptive_simulation_information['start_order'])
             _simulation = simulation.SmoothedModelAdaptiveSimulationWithInterpolation1D(
                 start_order,
                 _pde,
@@ -200,6 +272,32 @@ def main():
                                             compute_eigenvalues_and_eigenvectors),
                 spatialDiscretization.PRICE(1),
                 _time_integration) 
+        elif numerical_method_information['method'] == 'modelAdaptiveMomentSimulation1D':
+            
+            start_order = int(adaptive_simulation_information['start_order'])
+            _simulation = simulation.ModelAdaptiveMomentSimulation1D(
+            start_order,
+            min_order,
+            _pde,
+            _mesh,
+            CFL_number,
+            numerical_method_information['boundaryCondition'],
+            pde_information['initialCondition'],
+            smoothing,
+            smooth_par,
+            interpolation,
+            path_conservation,
+            _spatialDiscretization,
+            _spatialDiscretizationInterface,
+            _spatialDiscretizationPredictor,
+            _time_integration,
+            two_step_domain_decomposition_evaluation,
+            hierarchical,
+            type_model_error_estimator,
+            time_step_splitting,
+            order_diff,
+            tols_coarsening,
+            tols_refinement) 
         elif numerical_method_information['method'] == 'classical':
             _simulation = simulation.ClassicalSimulation1D(
                 numerical_method_information.getint('order'),
@@ -224,7 +322,8 @@ def main():
             if numerical_method_information['method'] == 'spatially_adaptive' or\
                 numerical_method_information['method'] == 'smoothedAdaptive' or\
                     numerical_method_information['method'] == 'interpolatedAdaptive' or\
-                        numerical_method_information['method'] == 'modelAdaptiveSimulation1D':
+                        numerical_method_information['method'] == 'modelAdaptiveSimulation1D' or\
+                            numerical_method_information['method'] == 'modelAdaptiveMomentSimulation1D':
                 _plotting = plotting.SWME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.SWME1DPlotClassical(_pde,_mesh,_simulation)
@@ -234,7 +333,8 @@ def main():
                     numerical_method_information['method'] == 'interpolatedAdaptive' or\
                         numerical_method_information['method'] == 'modelAdaptiveSimulation1D' or\
                             numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1D' or\
-                                numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1DWithInterpolation':
+                                numerical_method_information['method'] == 'smoothedModelAdaptiveSimulation1DWithInterpolation' or\
+                                    numerical_method_information['method'] == 'modelAdaptiveMomentSimulation1D':
                 _plotting = plotting.HME1DPlotAdaptive(_pde,_mesh,_simulation)
             elif numerical_method_information['method'] == 'classical':
                 _plotting = plotting.HME1DPlotClassical(_pde,_mesh,_simulation)

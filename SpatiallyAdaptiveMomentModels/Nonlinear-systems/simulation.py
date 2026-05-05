@@ -4213,7 +4213,7 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
     """
     TODO
     """
-    def __init__(self,
+    def __init__(self, 
                  max_order: int,
                  min_order: int,
                  pde_type: pde.PDE,
@@ -4221,7 +4221,6 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
                  CFL_number : float,
                  boundary_condition: str,
                  initial_condition: str,
-                 breakdown_criterion: str,
                  smoothing: bool,
                  smooth_par: int,
                  interpolation: bool,
@@ -4232,16 +4231,11 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
                  time_integration: timeIntegration.TimeIntegration,
                  two_step_domdecomp_approx: bool,
                  hierarchical: bool,
-                 dom_decomp_criterion_type: str,
+                 type_model_error_estimator: str,
                  time_step_splitting: bool,
                  order_diff: int,
-                 tol_coarsening_modelDifference,
-                 tol_refinement_modelDifference,
-                 tol_coarsening_heur_lastmoments,
-                 tol_coarsening_transport,
-                 tol_coarsening_source,
-                 tol_refinement_heur_gradients,
-                 tol_refinement_heur_source):
+                 tols_coarsening,
+                 tols_refinement):
 
         """
         TODO
@@ -4254,15 +4248,14 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
 
         self.boundary_condition = boundary_condition
         self.initial_condition = initial_condition
-        self.breakdown_criterion = breakdown_criterion
 
-        self.spatial_discretization = spatial_discretization_interior
+        self.spatial_discretization_interior = spatial_discretization_interior
         self.spatial_discretization_predictor = spatial_discretization_predictor
         self.spatial_discretization_interface = spatial_discretization_interface
-        self.path_conservative_interface_coupling = True
+        self.path_conservative_interface_coupling = path_conservation
 
         self.time_integration = time_integration
-        self.boundary_interfaces_discretized = [np.floor_divide(2*self.mesh.resolution,3),np.floor_divide(self.mesh.resolution,3)]
+        self.boundary_interfaces_discretized = [np.floor_divide(self.mesh.resolution,3),np.floor_divide(2*self.mesh.resolution,3)]
 
         self.max_order = max_order
         self.min_order = min_order
@@ -4272,13 +4265,11 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
         self.orders = [self.max_order,self.max_order,self.max_order]
         self.numbers_of_variables = [self.max_number_of_variables,self.max_number_of_variables,self.max_number_of_variables]
 
-        self.orders_cellwise = np.full(self.mesh.resolution, self.max_order, dtype=int)
-        self.numbers_of_variables_cellwise = np.full(self.mesh.resolution, self.max_number_of_variables, dtype=int)
+        self.orders_cellwise = np.full(self.mesh.resolution+2, self.max_order, dtype=int)
+        self.numbers_of_variables_cellwise = np.full(self.mesh.resolution+2, self.max_number_of_variables, dtype=int)
 
         self.dom_decomp_val_res1 = np.zeros(self.mesh.resolution)
         self.dom_decomp_val_res2 = np.zeros(self.mesh.resolution)
-
-        self.breakdown_estimators = np.zeros((self.mesh.resolution,self.max_order+4))
 
         self.subdomainReconstruction = CellwiseSubdomainReconstruction1D(boundary_condition)
         if smoothing:
@@ -4289,32 +4280,60 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
                                                                              self.mesh.resolution,
                                                                              interpolation)
 
-        self.domainDecomposition = OneStepModelErrorApproximation(dom_decomp_criterion_type)
+        self.type_model_error_estimator = type_model_error_estimator
+
+        self.domainDecomposition = OneStepModelErrorApproximation(self.type_model_error_estimator)
         if two_step_domdecomp_approx:
-            self.domainDecomposition = TwoStepModelErrorApproximation(dom_decomp_criterion_type)
+            self.domainDecomposition = TwoStepModelErrorApproximation(self.spatial_discretization_predictor,
+                                                                      self.time_integration,
+                                                                      self.pde_type,
+                                                                      self.mesh.resolution,
+                                                                      self.max_order,
+                                                                      self.max_number_of_variables)
 
-        self.interface_coupling = PaddedBufferCell1D(path_conservation,spatial_discretization_interface)
+        # self.interface_coupling = PaddedBufferCell1D(path_conservation,spatial_discretization_interface)
 
-        self.dom_decomp_criterion_type = dom_decomp_criterion_type
         if time_step_splitting:
-            self.AdaptiveFVMStep1D = SplittedNonHierarchicalAdaptiveFVMStep1D()
+            self.AdaptiveFVMStep1D = SplittedNonHierarchicalAdaptiveFVMStep1D(self.spatial_discretization_interior,
+                                                                            self.spatial_discretization_interface,
+                                                                            self.time_integration,
+                                                                            self.max_number_of_variables,
+                                                                            self.mesh.resolution,
+                                                                            self.pde_type)
             if hierarchical:
-                if dom_decomp_criterion_type == 'heuristics' and hierarchical:
-                    self.AdaptiveFVMStep1D = SplittedHierarchicalAdaptiveFVMStep1D()
-                elif dom_decomp_criterion_type == 'model_difference':
-                    self.AdaptiveFVMStep1D = SplittedNonHierarchicalAdaptiveFVMStep1D()
+                if self.type_model_error_estimator == 'heuristics_plus_discretization' and hierarchical:
+                    self.AdaptiveFVMStep1D = SplittedHierarchicalAdaptiveFVMStep1D(self.spatial_discretization_interior,
+                                                                            self.spatial_discretization_interface,
+                                                                            self.time_integration,
+                                                                            self.max_number_of_variables,
+                                                                            self.mesh.resolution,
+                                                                            self.pde_type)
+                elif self.type_model_error_estimator == 'model_difference':
+                    self.AdaptiveFVMStep1D = SplittedNonHierarchicalAdaptiveFVMStep1D(self.spatial_discretization_interior,
+                                                                            self.spatial_discretization_interface,
+                                                                            self.time_integration,
+                                                                            self.max_number_of_variables,
+                                                                            self.mesh.resolution,
+                                                                            self.pde_type)
                 else:
                     print('This type of model-error estimator has not been implemented yet!')
         else:
             print("Only time splitting methods implemented so far!")
 
-        self.tol_coarsening_modelDifference = tol_coarsening_modelDifference
-        self.tol_refinement_modelDifference = tol_refinement_modelDifference
-        self.tol_coarsening_heur_lastmoments = tol_coarsening_heur_lastmoments
-        self.tol_coarsening_transport = tol_coarsening_transport
-        self.tol_coarsening_source = tol_coarsening_source
-        self.tol_refinement_heur_gradients = tol_refinement_heur_gradients
-        self.tol_refinement_heur_source = tol_refinement_heur_source
+        self.number_of_breakdown_estimators_coarsening,self.number_of_breakdown_estimators_refinement =\
+            self.pde_type.get_number_of_breakdown_estimators(self.max_number_of_variables,self.type_model_error_estimator)
+
+        self.breakdown_estimators_coarsening = np.zeros((self.mesh.resolution,self.number_of_breakdown_estimators_coarsening))
+        self.breakdown_estimators_refinement = np.zeros((self.mesh.resolution,self.number_of_breakdown_estimators_refinement))
+
+        self.tols_coarsening = tols_coarsening
+        self.tols_refinement = tols_refinement
+
+        if self.type_model_error_estimator == 'heuristics_plus_discretization':
+            for i in range(len(tols_coarsening),self.number_of_breakdown_estimators_coarsening):
+                self.tols_coarsening.append(tols_coarsening[-1])
+            for i in range(len(tols_refinement),self.number_of_breakdown_estimators_refinement):
+                self.tols_refinement.append(tols_refinement[-1])
 
         self.order_diff = order_diff
 
@@ -4327,99 +4346,151 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
         
         values = self._get_initial_conditions(self.mesh.cell_center_positions)
         
-        dom_decomp_val_transport = np.zeros(self.mesh.resolution)
-        dom_decomp_val_source = np.zeros(self.mesh.resolution)
+        dom_decomp_val_decrease_transport = np.zeros(self.mesh.resolution)
+        dom_decomp_val_decrease_source = np.zeros(self.mesh.resolution)
 
         step_count = 0
         t = 0
 
+        values[0,:self.numbers_of_variables[0]] = self._update_boundary_conditions(values,'left')
+        values[self.mesh.resolution+1,:self.numbers_of_variables[-1]] = self._update_boundary_conditions(values,'right')
+        max_speed = self.pde_type.compute_max_wavespeed(max(self.orders),values)
+
+        delta_t = self.CFL_number*delta_x/max_speed 
+
+        if self.type_model_error_estimator == 'model_difference':
+            values = self.AdaptiveFVMStep1D.runFVMStep(values,
+                                                       delta_t,
+                                                       delta_x,
+                                                       self.orders,
+                                                       self.numbers_of_variables,
+                                                       self.boundary_interfaces_discretized)
+        elif self.type_model_error_estimator == 'heuristics_plus_discretization':
+            values,dom_decomp_val_decrease_transport,dom_decomp_val_decrease_source = self.AdaptiveFVMStep1D.runFVMStep(values,
+                                                                                                                        delta_t,
+                                                                                                                        delta_x,
+                                                                                                                        self.orders,
+                                                                                                                        self.numbers_of_variables,
+                                                                                                                        self.boundary_interfaces_discretized)
+        else:
+            print('this model error estimator has not been implemented yet')
+
+        step_count += 1
+
+        print()
+        print('time: '+str(t))
+        print('step size: '+str(delta_t))
+        print()
+
+        t += delta_t
         while t < t_end:
+            print("current orders: ", self.orders)
+
             # update boundary conditions
             values[0,:self.numbers_of_variables[0]] = self._update_boundary_conditions(values,'left')
             values[self.mesh.resolution+1,:self.numbers_of_variables[-1]] = self._update_boundary_conditions(values,'right')
             # max_speed = self.pde_type.compute_max_wavespeed(self.max_order,values)
             max_speed = self.pde_type.compute_max_wavespeed(max(self.orders),values)
-      
+
             delta_t = self.CFL_number*delta_x/max_speed 
 
             # prev_values = np.copy(values)
             # predicted_values = np.copy(values)
 
             # padded_vectors_left,padded_vectors_right = self._construct_padded_vectors(prev_values)
-            
-            if t > 0:
-
-                if self.type_model_error_estimator == 'model_difference':
-                    flags_increase_max,flags_decrease_min,estimators_increase_max,estimators_decrease_max =\
-                        self.domainDecomposition.compute_domain_decomposition(values,
-                                                                              delta_t,
-                                                                              delta_x,
-                                                                              self.orders,
-                                                                              self.max_order,
-                                                                              self.numbers_of_variables,
-                                                                              self.mesh.resolution,
-                                                                              self.boundary_interfaces_discretized,
-                                                                              [self.tol_coarsening_modelDifference],
-                                                                              [self.tol_refinement_modelDifference])
-
-                    self.breakdown_estimators = np.stack((estimators_decrease_max, estimators_increase_max),axis=1)
-                    self.breakdown_criteria_flags = self.pde_type.decompose_domain(self.mesh.resolution,
-                                                                                    self.max_order,
-                                                                                    self.orders_cellwise,
-                                                                                    flags_decrease_min,
-                                                                                    flags_increase_max)
-                    
-                elif self.type_model_error_estimator == 'heuristics_plus_discretization':
-
-                    flags_increase_max,flags_decrease_min,estimators_increase_max_heur,estimators_decrease_max_heur =\
-                        self.domainDecomposition.compute_domain_decomposition(values,
-                                                                              delta_t,
-                                                                              delta_x,
-                                                                              self.orders,
-                                                                              self.max_order,
-                                                                              self.numbers_of_variables,
-                                                                              self.mesh.resolution,
-                                                                              self.boundary_interfaces_discretized,
-                                                                              [self.tol_coarsening_heuristics,self.tol_coarsening_source],
-                                                                              [self.tol_refinement_heuristics,self.tol_refinement_source_last_entry])
-
-                    # dom_decomp_val_increase_source_last_entry = 0
-
-                    self.breakdown_estimators = np.stack((estimators_decrease_max_heur,
-                                                          dom_decomp_val_decrease_transport,
-                                                          dom_decomp_val_decrease_source,
-                                                          estimators_increase_max_heur),axis=1)
-
-                    for i in range(self.mesh.resolution):
-                        if flags_increase_max[i] == 0:
-                            if self.breakdown_estimators[i,-1] > self.tol_refinement_source:
-                                flags_increase_max[i] = 1
-                                continue
-                            handled = False
-                            for j in range(self.breakdown_estimators.shape[0]-1):
-                                if self.breakdown_estimators[i,j] > self.tol_refinement_heur_gradient:
-                                    flags_increase_max[i] = 1 #Generalize this so that it can include general increases
-                                    handled = True
-                                    break                                
-                            if handled:
-                                continue
-                            if dom_decomp_val_decrease_transport < self.tol_coarsening_transport and \
-                                dom_decomp_val_decrease_source < self.tol_coarsening_source:
-                                flags_decrease_min[i] = -1 #generalize this so that it can include general decreases
-                    
-                    self.breakdown_criteria_flags = self.decompose_domain(self.mesh.resolution,
-                                                                                    self.max_order,
-                                                                                    self.orders_cellwise,
-                                                                                    flags_decrease_min,
-                                                                                    flags_increase_max)   
-
-                values = self.subdomainReconstruction.reconstruct_subdomains()
-                # padded_vectors_left,padded_vectors_right = self._construct_padded_vectors(values)
 
             if self.type_model_error_estimator == 'model_difference':
-                values = self.AdaptiveFVMStep1D.runFVMStep()
+                flags_increase_max,flags_decrease_min,estimators_increase_max,estimators_decrease_max =\
+                    self.domainDecomposition.compute_domain_decomposition(values,
+                                                                            delta_t,
+                                                                            delta_x,
+                                                                            self.orders,
+                                                                            self.max_order,
+                                                                            self.numbers_of_variables,
+                                                                            self.mesh.resolution,
+                                                                            self.boundary_interfaces_discretized,
+                                                                            self.tols_coarsening,
+                                                                            self.tols_refinement,
+                                                                            self.number_of_breakdown_estimators_coarsening,
+                                                                            self.number_of_breakdown_estimators_refinement)
+
+                # self.breakdown_estimators = np.stack((estimators_decrease_max, estimators_increase_max),axis=1)
+                self.breakdown_estimators_coarsening = estimators_decrease_max
+                self.breakdown_estimators_refinement = estimators_increase_max
+                self.breakdown_criteria_flags = self.decompose_domain(flags_decrease_min,
+                                                                      flags_increase_max)
+                
             elif self.type_model_error_estimator == 'heuristics_plus_discretization':
-                values,dom_decomp_val_decrease_transport,dom_decomp_val_decrease_source = self.AdaptiveFVMStep1D.runFVMStep()
+
+                flags_increase_max,flags_decrease_min,estimators_increase_max_heur,estimators_decrease_max_heur =\
+                    self.domainDecomposition.compute_domain_decomposition(values,
+                                                                            delta_t,
+                                                                            delta_x,
+                                                                            self.orders,
+                                                                            self.max_order,
+                                                                            self.numbers_of_variables,
+                                                                            self.mesh.resolution,
+                                                                            self.boundary_interfaces_discretized,
+                                                                            self.tols_coarsening[0],
+                                                                            self.tols_refinement,
+                                                                            1,
+                                                                            self.number_of_breakdown_estimators_refinement)
+
+                # dom_decomp_val_increase_source_last_entry = 0
+
+                self.breakdown_estimators_coarsening = np.stack((estimators_decrease_max_heur,
+                                                        dom_decomp_val_decrease_transport,
+                                                        dom_decomp_val_decrease_source), axis = 1)
+                self.breakdown_estimators_refinement = estimators_increase_max_heur
+
+                for i in range(self.mesh.resolution):
+                    if flags_increase_max[i] == 0:
+                        # if self.breakdown_estimators_refinement[i,-1] > self.tols_refinement[1]:
+                        #     flags_increase_max[i] = 1
+                        #     continue
+                        # handled = False
+                        # for j in range(self.breakdown_estimators_refinement.shape[0]-1):
+                        #     if self.breakdown_estimators_refinement[i,j] > self.tols_refinement[0]:
+                        #         flags_increase_max[i] = 1 #Generalize this so that it can include general increases
+                        #         handled = True
+                        #         break                                
+                        # if handled:
+                        #     continue
+                        # if self.breakdown_estimators_coarsening[i,1] < self.tols_coarsening[1] and \
+                        #     self.breakdown_estimators_coarsening[i,2] < self.tols_coarsening[2] and\
+                        #         self.breakdown_estimators_coarsening[i,0] < self.tols_coarsening[0]:
+                        #     flags_decrease_min[i] = -1 #generalize this so that it can include general decreases
+                        if flags_decrease_min[i] == 0:
+                            if dom_decomp_val_decrease_transport[i] < self.tols_coarsening[0] or dom_decomp_val_decrease_source[i] < self.tols_coarsening[1]:
+                                flags_decrease_min[i] = -1
+                    
+                
+                self.breakdown_criteria_flags = self.decompose_domain(flags_decrease_min,
+                                                                        flags_increase_max)   
+
+            values,self.orders,self.numbers_of_variables,self.orders_cellwise,self.numbers_of_variables_cellwise,\
+                self.boundary_interfaces_discretized = self.subdomainReconstruction.reconstruct_subdomains(values,
+                                                                         self.orders_cellwise,
+                                                                         self.numbers_of_variables_cellwise,
+                                                                         self.max_order,
+                                                                         self.mesh.resolution,
+                                                                         not self.path_conservative_interface_coupling,
+                                                                         self.breakdown_criteria_flags)
+
+            if self.type_model_error_estimator == 'model_difference':
+                values = self.AdaptiveFVMStep1D.runFVMStep(values,
+                                                           delta_t,
+                                                            delta_x,
+                                                            self.orders,
+                                                            self.numbers_of_variables,
+                                                            self.boundary_interfaces_discretized)
+            elif self.type_model_error_estimator == 'heuristics_plus_discretization':
+                values,dom_decomp_val_decrease_transport,dom_decomp_val_decrease_source = self.AdaptiveFVMStep1D.runFVMStep(values,
+                                                                                                                            delta_t,
+                                                                                                                            delta_x,
+                                                                                                                            self.orders,
+                                                                                                                            self.numbers_of_variables,
+                                                                                                                            self.boundary_interfaces_discretized)
             else:
                 print('this model error estimator has not been implemented yet')
 
@@ -4432,6 +4503,7 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
             print()
 
             t+=delta_t
+
         print(self.boundary_interfaces_discretized)
         values = simulation_data = self._post_processing(values)
         return simulation_data  
@@ -4960,19 +5032,18 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
         return self.breakdown_estimators[:,0], self.breakdown_estimators[:,1]
 
     def decompose_domain(self,
-                        orders_cellwise: list,
                         flags_decrease: np.ndarray,
                         flags_increase: np.ndarray) -> np.ndarray:       
         
         domain_decomposition_flags = np.zeros(self.mesh.resolution,dtype=int)
         for i in range(self.mesh.resolution):
             if flags_increase[i] > 0:
-                if orders_cellwise[i+1] <= self.max_order - self.order_diff:
-                    domain_decomposition_flags[i] = flags_increase[i]
+                if self.orders_cellwise[i+1] <= self.max_order - self.order_diff:
+                    domain_decomposition_flags[i] = self.order_diff
             else:
                 if flags_decrease[i] < 0:
-                    if orders_cellwise[i+1] >= self.min_order + self.order_diff:
-                        domain_decomposition_flags[i] = flags_decrease[i]
+                    if self.orders_cellwise[i+1] >= self.min_order + self.order_diff:
+                        domain_decomposition_flags[i] = -self.order_diff
 
         return domain_decomposition_flags
 
@@ -4981,7 +5052,7 @@ class ModelAdaptiveMomentSimulation1D(SpatiallyAdaptiveSimulation1D):
 
 class AdaptiveFVMStep1D(ABC):
     
-    def init(self,
+    def __init__(self,
              spatial_discretization_interior,
              spatial_discretization_interface,
              time_integration,
@@ -5003,20 +5074,24 @@ class AdaptiveFVMStep1D(ABC):
 class SplittedAdaptiveFVMStep1D(AdaptiveFVMStep1D):
 
     def runFVMStep(self,
-                   padded_vectors_left,
-                   padded_vectors_right,
+                   values,
                    delta_t,
-                   delta_x):
+                   delta_x,
+                   orders,
+                   numbers_of_variables,
+                   boundary_interfaces):
         values = self.simulate_transport_step(values,
-                                        padded_vectors_left,
-                                        padded_vectors_right,
                                         delta_t,
-                                        delta_x)
+                                        delta_x,
+                                        orders,
+                                        numbers_of_variables,
+                                        boundary_interfaces)
         values = self.simulate_source_step(values,
-                                       padded_vectors_left,
-                                       padded_vectors_right,
                                        delta_t,
-                                       delta_x)
+                                       delta_x,
+                                       orders,
+                                       numbers_of_variables,
+                                       boundary_interfaces)
         
         
         return values
@@ -5032,6 +5107,7 @@ class SplittedAdaptiveFVMStep1D(AdaptiveFVMStep1D):
 class SplittedHierarchicalAdaptiveFVMStep1D(SplittedAdaptiveFVMStep1D):
 
     def runFVMStep(self,
+                   values,
                    delta_t,
                    delta_x,
                    orders,
@@ -5355,7 +5431,7 @@ class SplittedNonHierarchicalAdaptiveFVMStep1D(SplittedAdaptiveFVMStep1D):
 
 class DomainDecomposition1D(ABC):
     
-    def init(self,
+    def __init__(self,
              pde_type):
 
         self.pde_type = pde_type
@@ -5365,18 +5441,15 @@ class DomainDecomposition1D(ABC):
                                     delta_t: float,
                                     delta_x: float,
                                     orders: list,
-                                    max_order: int,
                                     numbers_of_variables: list,
                                     n: int,
                                     boundary_interfaces: list,
-                                    tols_decrease,
-                                    increase_criterion_flags: np.ndarray) -> np.ndarray:
+                                    tols_coarsening,
+                                    increase_criterion_flags: np.ndarray,
+                                    number_of_coarsening_estimators_pde) -> np.ndarray:
 
-        decrease_criterion_flags = np.zeros(n,dtype=int)
-        breakdown_estimators_decrease = np.zeros(n)
-
-        backward_differences = np.zeros(n,len(tols_decrease))
-        forward_differences = np.zeros(n,len(tols_decrease))
+        coarsening_criterion_flags = np.zeros(n,dtype=int)
+        model_error_estimators_coarsening = np.zeros((n,number_of_coarsening_estimators_pde))
 
         input_values = np.copy(values)
 
@@ -5401,41 +5474,28 @@ class DomainDecomposition1D(ABC):
             right_boundary_value[:n_right] = input_values[r+1,:n_right]
 
             if order > 3:
-                backward_differences[l-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[l,:],
-                                                                                            left_boundary_value,
-                                                                                            values[l,:],
-                                                                                            order,
-                                                                                            delta_t,
-                                                                                            delta_x)) 
-                forward_differences[l-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[l,:],
-                                                                                            values[l,:],
-                                                                                            values[l+1,:],
-                                                                                            order,
-                                                                                            delta_t,
-                                                                                            delta_x))                                                        
-                for i in range(l+1,r):
-                    backward_differences[i-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[i,:],
-                                                                                                values[i-1,:],
-                                                                                                values[i,:],
+                if increase_criterion_flags[l-1] == 0:
+                    model_error_estimators_coarsening[l-1,:] = self.pde_type.compute_coarsening_estimator(left_boundary_value,
+                                                                                                values[l,:],
+                                                                                                values[l+1,:],
                                                                                                 order,
                                                                                                 delta_t,
-                                                                                                delta_x)) 
-                    forward_differences[i-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[i,:],
-                                                                                                values[i,:],
-                                                                                                values[i+1,:],
-                                                                                                order))           
-                backward_differences[r-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[r,:],
-                                                                                            values[r-1,:],
-                                                                                            values[r,:],
-                                                                                            order,
-                                                                                            delta_t,
-                                                                                            delta_x)) 
-                forward_differences[r-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[r,:],
-                                                                                            values[r,:],
-                                                                                            right_boundary_value,
-                                                                                            order,
-                                                                                            delta_t,
-                                                                                            delta_x)) 
+                                                                                                delta_x)                                                       
+                for i in range(l+1,r):
+                    if increase_criterion_flags[i-1] == 0:
+                        model_error_estimators_coarsening[i-1,:] = self.pde_type.compute_coarsening_estimator(values[i-1,:],
+                                                                                                    values[i,:],
+                                                                                                    values[i+1,:],
+                                                                                                    order,
+                                                                                                    delta_t,
+                                                                                                    delta_x)          
+                if increase_criterion_flags[r-1] == 0:
+                    model_error_estimators_coarsening[r-1,:] = self.pde_type.compute_coarsening_estimator(values[r-1,:],
+                                                                                                values[r,:],
+                                                                                                right_boundary_value,
+                                                                                                order,
+                                                                                                delta_t,
+                                                                                                delta_x) 
         n_variables_prev = n_variables
         order = orders[-1]
         n_variables = numbers_of_variables[-1]
@@ -5448,43 +5508,34 @@ class DomainDecomposition1D(ABC):
         left_boundary_value[:n_left] = input_values[l-1,:n_left]  
 
         if order > 3:
-            backward_differences[l-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[l,:],
-                                                                                        left_boundary_value,
-                                                                                        values[l,:],
-                                                                                        order,
-                                                                                        delta_t,
-                                                                                        delta_x)) 
-            forward_differences[l-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[l,:],
-                                                                                        values[l,:],
-                                                                                        values[l+1,:],
-                                                                                        order,
-                                                                                        delta_t,
-                                                                                        delta_x))                                                        
+            if increase_criterion_flags[l-1] == 0:
+                model_error_estimators_coarsening[l-1,:] = self.pde_type.compute_coarsening_estimator(
+                                                                                            left_boundary_value,
+                                                                                            values[l,:],
+                                                                                            values[l+1,:],
+                                                                                            order,
+                                                                                            delta_t,
+                                                                                            delta_x)                                                      
             for i in range(l+1,n+1):
-                backward_differences[i-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[i,:],
-                                                                                            values[i-1,:],
-                                                                                            values[i,:],
-                                                                                            order,
-                                                                                            delta_t,
-                                                                                            delta_x)) 
-                forward_differences[i-1,:] = np.abs(self.pde_type.compute_coarsening_estimator(values[i,:],
-                                                                                            values[i,:],
-                                                                                            values[i+1,:],
-                                                                                            order,
-                                                                                            delta_t,
-                                                                                            delta_x)) 
-
-        breakdown_estimators_decrease = np.maximum(backward_differences,forward_differences)
+                if increase_criterion_flags[i-1] == 0:
+                    model_error_estimators_coarsening[i-1,:] = self.pde_type.compute_coarsening_estimator(values[i-1,:],
+                                                                                                values[i,:],
+                                                                                                values[i+1,:],
+                                                                                                order,
+                                                                                                delta_t,
+                                                                                                delta_x) 
 
         for i in range(n):
             if increase_criterion_flags[i] == 0:
-                decrease_criterion_flags = -2
-                for j in range(len(tols_decrease)):
-                    if increase_criterion_flags[i] == 0 and breakdown_estimators_decrease[i,j] > tols_decrease[j]:
-                        decrease_criterion_flags[i] = 0
+                coarsening = True
+                for j in range(number_of_coarsening_estimators_pde):
+                    if model_error_estimators_coarsening[i,j] > tols_coarsening[j]:
+                        coarsening = False 
                         break
+                if coarsening:
+                    coarsening_criterion_flags[i] = -1
 
-        return breakdown_estimators_decrease, decrease_criterion_flags
+        return model_error_estimators_coarsening, coarsening_criterion_flags
 
     def compute_refinement_criterion(self,
                                     values: np.ndarray,
@@ -5495,13 +5546,11 @@ class DomainDecomposition1D(ABC):
                                     numbers_of_variables: list,
                                     n: int,
                                     boundary_interfaces: list,
-                                    tols_increase) -> np.ndarray:
-        
-        increase_criterion_flags = np.zeros(n,dtype=int)
-        breakdown_estimators_increase = np.zeros(n)
+                                    tols_refinement,
+                                    number_of_refinement_estimators_pde) -> np.ndarray:
 
-        backward_differences = np.zeros(n,len(tols_increase))
-        forward_differences = np.zeros(n,len(tols_increase))
+        refinement_criterion_flags = np.zeros(n,dtype=int)
+        model_error_estimators_refinement = np.zeros((n,number_of_refinement_estimators_pde))
 
         input_values = np.copy(values) 
 
@@ -5525,50 +5574,30 @@ class DomainDecomposition1D(ABC):
             left_boundary_value[:n_left] = input_values[l-1,:n_left]
             right_boundary_value[:n_right] = input_values[r+1,:n_right]
 
-            backward_differences[l-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[l,:],
-                                                                                        left_boundary_value,
-                                                                                        values[l,:],
-                                                                                        order,
-                                                                                        max_order,
-                                                                                        delta_t,
-                                                                                        delta_x)) 
-            forward_differences[l-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[l,:],
-                                                                                        values[l,:],
-                                                                                        values[l+1,:],
-                                                                                        order,
-                                                                                        max_order,
-                                                                                        delta_t,
-                                                                                        delta_x))                  
-                                                    
+            model_error_estimators_refinement[l-1,:] = self.pde_type.compute_refinement_estimator(
+                                                                                    left_boundary_value,
+                                                                                    values[l,:],
+                                                                                    values[l+1,:],
+                                                                                    order,
+                                                                                    max_order,
+                                                                                    delta_t,
+                                                                                    delta_x) 
+
             for i in range(l+1,r):
-                backward_differences[i-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[i,:],
-                                                                                            values[i-1,:],
-                                                                                            values[i,:],
-                                                                                            order,
-                                                                                            max_order,
-                                                                                            delta_t,
-                                                                                            delta_x)) 
-                forward_differences[i-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[i,:],
+                model_error_estimators_refinement[i-1,:] = self.pde_type.compute_refinement_estimator(values[i-1,:],
                                                                                             values[i,:],
                                                                                             values[i+1,:],
                                                                                             order,
                                                                                             max_order,
                                                                                             delta_t,
-                                                                                            delta_x))        
-            backward_differences[r-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[r,:],
-                                                                                        values[r-1,:],
-                                                                                        values[r,:],
-                                                                                        order,
-                                                                                        max_order,
-                                                                                        delta_t,
-                                                                                        delta_x)) 
-            forward_differences[r-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[r,:],
+                                                                                            delta_x)     
+            model_error_estimators_refinement[r-1,:] = self.pde_type.compute_refinement_estimator(values[r-1,:],
                                                                                         values[r,:],
                                                                                         right_boundary_value,
                                                                                         order,
                                                                                         max_order,
                                                                                         delta_t,
-                                                                                        delta_x)) 
+                                                                                        delta_x) 
 
         n_variables_prev = n_variables
         order = orders[-1]
@@ -5581,45 +5610,30 @@ class DomainDecomposition1D(ABC):
         left_boundary_value = input_values[l,:]            
         left_boundary_value[:n_left] = input_values[l-1,:n_left]  
 
-        backward_differences[l-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[l,:],
-                                                                                    left_boundary_value,
-                                                                                    values[l,:],
-                                                                                    order,
-                                                                                    max_order,
-                                                                                    delta_t,
-                                                                                    delta_x)) 
-        forward_differences[l-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[l,:],
-                                                                                    values[l,:],
-                                                                                    values[l+1,:],
-                                                                                    order,
-                                                                                    max_order,
-                                                                                    delta_t,
-                                                                                    delta_x))                  
+        model_error_estimators_refinement[l-1,:] = self.pde_type.compute_refinement_estimator(left_boundary_value,
+                                                                                values[l,:],
+                                                                                values[l+1,:],
+                                                                                order,
+                                                                                max_order,
+                                                                                delta_t,
+                                                                                delta_x)                 
                                                 
         for i in range(l+1,n+1):
-            backward_differences[i-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[i,:],
-                                                                                        values[i-1,:],
-                                                                                        values[i,:],
-                                                                                        order,
-                                                                                        max_order,
-                                                                                        delta_t,
-                                                                                        delta_x)) 
-            forward_differences[i-1,:] = np.abs(self.pde_type.compute_refinement_estimator(values[i,:],
-                                                                                        values[i,:],
-                                                                                        values[i+1,:],
-                                                                                        order,
-                                                                                        max_order,
-                                                                                        delta_t,
-                                                                                        delta_x)) 
-
-        breakdown_estimators_increase = np.maximum(forward_differences,backward_differences)
-
+            model_error_estimators_refinement[i-1,:] = self.pde_type.compute_refinement_estimator(values[i-1,:],
+                                                                        values[i,:],
+                                                                        values[i+1,:],
+                                                                        order,
+                                                                        max_order,
+                                                                        delta_t,
+                                                                        delta_x) 
+            
         for i in range(n):
-            for j in range(len(tols_increase)):
-                if breakdown_estimators_increase[i,j] > tols_increase[j]: 
-                    increase_criterion_flags[i] = 1
-                    break            
-        return breakdown_estimators_increase, increase_criterion_flags
+            for j in range(number_of_refinement_estimators_pde):
+                if model_error_estimators_refinement[i,j] > tols_refinement[j]:
+                    refinement_criterion_flags[i] = 1
+                    break
+           
+        return model_error_estimators_refinement, refinement_criterion_flags
 
     @abstractmethod
     def compute_domain_decomposition(self):
@@ -5637,9 +5651,11 @@ class OneStepModelErrorApproximation(DomainDecomposition1D):
                                      mesh_resolution,
                                      boundary_interfaces_discretized,
                                      tols_coarsening,
-                                     tols_refinement):
+                                     tols_refinement,
+                                     number_of_coarsening_estimators_pde,
+                                     number_of_refinement_estimators_pde):
 
-        estimators_increase,flags_increase = self.pde_type.compute_refinement_criterion(
+        estimators_increase,flags_increase = self.compute_refinement_criterion(
                                                             values,
                                                             delta_t,
                                                             delta_x,
@@ -5648,24 +5664,25 @@ class OneStepModelErrorApproximation(DomainDecomposition1D):
                                                             numbers_of_variables,
                                                             mesh_resolution,
                                                             boundary_interfaces_discretized,
-                                                            tols_refinement)
+                                                            tols_refinement,
+                                                            number_of_refinement_estimators_pde)
 
-        estimators_decrease,flags_decrease = self.pde_type.compute_coarsening_criterion(
+        estimators_decrease,flags_decrease = self.compute_coarsening_criterion(
                                                             values,
                                                             delta_t,
                                                             delta_x,
                                                             orders,
-                                                            max_order,
                                                             numbers_of_variables,
                                                             mesh_resolution,
                                                             boundary_interfaces_discretized,
                                                             tols_coarsening,
-                                                            flags_increase)
+                                                            flags_increase,
+                                                            number_of_coarsening_estimators_pde)
 
         return flags_increase,flags_decrease,estimators_increase,estimators_decrease    
 
 class TwoStepModelErrorApproximation(DomainDecomposition1D):
-    def init(self,
+    def __init__(self,
              spatial_discretization_predictor,
              time_integrator,
              pde_type,
@@ -5690,13 +5707,20 @@ class TwoStepModelErrorApproximation(DomainDecomposition1D):
                                      mesh_resolution,
                                      boundary_interfaces_discretized,
                                      tols_coarsening,
-                                     tols_refinement):
+                                     tols_refinement,
+                                     number_of_breakdown_estimators_coarsening,
+                                     number_of_breakdown_estimators_refinement):
         
         prev_values = np.copy(values)
 
-        predicted_values = self.predict_values(values,delta_t,delta_x)
-
-        estimators_increase_prev,flags_increase_prev = self.pde_type.compute_refinement_criterion(
+        predicted_values = self.predict_values(values,
+                                               delta_t,
+                                               delta_x,
+                                               orders,
+                                               numbers_of_variables,
+                                               boundary_interfaces_discretized)
+        
+        estimators_increase_prev,flags_increase_prev = self.compute_refinement_criterion(
                                                             prev_values,
                                                             delta_t,
                                                             delta_x,
@@ -5705,9 +5729,10 @@ class TwoStepModelErrorApproximation(DomainDecomposition1D):
                                                             numbers_of_variables,
                                                             mesh_resolution,
                                                             boundary_interfaces_discretized,
-                                                            tols_refinement)
+                                                            tols_refinement,
+                                                            number_of_breakdown_estimators_refinement)
 
-        estimators_increase_next,flags_increase_next = self.pde_type.compute_refinement_criterion(
+        estimators_increase_next,flags_increase_next = self.compute_refinement_criterion(
                                                             predicted_values,
                                                             delta_t,
                                                             delta_x,
@@ -5716,55 +5741,66 @@ class TwoStepModelErrorApproximation(DomainDecomposition1D):
                                                             numbers_of_variables,
                                                             mesh_resolution,
                                                             boundary_interfaces_discretized,
-                                                            tols_refinement)
+                                                            tols_refinement,
+                                                            number_of_breakdown_estimators_refinement)
 
         flags_increase_max = np.maximum(flags_increase_next,flags_increase_prev)
         estimators_increase_max = np.maximum(estimators_increase_next,estimators_increase_prev)
 
-        estimators_decrease_prev,flags_decrease_prev = self.pde_type.compute_coarsening_criterion(
+        estimators_decrease_prev,flags_decrease_prev = self.compute_coarsening_criterion(
                                                             prev_values,
                                                             delta_t,
                                                             delta_x,
                                                             orders,
-                                                            max_order,
                                                             numbers_of_variables,
                                                             mesh_resolution,
                                                             boundary_interfaces_discretized,
                                                             tols_coarsening,
-                                                            flags_increase_max)
+                                                            flags_increase_max,
+                                                            number_of_breakdown_estimators_coarsening)
 
-        estimators_decrease_next,flags_decrease_next = self.pde_type.compute_coarsening_criterion(
+        estimators_decrease_next,flags_decrease_next = self.compute_coarsening_criterion(
                                                             predicted_values,
                                                             delta_t,
                                                             delta_x,
                                                             orders,
-                                                            max_order,
                                                             numbers_of_variables,
                                                             mesh_resolution,
                                                             boundary_interfaces_discretized,
                                                             tols_coarsening,
-                                                            flags_increase_max)
+                                                            flags_increase_max,
+                                                            number_of_breakdown_estimators_coarsening)
 
         flags_decrease_min = np.minimum(flags_decrease_next,flags_decrease_prev)
         estimators_decrease_max = np.maximum(estimators_decrease_next,estimators_decrease_prev)
 
         return flags_increase_max,flags_decrease_min,estimators_increase_max,estimators_decrease_max
 
-    def predict_values(self,values,delta_t,delta_x):
+    def predict_values(self,
+                       values,
+                       delta_t,
+                       delta_x,
+                       orders,
+                       numbers_of_variables,
+                       boundary_interfaces_discretized):
         predicted_values_transport = self._transport_step_augmented(values,
                                                                     delta_t,
                                                                     delta_x,
-                                                                    self.spatial_discretization_predictor)
+                                                                    orders,
+                                                                    numbers_of_variables,
+                                                                    boundary_interfaces_discretized)
         predicted_values = self._source_step_augmented(predicted_values_transport,
                                                         delta_t,
-                                                        delta_x)
+                                                        delta_x,
+                                                        orders,
+                                                        numbers_of_variables,
+                                                        boundary_interfaces_discretized)
         return predicted_values
 
     def _transport_step_augmented(self,
                                 values,
                                 delta_t,
                                 delta_x,
-                                spatial_discretization,
                                 orders,
                                 numbers_of_variables,
                                 boundary_interfaces_discretized) -> np.ndarray:   
@@ -5856,7 +5892,7 @@ class TwoStepModelErrorApproximation(DomainDecomposition1D):
                                                 delta_t,
                                                 delta_x)  
         # fluctuations_plus[left_boundary_subdomain-1,:] = np.zeros(self.max_number_of_variables)
-        for i in range(left_boundary_subdomain+1,self.mesh.resolution+2):
+        for i in range(left_boundary_subdomain+1,self.mesh_resolution+2):
             fluctuations_min[i-1,:n_variables+nr_augmented_variables],\
                 fluctuations_plus[i-1,:n_variables+nr_augmented_variables] =\
                 self.spatial_discretization_predictor.compute_fluctuation(
@@ -5928,7 +5964,7 @@ class TwoStepModelErrorApproximation(DomainDecomposition1D):
 
 class AdaptiveSimulationInterfaceCoupling1D(ABC):
     @abstractmethod
-    def init(self):
+    def __init__(self):
         pass
 
     @abstractmethod
@@ -5937,7 +5973,7 @@ class AdaptiveSimulationInterfaceCoupling1D(ABC):
 
 class PaddedBufferCell1D(AdaptiveSimulationInterfaceCoupling1D,ABC):
 
-    def init(self):
+    def __init__(self):
         pass
 
     def construct_padded_vector(self):
@@ -5950,7 +5986,7 @@ class PaddedBufferCell1D(AdaptiveSimulationInterfaceCoupling1D,ABC):
 
 class SubdomainReconstruction1D(ABC):
     @abstractmethod
-    def init(self):
+    def __init__(self):
         pass
 
     @abstractmethod
@@ -5995,7 +6031,7 @@ class SubdomainReconstruction1D(ABC):
         return values
 
 class CellwiseSubdomainReconstruction1D(SubdomainReconstruction1D):
-    def init(self,
+    def __init__(self,
              boundary_condition):
         self.boundary_condition = boundary_condition
         self.reconstruct_subdomains = self._reconstruct_subdomains()
@@ -6061,11 +6097,16 @@ class CellwiseSubdomainReconstruction1D(SubdomainReconstruction1D):
                                                                                      mesh_resolution,
                                                                                      domain_decomposition_flags)
         
-        max_order_boundary = max(orders_cellwise[-2],orders_cellwise[-1],orders_cellwise[0],orders_cellwise[1])
-        max_number_of_variables_boundary = max(numbers_of_variables_cellwise[-2],numbers_of_variables_cellwise[-1],
-                                               numbers_of_variables_cellwise[0],numbers_of_variables_cellwise[1])
-        orders_cellwise[-2],orders_cellwise[-1],orders_cellwise[0],orders_cellwise[1] = max_order_boundary
-        numbers_of_variables_cellwise[-2],numbers_of_variables_cellwise[-1],numbers_of_variables_cellwise[0],numbers_of_variables_cellwise[1] = max_number_of_variables_boundary
+        max_order_boundary = max(orders_cellwise[-2],orders_cellwise[1])
+        max_number_of_variables_boundary = max(numbers_of_variables_cellwise[-2],numbers_of_variables_cellwise[1])
+        orders_cellwise[-2] = max_order_boundary
+        orders_cellwise[-1] = max_order_boundary
+        orders_cellwise[0] = max_order_boundary
+        orders_cellwise[1] = max_order_boundary
+        numbers_of_variables_cellwise[-2] = max_number_of_variables_boundary
+        numbers_of_variables_cellwise[-1] = max_number_of_variables_boundary
+        numbers_of_variables_cellwise[0] = max_number_of_variables_boundary
+        numbers_of_variables_cellwise[1] = max_number_of_variables_boundary
 
         boundary_interfaces, orders_out, numbers_of_variables_out = self.compute_boundary_interfaces(orders_cellwise,
                                                                                                 numbers_of_variables_cellwise,
@@ -6113,7 +6154,7 @@ class CellwiseSubdomainReconstruction1D(SubdomainReconstruction1D):
 
 class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
     
-    def init(self,
+    def __init__(self,
              boundary_condition: str,
              smooth_par: int,
              start_order : int,
@@ -6123,6 +6164,7 @@ class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
             
             self.smooth_par = smooth_par
             self.orders_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_order,dtype=int)
+            self.increase_flags_subdomains = np.full(shape=self.smooth_par+1,fill_value=0,dtype=int) 
             self.breakdown_criteria_flags_subdomains = np.full(shape=self.smooth_par+1,fill_value=0,dtype=int)
             self.breakdown_criteria_flags = np.full(shape=mesh_resolution,dtype=int,fill_value=0)
             self.numbers_of_variables_subdomains = np.full(shape=self.smooth_par+1,fill_value=start_nr_of_variables,dtype=int)
@@ -6167,6 +6209,8 @@ class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
                                padding,
                                domain_decomposition_flags) -> np.ndarray:
 
+        print("Current orders subdomains: ",self.orders_subdomains)
+
         orders_cellwise, numbers_of_variables_cellwise = self.update_orders_cellwise(orders_cellwise,
                                                                                      numbers_of_variables_cellwise,
                                                                                      mesh_resolution,
@@ -6203,7 +6247,8 @@ class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
                                                   mesh_resolution)
 
         if self.interpolation:
-            values_copy = self.interpolate_subdomains(values_copy)
+            values_copy = self.interpolate_subdomains(values_copy,
+                                                      mesh_resolution)
      
         return values_copy,orders_out,numbers_of_variables_out,orders_cellwise,numbers_of_variables_cellwise,boundary_interfaces
 
@@ -6216,16 +6261,23 @@ class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
                                padding,
                                domain_decomposition_flags) -> np.ndarray:
 
+        print("Current orders subdomains: ",self.orders_subdomains)
+
         orders_cellwise, numbers_of_variables_cellwise = self.update_orders_cellwise(orders_cellwise,
                                                                                      numbers_of_variables_cellwise,
                                                                                      mesh_resolution,
                                                                                      domain_decomposition_flags)  
         
-        max_order_boundary = max(orders_cellwise[-2],orders_cellwise[-1],orders_cellwise[0],orders_cellwise[1])
-        max_number_of_variables_boundary = max(numbers_of_variables_cellwise[-2],numbers_of_variables_cellwise[-1],
-                                               numbers_of_variables_cellwise[0],numbers_of_variables_cellwise[1])
-        orders_cellwise[-2],orders_cellwise[-1],orders_cellwise[0],orders_cellwise[1] = max_order_boundary
-        numbers_of_variables_cellwise[-2],numbers_of_variables_cellwise[-1],numbers_of_variables_cellwise[0],numbers_of_variables_cellwise[1] = max_number_of_variables_boundary
+        max_order_boundary = max(orders_cellwise[-2],orders_cellwise[1])
+        max_number_of_variables_boundary = max(numbers_of_variables_cellwise[-2],numbers_of_variables_cellwise[1])
+        orders_cellwise[-2] = max_order_boundary
+        orders_cellwise[-1] = max_order_boundary
+        orders_cellwise[0] = max_order_boundary
+        orders_cellwise[1] = max_order_boundary
+        numbers_of_variables_cellwise[-2] = max_number_of_variables_boundary
+        numbers_of_variables_cellwise[-1] = max_number_of_variables_boundary
+        numbers_of_variables_cellwise[0] = max_number_of_variables_boundary
+        numbers_of_variables_cellwise[1] = max_number_of_variables_boundary
 
         boundary_interfaces, orders_out, numbers_of_variables_out =\
             self.compute_boundary_interfaces_periodic(orders_cellwise,
@@ -6253,7 +6305,8 @@ class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
                                                   mesh_resolution)
 
         if self.interpolation:
-            values_copy = self.interpolate_subdomains(values_copy)
+            values_copy = self.interpolate_subdomains(values_copy,
+                                                      mesh_resolution)
 
         return values_copy,orders_out,numbers_of_variables_out,orders_cellwise,numbers_of_variables_cellwise,boundary_interfaces
 
@@ -6298,8 +6351,8 @@ class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
                 values[boundary_left,nr_variables-increase_flag:nr_variables],
                 values[boundary_right,nr_variables-increase_flag:nr_variables],
                 mesh_resolution-boundary_left+boundary_right+1)
-            interpolated_values[boundary_left+1:-1,:] = interp_val_bound[:mesh_resolution-boundary_right,:]
-            interpolated_values[1:boundary_right,:] = interp_val_bound[mesh_resolution-boundary_right+1:,:]
+            interpolated_values[boundary_left+1:-1,nr_variables-increase_flag:nr_variables] = interp_val_bound[:mesh_resolution-boundary_left,:]
+            interpolated_values[1:boundary_right,nr_variables-increase_flag:nr_variables] = interp_val_bound[mesh_resolution-boundary_left+1:,:]
 
         return interpolated_values            
 
@@ -6400,12 +6453,15 @@ class SmoothedSubdomainReconstruction1D(SubdomainReconstruction1D):
                                     self.subdomain_start+(i+1)*self.n_cells_subdomain] = local_order
             numbers_of_variables_cellwise[self.subdomain_start+i*self.n_cells_subdomain:\
                                                     self.subdomain_start+(i+1)*self.n_cells_subdomain] = local_number_of_variables
-        local_order_end = np.max(self.orders[self.subdomain_start+(self.smooth_par-1)*self.n_cells_subdomain:])
+        local_order_end = np.max(orders_cellwise[self.subdomain_start+(self.smooth_par-1)*self.n_cells_subdomain:])
         max_boundary_order = max(local_order_start,local_order_end)
         max_increase_flags_end = int(np.max(domain_decomposition_flags[self.subdomain_start+(self.smooth_par-1)*self.n_cells_subdomain:]))
-        self.increase_flags_subdomains[0], self.increase_flags_subdomains[-1] = max(max_increase_flags_start,max_increase_flags_end)
-        self.orders_subdomains[0],self.orders_subdomains[-1] = max_boundary_order
-        self.numbers_of_variables_subdomains[0],self.numbers_of_variables_subdomains[-1] = max_boundary_order + self.nvar_min_order
+        self.increase_flags_subdomains[0] = max(max_increase_flags_start,max_increase_flags_end)
+        self.increase_flags_subdomains[-1] = max(max_increase_flags_start,max_increase_flags_end)
+        self.orders_subdomains[0] = max_boundary_order
+        self.orders_subdomains[-1] = max_boundary_order
+        self.numbers_of_variables_subdomains[0] = max_boundary_order + self.nvar_min_order
+        self.numbers_of_variables_subdomains[-1] = max_boundary_order + self.nvar_min_order
 
         orders_out.append(int(self.orders_subdomains[0]))
         numbers_of_variables_out.append(int(self.numbers_of_variables_subdomains[0]))

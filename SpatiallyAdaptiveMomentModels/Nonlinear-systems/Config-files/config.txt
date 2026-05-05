@@ -19,7 +19,7 @@ linear_source = True
 ### constantDensity_noVelocity, constantDensity_constantVelocity, shockTube_noVelocity,
 ### smooth_densityWave_noVelocity, symmetric_shockTube, symmetric_shockTube_constantVelocity
 ### colliding_shockTube, smooth_and_dam, smooth_expit_rightgoing, smooth_expit_leftgoing
-initialCondition = smooth_and_shockTube
+initialCondition = symmetric_shockTube
 
 breakdown_criterion = nothing
 
@@ -34,11 +34,11 @@ structuredGrid = True
 
     # structuredGrid #
     # Number of grid points in x-direction and y-direction (if the simulation is 1D: only resolutionX is used)
-resolutionX = 2000
+resolutionX = 500
 resolutionY = 800
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
-x1boundary = -2.75
-x2boundary = 3.25
+x1boundary = -1
+x2boundary = 1
 y1boundary = -2
 y2boundary = 2
 
@@ -49,18 +49,12 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end =  0.1
+t_end =  0.2
+
+CFL = 0.7
 
 # spatially_adaptive, classical, micro_macro, smoothedAdaptive, interpolatedAdaptive, smoothedModelAdaptiveSimulation1D, modelAdaptiveSimulation1D
-method = smoothedModelAdaptiveSimulation1DWithInterpolation
-smooth_par = 100
-    ### SPATIALLYADAPTIVE ###
-    # spatial coupling: conservative, nonconservative
-coupling = nonconservative
-    # Starting order of the adaptive simulation
-start_order = 12
-    ### CLASSICAL ###
-    # Order of the model
+method = modelAdaptiveMomentSimulation1D
 order = 12
 
 
@@ -77,4 +71,28 @@ nr_of_quadrature_points = 3
 timeIntegrator = Exact
 
 # Boundary condition. Implemented: INFLOW_OUTFLOW, PERIODIC
-boundaryCondition = INFLOW_OUTFLOW
+boundaryCondition = PERIODIC
+
+[adaptive_simulation_information]
+smoothing = True
+smooth_par = 37
+path_conservation = True
+start_order = 12
+interpolation = True
+spatial_discretization_predictor = PRICE
+spatial_discretization_interface = PRICE
+two_step_domain_decomposition_evaluation = True
+hierarchical = False
+# heuristics_plus_discretization, model_difference
+type_model_error_estimator = model_difference
+time_step_splitting = True
+
+tol_coarsening_model_difference = 0.0003
+tol_refinement_model_difference = 0.00045
+
+tol_coarsening_heur = 0.001
+tol_refinement_heur_source = 0.001
+tol_refinement_heur_grad = 0.001 
+
+tol_res1 = 0.001
+tol_res2 = 0.001

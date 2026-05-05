@@ -194,7 +194,8 @@ class SWME1DPlotAdaptive(Plotting):
     def __init__(self,
                  pde_type: pde.SWME1D,
                  mesh: mesh.RectangularMesh,
-                 simulation: simulation.SpatiallyAdaptiveSimulation1D):
+                 simulation: simulation.SpatiallyAdaptiveSimulation1D,
+                 type_model_error_estimator):
         """
         initializes the adaptive SWME1D plotting object
 
@@ -215,6 +216,7 @@ class SWME1DPlotAdaptive(Plotting):
         self.pde_type = pde_type 
         self.mesh = mesh
         self.simulation = simulation
+        self.type_model_error_estimator = type_model_error_estimator
 
     def plot(self,data_array):
         
@@ -247,38 +249,37 @@ class SWME1DPlotAdaptive(Plotting):
             plt.title('alpha_'+str(i))
             k += 1
 
-        plt.subplot(4,4,k)
-        # plt.plot(self.mesh.cell_center_positions[:-1],height_gradient)
-        plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators[:,2])
-        plt.title('Height gradient')
+        if self.type_model_error_estimator == 'heuristics_plus_discretization':
 
-        plt.subplot(4,4,k+1)
-        # plt.plot(self.mesh.cell_center_positions[:-1],momentum_gradient)
-        plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators[:,3])
-        plt.title('Velocity gradient')
+            plt.subplot(4,4,k)
+            plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators_coarsening[:,1])
+            plt.title('Absolute value last moment')
 
-        plt.subplot(4,4,k+2)
-        plt.plot(self.mesh.cell_center_positions,self.simulation.dom_decomp_val_res1)
-        plt.title('domain_decomposition_values 1')
+            plt.subplot(4,4,k+1)
+            plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators_coarsening[:,-2])
+            plt.title('transport residual')
 
-        plt.subplot(4,4,k+3)
-        plt.plot(self.mesh.cell_center_positions,self.simulation.dom_decomp_val_res2)
-        plt.title('domain_decomposition_values 2')
+            plt.subplot(4,4,k+2)
+            plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators_coarsening[:,-1])
+            plt.title('source residual')
 
-        plt.subplot(4,4,k+4)
-        plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators[:,2])
-        plt.scatter(self.mesh.cell_center_positions,(data_array[:,-1]*np.max(self.simulation.breakdown_estimators[:,2])+(5-data_array[:,-1])*np.min(self.simulation.breakdown_estimators[:,2]))/5,s=5,color = 'hotpink')
-        plt.title('orders vs height-gradient')
+            plt.subplot(4,4,k+3)
+            plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators_refinement[:,1])
+            plt.title('Height gradient')
 
-        plt.subplot(4,4,k+5)
-        # plt.plot(self.mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],orders,number_of_variables,'last_moment',self.mesh.resolution-1,delta_x))
-        plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators[:,1])
-        plt.title('Absolute value last moment')
+            plt.subplot(4,4,k+4)
+            # plt.plot(self.mesh.cell_center_positions[:-1],momentum_gradient)
+            plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators_refinement[:,2])
+            plt.title('Velocity gradient')
 
-        plt.subplot(4,4,k+6)
-        # plt.plot(self.mesh.cell_center_positions[:-1],_pde.compute_breakdown_criterion(data_array[:,1:],orders,number_of_variables,'source_term',self.mesh.resolution-1,delta_x))
-        plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators[:,0])
-        plt.title('source term')
+            plt.subplot(4,4,k+5)
+            plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators_refinement[:,0])
+            plt.title('source term last entry')
+
+            plt.subplot(4,4,k+6)
+            plt.plot(self.mesh.cell_center_positions,self.simulation.breakdown_estimators[:,2])
+            plt.scatter(self.mesh.cell_center_positions,(data_array[:,-1]*np.max(self.simulation.breakdown_estimators[:,0])+(5-data_array[:,-1])*np.min(self.simulation.breakdown_estimators[:,2]))/5,s=5,color = 'hotpink')
+            plt.title('orders vs height-gradient')
 
         plt.show()
 
@@ -451,11 +452,11 @@ class HME1DPlotAdaptive(Plotting):
             k += 1
 
         plt.subplot(4,4,k)
-        plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,0])
+        plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators_coarsening[:,0])
         plt.title('Decrease estimator')
 
         plt.subplot(4,4,k+1)
-        plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators[:,1])
+        plt.plot(self.mesh.cell_center_positions, self.simulation.breakdown_estimators_refinement[:,0])
         plt.title('Increase estimator')
 
         plt.subplot(4,4,k+2)

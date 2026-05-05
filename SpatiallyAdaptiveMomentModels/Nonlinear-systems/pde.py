@@ -410,7 +410,7 @@ class PDE(ABC):
                                      criterion_type):
         
         if criterion_type == "model_difference":
-            self.compute_refinement_estimator = self.compute_refinement_estimator_model_diff
+            self.compute_refinement_estimator = self.compute_refinement_estimator_model_difference
         elif criterion_type == "heuristics":
             self.compute_refinement_estimator = self.compute_refinement_estimator_heur
         else:
@@ -420,11 +420,26 @@ class PDE(ABC):
                                      criterion_type):
         
         if criterion_type == "model_difference":
-            self.compute_coarsening_estimator = self.compute_coarsening_estimator_model_diff
+            self.compute_coarsening_estimator = self.compute_coarsening_estimator_model_difference
         elif criterion_type == "heuristics":
             self.compute_coarsening_estimator = self.compute_coarsening_estimator_heur
         else:
             print("This criterion has not been implemented yet")
+
+    def get_number_of_breakdown_estimators(number_of_variables,dom_decomp_criterion_type):
+    
+        number_of_breakdown_estimators_coarsening = 0
+        number_of_breakdown_estimators_refinement = 0
+        if dom_decomp_criterion_type == "model_difference":
+            number_of_breakdown_estimators_coarsening = 1
+            number_of_breakdown_estimators_refinement = 1
+        elif dom_decomp_criterion_type == "heuristics_plus_discretization":
+            number_of_breakdown_estimators_coarsening = 3
+            number_of_breakdown_estimators_refinement = number_of_variables
+        else:
+            print("this breakdwon estimator has not been implemented yet") 
+
+        return number_of_breakdown_estimators_coarsening,number_of_breakdown_estimators_refinement
 
 class SWME1D(PDE):
 
@@ -6964,7 +6979,7 @@ class HermiteMomentEquations(PDE):
         
         pass
 
-    def compute_coarsening_estimator_model_difference(self,
+    def compute_coarsening_estimator_model_difference_old(self,
                                             value_central: np.ndarray, 
                                             value_left: np.ndarray,
                                             value_right: np.ndarray,
@@ -6990,13 +7005,13 @@ class HermiteMomentEquations(PDE):
 
         return decrease_quantity
 
-    def compute_coarsening_estimator_model_difference_new(self,
+    def compute_coarsening_estimator_model_difference(self,
                                             value_left: np.ndarray, 
                                             value_central: np.ndarray,
                                             value_right: np.ndarray,
                                             order: int,
                                             delta_t: float,
-                                            delta_x: float) -> float:
+                                            delta_x: float) -> tuple[float,int]:
         
         decrease_quantity = 0
     
@@ -7021,7 +7036,7 @@ class HermiteMomentEquations(PDE):
 
         return decrease_quantity
 
-    def compute_refinement_estimator_model_difference(self,
+    def compute_refinement_estimator_model_difference_old(self,
                                    value_central: np.ndarray, 
                                    value_left: np.ndarray,
                                    value_right: np.ndarray,
@@ -7047,13 +7062,51 @@ class HermiteMomentEquations(PDE):
         
         return increase_quantity
 
+    def compute_refinement_estimator_model_difference(self,
+                                   value_left: np.ndarray, 
+                                   value_central: np.ndarray,
+                                   value_right: np.ndarray,
+                                   order,
+                                   max_order,
+                                   delta_t: float,
+                                   delta_x: float):
+        
+        increase_quantity = 0
+
+        if order == 2:
+            increase_quantity = max(abs(6/value_central[0]*(value_central[3]-value_left[3])),
+                                    abs(6/value_central[0]*(value_right[3]-value_central[3])))
+        elif order == 3:
+            increase_quantity = max(abs(4*value_central[3]*(value_central[1]-value_left[1])+4*(value_central[4]-value_left[4])),
+                                    abs(4*value_central[3]*(value_right[1]-value_central[1])+4*(value_right[4]-value_central[4])))
+        elif order == max_order:
+            increase_quantity = max(
+                                    abs((order+1)/2*(2*value_central[order]*(value_central[1]-value_left[1])+\
+                                        value_central[order-1]*(value_central[2]-value_left[2]))),
+                                    abs((order+1)/2*(2*value_central[order]*(value_right[1]-value_central[1])+\
+                                        value_central[order-1]*(value_right[2]-value_central[2])))
+                                )  
+        else:
+            increase_quantity = max(
+                                    abs((order+1)*(value_central[order+1]-value_left[order+1])+\
+                                        (order+1)/2*(2*value_central[order]*(value_central[1]-value_left[1])+\
+                                        value_central[order-1]*(value_central[2]-value_left[2]))),
+                                    abs((order+1)*(value_right[order+1]-value_central[order+1])+\
+                                        (order+1)/2*(2*value_central[order]*(value_right[1]-value_central[1])+\
+                                        value_central[order-1]*(value_right[2]-value_central[2])))
+                                )
+        
+        increase_quantity = increase_quantity/delta_x
+
+        return increase_quantity
+
     def compute_coarsening_estimator_heur(self):
         pass
 
     def compute_refinement_estimator_heur(self):
         pass
 
-    def compute_refinement_criterion(self,
+    def compute_refinement_criterion_old(self,
                                     values: np.ndarray,
                                     orders: list,
                                     max_order: int,
@@ -7186,7 +7239,105 @@ class HermiteMomentEquations(PDE):
                 increase_criterion_flags[i] = 2            
         return breakdown_estimators_increase, increase_criterion_flags
 
-    def compute_coarsening_criterion(self,
+    def compute_refinement_criterion(self,
+                                    values: np.ndarray,
+                                    orders: list,
+                                    max_order: int,
+                                    numbers_of_variables: list,
+                                    n: int,
+                                    boundary_interfaces: list,
+                                    delta_t: float,
+                                    delta_x: float,
+                                    tols_refinement) -> np.ndarray:
+
+        increase_criterion_flags = np.zeros(n,dtype=int)
+        model_error_estimators_increase = np.zeros(n)
+
+        input_values = np.copy(values) 
+
+        r = 0
+
+        order = orders[0]
+        n_variables = numbers_of_variables[0]
+        for m in range(len(boundary_interfaces)):
+            n_variables_prev = n_variables
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+            n_variables_next = numbers_of_variables[m+1]
+            l = r+1
+            r = boundary_interfaces[m]  
+
+            n_left = min(n_variables_prev,n_variables)
+            n_right = min(n_variables,n_variables_next)
+
+            left_boundary_value = input_values[l,:]
+            right_boundary_value = input_values[r,:]
+            left_boundary_value[:n_left] = input_values[l-1,:n_left]
+            right_boundary_value[:n_right] = input_values[r+1,:n_right]
+
+            model_error_estimators_increase[l-1], increase_criterion_flags[l-1] = self.compute_refinement_estimator(
+                                                                                    left_boundary_value,
+                                                                                    values[l,:],
+                                                                                    values[l+1,:],
+                                                                                    order,
+                                                                                    max_order,
+                                                                                    delta_t,
+                                                                                    delta_x,
+                                                                                    tols_refinement) 
+
+            for i in range(l+1,r):
+                model_error_estimators_increase[i-1], increase_criterion_flags[i-1] = self.compute_refinement_estimator(values[i-1,:],
+                                                                                            values[i,:],
+                                                                                            values[i+1,:],
+                                                                                            order,
+                                                                                            max_order,
+                                                                                            delta_t,
+                                                                                            delta_x,
+                                                                                            tols_refinement)     
+            model_error_estimators_increase[r-1], increase_criterion_flags[r-1] = self.compute_refinement_estimator(values[r-1,:],
+                                                                                        values[r,:],
+                                                                                        right_boundary_value,
+                                                                                        order,
+                                                                                        max_order,
+                                                                                        delta_t,
+                                                                                        delta_x,
+                                                                                        tols_refinement) 
+
+        n_variables_prev = n_variables
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        n_left = min(n_variables_prev,n_variables)
+
+        l = r+1  
+
+        left_boundary_value = input_values[l,:]            
+        left_boundary_value[:n_left] = input_values[l-1,:n_left]  
+
+        model_error_estimators_increase[l-1], increase_criterion_flags[l-1] = self.compute_refinement_estimator(left_boundary_value,
+                                                                                values[l,:],
+                                                                                values[l+1,:],
+                                                                                order,
+                                                                                max_order,
+                                                                                delta_t,
+                                                                                delta_x,
+                                                                                tols_refinement)                 
+                                                
+        for i in range(l+1,n+1):
+            model_error_estimators_increase[i-1], increase_criterion_flags[i-1] = self.compute_refinement_estimator(values[i-1,:],
+                                                                        values[i,:],
+                                                                        values[i+1,:],
+                                                                        order,
+                                                                        max_order,
+                                                                        delta_t,
+                                                                        delta_x,
+                                                                        tols_refinement) 
+            
+        model_error_estimators_increase = model_error_estimators_increase/delta_x
+           
+        return model_error_estimators_increase, increase_criterion_flags
+
+    def compute_coarsening_criterion_old(self,
                                     values: np.ndarray,
                                     delta_t: float,
                                     delta_x: float,
@@ -7303,11 +7454,107 @@ class HermiteMomentEquations(PDE):
         breakdown_estimators_decrease = np.maximum(backward_differences,forward_differences)
 
         for i in range(n):
-            if increase_criterion_flags[i] == 0 and breakdown_estimators_decrease[i] < tolerance_decrease:
+            if increase_criterion_flags[i] == 0 and breakdown_estimators_decrease[i] < tols_decrease:
                 decrease_criterion_flags[i] = -2
 
         return breakdown_estimators_decrease, decrease_criterion_flags
-    
+
+    def compute_coarsening_criterion(self,
+                                    values: np.ndarray,
+                                    delta_t: float,
+                                    delta_x: float,
+                                    orders: list,
+                                    max_order: int,
+                                    numbers_of_variables: list,
+                                    n: int,
+                                    boundary_interfaces: list,
+                                    tols_coarsening,
+                                    increase_criterion_flags: np.ndarray) -> np.ndarray:
+
+        decrease_criterion_flags = np.zeros(n,dtype=int)
+        model_error_estimators_decrease = np.zeros(n)
+
+        input_values = np.copy(values)
+
+        r = 0
+
+        order = orders[0]
+        n_variables = numbers_of_variables[0]
+        for m in range(len(boundary_interfaces)):
+            n_variables_prev = n_variables
+            order = orders[m]
+            n_variables = numbers_of_variables[m]
+            n_variables_next = numbers_of_variables[m+1]
+            l = r+1
+            r = boundary_interfaces[m]  
+
+            n_left = min(n_variables_prev,n_variables)
+            n_right = min(n_variables,n_variables_next)
+
+            left_boundary_value = input_values[l,:]
+            right_boundary_value = input_values[r,:]
+            left_boundary_value[:n_left] = input_values[l-1,:n_left]
+            right_boundary_value[:n_right] = input_values[r+1,:n_right]
+
+            if order > 3:
+                if increase_criterion_flags[l-1] == 0:
+                    model_error_estimators_decrease[l-1], decrease_criterion_flags[l-1] = self.compute_coarsening_estimator(left_boundary_value,
+                                                                                                values[l,:],
+                                                                                                values[l+1,:],
+                                                                                                order,
+                                                                                                delta_t,
+                                                                                                delta_x,
+                                                                                                tols_coarsening)                                                       
+                for i in range(l+1,r):
+                    if increase_criterion_flags[i-1] == 0:
+                        model_error_estimators_decrease[i-1], decrease_criterion_flags[i-1] = self.compute_coarsening_estimator(values[i-1,:],
+                                                                                                    values[i,:],
+                                                                                                    values[i+1,:],
+                                                                                                    order,
+                                                                                                    delta_t,
+                                                                                                    delta_x,
+                                                                                                    tols_coarsening)          
+                if increase_criterion_flags[r-1] == 0:
+                    model_error_estimators_decrease[r-1], decrease_criterion_flags[r-1] = self.compute_coarsening_estimator(values[r-1,:],
+                                                                                                values[r,:],
+                                                                                                right_boundary_value,
+                                                                                                order,
+                                                                                                delta_t,
+                                                                                                delta_x,
+                                                                                                tols_coarsening) 
+        n_variables_prev = n_variables
+        order = orders[-1]
+        n_variables = numbers_of_variables[-1]
+
+        n_left = min(n_variables_prev,n_variables)
+
+        l = r+1  
+
+        left_boundary_value = input_values[l,:]            
+        left_boundary_value[:n_left] = input_values[l-1,:n_left]  
+
+        if order > 3:
+            if increase_criterion_flags[l-1] == 0:
+                model_error_estimators_decrease[l-1], decrease_criterion_flags[l-1] = self.compute_coarsening_estimator(
+                                                                                            left_boundary_value,
+                                                                                            values[l,:],
+                                                                                            values[l+1,:],
+                                                                                            order,
+                                                                                            delta_t,
+                                                                                            delta_x,
+                                                                                            tols_coarsening)                                                      
+            for i in range(l+1,n+1):
+                if increase_criterion_flags[i-1] == 0:
+                    model_error_estimators_decrease[i-1], decrease_criterion_flags[i-1] = self.compute_coarsening_estimator(values[i-1,:],
+                                                                                                values[i,:],
+                                                                                                values[i+1,:],
+                                                                                                order,
+                                                                                                delta_t,
+                                                                                                delta_x,
+                                                                                                tols_coarsening) 
+
+        return model_error_estimators_decrease, decrease_criterion_flags
+
     def decompose_domain(self,
                         n: int,
                         max_order: int,
@@ -7356,3 +7603,16 @@ class HermiteMomentEquations(PDE):
                                    
         return eigenvalues, eigenvectors
         
+    def get_number_of_breakdown_estimators(self,number_of_variables,dom_decomp_criterion_type):
+    
+        number_of_breakdown_estimators_coarsening = 0
+        number_of_breakdown_estimators_refinement = 0
+        if dom_decomp_criterion_type == "model_difference":
+            number_of_breakdown_estimators_coarsening = 1
+            number_of_breakdown_estimators_refinement = 1
+        elif dom_decomp_criterion_type == "heuristics_plus_discretization":
+            print("this breakdwon estimator has not been implemented yet")
+        else:
+            print("this breakdwon estimator has not been implemented yet") 
+
+        return number_of_breakdown_estimators_coarsening,number_of_breakdown_estimators_refinement
