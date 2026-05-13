@@ -88,10 +88,10 @@ def main():
                                 pde_information.getfloat('slipLength'),
                                 False,
                                 linear_source_implicit,
-                                0.008,
-                                0.97,
-                                800,
-                                0.4)
+                                pde_information.getfloat('diameter'),
+                                pde_information.getfloat('CD'),
+                                pde_information.getfloat('surface_density'),
+                                pde_information.getfloat('h_v'))
     elif pde_information['pde_type'] == 'HME':
         min_order = 2
         order_diff = 2
@@ -318,7 +318,8 @@ def main():
                 _spatialDiscretization,
                 _time_integration)
 
-        if pde_information['pde_type'] == 'SWME1D' or pde_information['pde_type'] == 'HSWME1D':
+        if pde_information['pde_type'] == 'SWME1D' or pde_information['pde_type'] == 'HSWME1D'\
+            or pde_information['pde_type'] == 'VegetationSWME1D':
             if numerical_method_information['method'] == 'spatially_adaptive' or\
                 numerical_method_information['method'] == 'smoothedAdaptive' or\
                     numerical_method_information['method'] == 'interpolatedAdaptive' or\

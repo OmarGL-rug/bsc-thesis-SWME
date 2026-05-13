@@ -7,20 +7,33 @@
 ### True: one-dimensional, False: two-dimensional
 1D = True
 
-pde_type = HME
+pde_type = VegetationSWME1D
 
-# Relaxation time
-relaxation_time = 0.05
+    # Specify friction model. Implemented: Newton
+frictionModel = Newton
+        # Newton #
+        # Specify friction parameters
+slipLength = 0.1
+viscosity = 0.1
 
-# The HME model has a linear source term
-linear_source = True
+    # Specify drag force parameters for the vegetation 
+diameter = 0.008
+# dimensionless drag coefficient                               
+CD = 0.97  
+surface_density = 800
+# height of the vegetation (this should be smaller than or equal to the minimum height)
+h_v = 0.4   
+
+# The VegetationSWME1D model does not have a source term that can be written in a linear form
+linear_source = False
 
 # Specify initial conditions. 
-### constantDensity_noVelocity, constantDensity_constantVelocity, shockTube_noVelocity,
-### smooth_densityWave_noVelocity, symmetric_shockTube, symmetric_shockTube_constantVelocity
-### colliding_shockTube, smooth_and_dam, smooth_expit_rightgoing, smooth_expit_leftgoing
-initialCondition = symmetric_shockTube
+# SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
+                   #linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave, symmetric_damBreak,
+                   #smooth_plus_damBreak
+initialCondition = damBreak_noVelocity
 
+# This input is never really used anymore, so just keep it like this
 breakdown_criterion = nothing
 
 ###############################
@@ -34,13 +47,18 @@ structuredGrid = True
 
     # structuredGrid #
     # Number of grid points in x-direction and y-direction (if the simulation is 1D: only resolutionX is used)
-resolutionX = 500
+# A good guideline is to stay around delta_x = 0.002
+resolutionX = 1000
+# This is never used for 1D simulations
 resolutionY = 800
     # Physical boundaries of the domain (if the simulation is 1D: only x1boundary and x2boundary are used)
+# This should depend on the specific test case (initial conditions)
 x1boundary = -1
 x2boundary = 1
-y1boundary = -2
-y2boundary = 2
+
+# This is never used for 1D simulations 
+y1boundary = -2                                 
+y2boundary = 2 
 
 
 #########################################
@@ -49,36 +67,44 @@ y2boundary = 2
 
 [numerical_method_information]
 # End time
-t_end =  0.2
+t_end =  1.0
 
-CFL = 0.7
+# This should be a number smaller than 1, I would just keep it at 0.5
+CFL = 0.5 
 
 # spatially_adaptive, classical, micro_macro, smoothedAdaptive, interpolatedAdaptive, smoothedModelAdaptiveSimulation1D, modelAdaptiveSimulation1D
-method = modelAdaptiveMomentSimulation1D
-order = 12
-
+# This should always be 'classical'
+method = classical
+# This is the order of the polynomial expansion, can go up to 6
+order = 1
 
 # Finite volume method type. Implemented: PVM
+# Only PVM method is implemented
 fvm_type = PVM
 
     # PVM #
     # Polynomial viscosity method. Implemented: PRICE, LF, Roe
+# The PRICE method is a good choice here
 pvm = PRICE
 # number of quadrature points
+# Just keep it at 3, it's not important to know what this is used for
 nr_of_quadrature_points = 3
 
 # Time integration for source term. Implemented: ExplicitEuler, ImplicitEuler, Exact
-timeIntegrator = Exact
+# Keeping it at 'ImplicitEuler' ensures stability
+timeIntegrator = ImplicitEuler
 
 # Boundary condition. Implemented: INFLOW_OUTFLOW, PERIODIC
-boundaryCondition = PERIODIC
+# This also depend on the test case, INFLOW_OUTFLOW should always work
+boundaryCondition = INFLOW_OUTFLOW
 
-[adaptive_simulation_information]
+# All of the inputs below will never be used for your simulations
+[adaptive_simulation_information] 
 smoothing = True
-smooth_par = 37
+smooth_par = 50
 path_conservation = True
 start_order = 12
-interpolation = True
+interpolation = False
 spatial_discretization_predictor = PRICE
 spatial_discretization_interface = PRICE
 two_step_domain_decomposition_evaluation = True

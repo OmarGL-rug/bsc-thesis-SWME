@@ -941,6 +941,11 @@ class SWME1D(PDE):
 
         return A_diff
 
+    def compute_system_matrix_augmented(self,
+                                        order,
+                                        values):
+        pass
+
     def compute_source_term(self,
                             order: int,
                             values: np.ndarray,
@@ -1053,6 +1058,11 @@ class SWME1D(PDE):
                 84*self.slip_length*alpha6)/h))/self.slip_length
 
         return S
+
+    def compute_source_term_augmented(self,
+                                      order,
+                                      values):
+        pass
 
     def _compute_source_matrix_inverse(self,
                                       order: int,
@@ -3568,6 +3578,11 @@ class SWME1D(PDE):
                         domain_decomposition_flags[i] = flags_decrease[i]
 
         return domain_decomposition_flags
+
+    def compute_eigenvalues_and_eigenvectors(self,
+                                             values: np.ndarray) -> tuple[np.ndarray,np.ndarray]:
+
+        pass
 
 class VegetationSWME1D(SWME1D):
     """
@@ -6697,8 +6712,8 @@ class HermiteMomentEquations(PDE):
             if order > 9:
                 initial_values[10] = 0.1
         elif initial_condition == 'symmetric_shockTube':
-            x0 = -0.5
-            x1 = 0.5
+            x0 = -0.3
+            x1 = 0.3
             if x0 < position < x1:
                 initial_values[0] = 1
                 initial_values[1] = 0
