@@ -1,4 +1,5 @@
 # Compiled source #
 ###################
 *.pyc
-*.txt
+Github_Token.txt
+data*
