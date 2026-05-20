@@ -1,5 +1,6 @@
 # Compiled source #
 ###################
+.gitignore
 *.pyc
 Github_Token.txt
-SpatiallyAdaptiveMomentModels/Data-processing
+*Omar/

@@ -7,6 +7,10 @@
 ### True: one-dimensional, False: two-dimensional
 1D = True
 
+
+# ################################################################## #
+# ################################################################## #
+# ######################    Vegetation start    #################### #
 pde_type = VegetationSWME1D
 
     # Specify friction model. Implemented: Newton
@@ -19,10 +23,10 @@ viscosity = 0.1
     # Specify drag force parameters for the vegetation 
 diameter = 0.008
 # dimensionless drag coefficient                               
-CD = 0.97  
-surface_density = 800
+CD = 0.99  
+surface_density = 256
 # height of the vegetation (this should be smaller than or equal to the minimum height)
-h_v = 0.4   
+h_v = 1 
 
 # The VegetationSWME1D model does not have a source term that can be written in a linear form
 linear_source = False
@@ -35,6 +39,9 @@ initialCondition = damBreak_noVelocity
 
 # This input is never really used anymore, so just keep it like this
 breakdown_criterion = nothing
+# ######################    Vegetation end    ###################### #
+# ################################################################## #
+# ################################################################## #
 
 ###############################
 ###### GRID INFORMATION #######
@@ -76,7 +83,7 @@ CFL = 0.5
 # This should always be 'classical'
 method = classical
 # This is the order of the polynomial expansion, can go up to 6
-order = 1
+order = 6
 
 # Finite volume method type. Implemented: PVM
 # Only PVM method is implemented
