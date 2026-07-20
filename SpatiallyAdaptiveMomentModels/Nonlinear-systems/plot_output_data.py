@@ -1,31 +1,57 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from pathlib import Path
 from os import getcwd
 from itertools import product
+import re
 
-import sys
-
+# ---------- configuration ----------
 SAVE_DATA = True
-
-resolution_list = [1000, 2000, 5000]
-height_list = np.arange(0,1.1,0.25)
 height_points = 100
+z_values = np.linspace(0, 1, height_points)
 
-file_path = Path(getcwd()) / ("Data-processing/Output/Omar/" + \
-                                "20260605-Overnight_computation-pre-gnsk")
+data_dir = Path(getcwd()) / "Data-processing/Output/Omar/combined"
+out_dir  = Path(getcwd()) / "Data-processing/Results/Omar"
+out_dir.mkdir(parents=True, exist_ok=True)
 
-def file_name_func(h:float, resolution:int, order:int):
+
+# ---------- helper functions ----------
+def parse_filename(filename: str):
     """
-    h: height of the vegetation. Always a float.
-    resolution: the amount of grid_points. In scientific notation
-    order:
+    Extract metadata from filename.
+    Expected patterns:
+        damBreak_noVelocity-height_0.0-resolution_100-order_2.csv
+        time-damBreak_noVelocity-height_0.0-resolution_100-order_2.csv
+        initialCondition_damBreakNoVelocity-density_512-height_0.0-resolution_100-order_2.csv
+    Returns dict with keys: is_time, base, height, resolution, order, density
     """
-    return f"damBreak_noVelocity-height_{h}-" + \
-                    f"resolution_{resolution}-" + \
-                    f"order_{order}" + \
-                    ".csv"
+    stem = Path(filename).stem
+    meta = {}
+
+    # optional time- prefix
+    if stem.startswith('time-'):
+        meta['is_time'] = True
+        stem = stem[5:]          # remove 'time-'
+    else:
+        meta['is_time'] = False
+
+    # Try to extract density if present (e.g., density_512)
+    dens_match = re.search(r'density_(\d+)', stem)
+    meta['density'] = int(dens_match.group(1)) if dens_match else 512  # default
+
+    # Extract base, height, resolution, order
+    # Pattern: (.*?)_noVelocity-height_([\d.]+)-resolution_(\d+)-order_(\d+)
+    pattern = r'^(.*?)_noVelocity-height_([\d.]+)-resolution_(\d+)-order_(\d+)$'
+    match = re.match(pattern, stem)
+    if not match:
+        raise ValueError(f"Filename '{filename}' does not match expected pattern")
+
+    meta['base'] = match.group(1)          # e.g., 'damBreak'
+    meta['height'] = float(match.group(2)) # e.g., 0.0
+    meta['resolution'] = int(match.group(3))
+    meta['order'] = int(match.group(4))
+
+    return meta
 
 def compute_error(error_type: str, data: pd.DataFrame, reference: pd.DataFrame)->np.ndarray:
     """
@@ -118,7 +144,6 @@ velocity_profiles = pd.DataFrame(velocity_profiles, columns=(base_columns+u_prof
 errors = pd.DataFrame(errors, columns=(base_columns+errors_columns))
 ### fi Creation arrays ###
 
-
 z_values = np.linspace(0, 1, height_points)
 
 low_bound, counter = 0, 0
@@ -148,8 +173,10 @@ for resolution, height, order in product(resolution_list, height_list, range(7))
     
     low_bound, counter = top_bound, counter+1
 
-errors.loc[:,base_columns] = data_time.loc[data["Order"] != 6 ,base_columns].reset_index()
+errors.loc[:,base_columns] = data_time.loc[data_time["Order"] != 6 ,base_columns].reset_index()
 velocity_profiles.loc[:,base_columns] = data.loc[:,base_columns]
+
+print("Arrays were created successfully")
 
 
 # Compute the error
@@ -179,8 +206,12 @@ for resolution, height, order in product(resolution_list, height_list, range(6))
                                                                             np.std(linf_u_profile) / np.sqrt(len(linf_u_profile)))
                                                                     )
 
+print("Errors were computed successfully")
+
 if SAVE_DATA == True:
-    data.to_csv(output_data_path / '01-data_stacked.csv', sep=',')
-    data_time.to_csv(output_data_path / '02-time_stacked.csv', sep=',')
-    errors.to_csv(output_data_path / '03-errors.csv', sep=',')
-    velocity_profiles.to_csv(output_data_path / '04-velocity_profiles.csv', sep=',')
+    data.to_csv(output_data_path / 'convergence-01-data_stacked.csv', sep=',')
+    data_time.to_csv(output_data_path / 'convergence-02-time_stacked.csv', sep=',')
+    errors.to_csv(output_data_path / 'convergence-03-errors.csv', sep=',')
+    velocity_profiles.to_csv(output_data_path / 'convergence-04-velocity_profiles.csv', sep=',')
+
+    print("Data was saved successfully")
