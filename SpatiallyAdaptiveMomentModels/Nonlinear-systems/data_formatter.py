@@ -206,9 +206,3 @@ if SAVE_DATA:
         time[mask(time)].to_csv(out_dir / f"02-time-{init_cond}.csv", index=False)
         profile[mask(profile)].to_csv(out_dir / f"03-u_profile-{init_cond}.csv", index=False)
         error[mask(error)].to_csv(out_dir / f"04-error-{init_cond}.csv", index=False)
-
-        #Convergence
-        # data[mask(data)].to_csv(out_dir / f"01-data-{init_cond}.csv", index=False)
-        # time[mask(time)].to_csv(out_dir / f"02-time-{init_cond}.csv", index=False)
-        # profile[mask(profile)].to_csv(out_dir / f"03-u_profile-{init_cond}.csv", index=False)
-        # error[mask(error)].to_csv(out_dir / f"04-error-{init_cond}.csv", index=False)
