@@ -12,11 +12,11 @@ import numpy as np
 from itertools import product
 import shutil
 
-order_params = range(0,7)
-resolution_x_params = [2000]#[100, 500, 1000, 2000]
-height_params = [0.0, 0.25, 0.5, 0.75, 1.0]
+order_params = [6] #range(0,7)
+resolution_x_params = [12000]#[100, 500, 1000, 2000]
+height_params = [1.0] #[0.0, 0.25, 0.5, 0.75, 1.0]
 height_params = [str(height) for height in height_params]
-plant_dens_params = [512, 1024, 2048, 4096]#[1024 ,2048, 4096]
+plant_dens_params = [512] #, 1024, 2048, 4096]#[1024 ,2048, 4096]
 initial_condition = "linearHeightNoVelocity"#"smoothWave"
 
 
@@ -372,13 +372,13 @@ if __name__ == '__main__':
 
         #moved outside of the conditional to make it easier to find by colapsing all if statements.        
         # foldername = f"Data-processing/Output/Omar/plantDensity_{plant_dens}"     
-        foldername = f"Data-processing/Output/Omar/20260718-{plant_dens}"                          
+        foldername = f"Data-processing/Output/Omar/20260720-Final"                          
                      
         output_dir = Path(foldername)
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # filename = 'smoothPlusDam'+'.csv'
-        filename = f"initialCondition_{initial_condition}-height_{height.replace(".",",")}-"+\
+        filename = f"initialCondition_{initial_condition}-density_{plant_dens}-height_{height.replace(".",",")}-"+\
                    f"resolution_{resolution_x}-order_{order}.csv"
         filename_time = 'time-' + filename
 

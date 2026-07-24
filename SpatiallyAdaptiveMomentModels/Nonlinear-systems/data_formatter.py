@@ -73,7 +73,7 @@ def compute_error(error_type: str, data: pd.DataFrame, reference: pd.DataFrame)-
     if error_type == 'LInf':
         return np.max(np.absolute(data - reference), axis=0)
     elif error_type == "L2":
-        return np.sqrt(np.sum(np.square(data - reference), axis=0)) / data.shape[0]
+        return np.sqrt(np.sum(np.square(data - reference) / data.shape[0], axis=0)) 
 
 def compute_vertical_velocity_profile(order: int, 
                                       values: pd.DataFrame,
