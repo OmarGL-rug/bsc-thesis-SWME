@@ -80,7 +80,7 @@ CFL = 0.5
 # spatially_adaptive, classical, micro_macro, smoothedAdaptive, interpolatedAdaptive, smoothedModelAdaptiveSimulation1D, modelAdaptiveSimulation1D
 # This should always be 'classical'
 method = classical
-# This is the order of the polynomiafl expansion, can go up to 6
+# This is the order of the polynomial expansion, can go up to 6
 # order = 0
 
 # Finite volume method type. Implemented: PVM
@@ -127,13 +127,3 @@ tol_refinement_heur_grad = 0.001
 
 tol_res1 = 0.001
 tol_res2 = 0.001
-[pde_information]
-h_v = 1.0
-
-surface_density = 4096
-
-[grid_information]
-resolutionX = 2000
-
-[numerical_method_information]
-order = 6

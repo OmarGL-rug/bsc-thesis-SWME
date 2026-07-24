@@ -1,6 +1,6 @@
-# Compiled source #
-###################
-.gitignore
+*.gitignore
 *.pyc
-Github_Token.txt
+*Github_Token.txt
 *Omar/
+.venv
+.vscode

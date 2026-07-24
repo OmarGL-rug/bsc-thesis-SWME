@@ -161,7 +161,7 @@ class SWME1DPlotClassical(Plotting):
             plt.title('alpha_'+str(i+1))
             k += 1
 
-        # plt.show()
+        plt.show()
 
 class SWME1DPlotAdaptive(Plotting):
 
@@ -281,7 +281,7 @@ class SWME1DPlotAdaptive(Plotting):
             plt.scatter(self.mesh.cell_center_positions,(data_array[:,-1]*np.max(self.simulation.breakdown_estimators[:,0])+(5-data_array[:,-1])*np.min(self.simulation.breakdown_estimators[:,2]))/5,s=5,color = 'hotpink')
             plt.title('orders vs height-gradient')
 
-        # plt.show()
+        plt.show()
 
 class HME1DPlotClassical(Plotting):
 
@@ -361,7 +361,7 @@ class HME1DPlotClassical(Plotting):
             plt.title('f_'+str(i))
             k += 1
 
-        # plt.show()
+        plt.show()
 
 class HME1DPlotAdaptive(Plotting):
 
@@ -464,4 +464,4 @@ class HME1DPlotAdaptive(Plotting):
         plt.scatter(self.mesh.cell_center_positions,(data_array[:,-1]*np.max(data_array[:,0])+(5-data_array[:,-1])*np.min(data_array[:,0]))/8,s=8,color = 'hotpink')
         plt.title('orders vs density')
 
-        # plt.show()
+        plt.show()
