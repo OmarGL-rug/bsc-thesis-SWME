@@ -10,10 +10,16 @@ from pathlib import Path
 from itertools import product
 
 
-data_path = Path(os.getcwd()) / "Data-processing/Results/Omar/"
-out_graph_path = Path(os.getcwd()) / "Data-processing/Results/Omar/graphs"
+SAVE_FIG = True
+
+# Order used for the numerical (grid-refinement) convergence plot
+NUMERICAL_CONVERGENCE_ORDER = 3
+
+results_dir = Path(os.getcwd()) / "Data-processing/Results/Omar/"
+data_path = results_dir / "clanker_made"
+out_graph_path = results_dir / "clanker_made/graphs"
 out_graph_path.mkdir(parents=True, exist_ok=True)
-out_table_path = Path(os.getcwd()) / "Data-processing/Results/Omar/tables"
+out_table_path = results_dir / "clanker_made/tables"
 out_table_path.mkdir(parents=True, exist_ok=True)
 
 data = pd.read_csv(data_path / "01-data-damBreakNoVelocity.csv")
@@ -115,21 +121,36 @@ def plot_error_convergence(df: pd.DataFrame,
     for resolution in resolutions:
 
         mask = (df["Resolution"] == resolution) & (df["Error Type"] == error_type)
+        sub = df.loc[mask].sort_values("Order")
+        clean = sub.loc[~sub["Reference Contaminated"]]
+        contaminated = sub.loc[sub["Reference Contaminated"]]
 
-        axs[0].plot(df.loc[mask,"Order"], df.loc[mask,"Water Height"],
-                    linestyle='-',
-                    color=color_map[resolution],
-                    marker=".", alpha=alpha)
+        # Line through every point (keeps the curve continuous), markers drawn
+        # separately so reference-contaminated orders can be rendered hollow --
+        # they sit close to the reference and are not meaningful errors.
+        axs[0].plot(sub["Order"], sub["Water Height"], linestyle='-',
+                    color=color_map[resolution], alpha=alpha)
+        axs[0].scatter(clean["Order"], clean["Water Height"],
+                        color=color_map[resolution], marker=".", alpha=alpha)
+        axs[0].scatter(contaminated["Order"], contaminated["Water Height"],
+                        facecolors='none', edgecolors=color_map[resolution],
+                        marker="o", alpha=alpha)
 
-        axs[1].plot(df.loc[mask,"Order"], df.loc[mask, "Average Velocity"],
-                    linestyle='-',
-                    color=color_map[resolution],
-                    marker=".", alpha=alpha)
+        axs[1].plot(sub["Order"], sub["Average Velocity"], linestyle='-',
+                    color=color_map[resolution], alpha=alpha)
+        axs[1].scatter(clean["Order"], clean["Average Velocity"],
+                        color=color_map[resolution], marker=".", alpha=alpha)
+        axs[1].scatter(contaminated["Order"], contaminated["Average Velocity"],
+                        facecolors='none', edgecolors=color_map[resolution],
+                        marker="o", alpha=alpha)
 
-        axs[2].errorbar(df.loc[mask,"Order"], df.loc[mask,"U profile"],
-                        yerr=df.loc[mask, "std U profile"],
-                        color=color_map[resolution], 
+        axs[2].errorbar(sub["Order"], sub["U profile"],
+                        yerr=sub["std U profile"],
+                        color=color_map[resolution],
                         marker=".", alpha=alpha)
+        axs[2].scatter(contaminated["Order"], contaminated["U profile"],
+                        facecolors='none', edgecolors=color_map[resolution],
+                        marker="o", alpha=alpha, zorder=3)
 
         axs[0].set_title("Water Height")
         axs[1].set_title("Average velocity")
@@ -169,13 +190,24 @@ def plot_percentage_change_convergence(df: pd.DataFrame,
 
     for resolution in resolutions:
         mask = pct_df["Resolution"] == resolution
+        sub = pct_df.loc[mask].sort_values("Order")
+        clean = sub.loc[~sub["Reference Contaminated"]]
+        contaminated = sub.loc[sub["Reference Contaminated"]]
 
-        axs[0].plot(pct_df.loc[mask, "Order"], pct_df.loc[mask, "Water Height"],
-                    linestyle='-', color=color_map[resolution], marker=".", alpha=alpha)
-        axs[1].plot(pct_df.loc[mask, "Order"], pct_df.loc[mask, "Average Velocity"],
-                    linestyle='-', color=color_map[resolution], marker=".", alpha=alpha)
-        axs[2].plot(pct_df.loc[mask, "Order"], pct_df.loc[mask, "U profile"],
-                    linestyle='-', color=color_map[resolution], marker=".", alpha=alpha)
+        # Hollow markers flag orders whose OWN error is reference-contaminated
+        # (order 6, and order 5 near the top resolutions) -- the % change into
+        # or out of those points is not meaningful evidence either.
+        axs[0].plot(sub["Order"], sub["Water Height"], linestyle='-', color=color_map[resolution], alpha=alpha)
+        axs[0].scatter(clean["Order"], clean["Water Height"], color=color_map[resolution], marker=".", alpha=alpha)
+        axs[0].scatter(contaminated["Order"], contaminated["Water Height"], facecolors='none', edgecolors=color_map[resolution], marker="o", alpha=alpha)
+
+        axs[1].plot(sub["Order"], sub["Average Velocity"], linestyle='-', color=color_map[resolution], alpha=alpha)
+        axs[1].scatter(clean["Order"], clean["Average Velocity"], color=color_map[resolution], marker=".", alpha=alpha)
+        axs[1].scatter(contaminated["Order"], contaminated["Average Velocity"], facecolors='none', edgecolors=color_map[resolution], marker="o", alpha=alpha)
+
+        axs[2].plot(sub["Order"], sub["U profile"], linestyle='-', color=color_map[resolution], alpha=alpha)
+        axs[2].scatter(clean["Order"], clean["U profile"], color=color_map[resolution], marker=".", alpha=alpha)
+        axs[2].scatter(contaminated["Order"], contaminated["U profile"], facecolors='none', edgecolors=color_map[resolution], marker="o", alpha=alpha)
 
     axs[0].set_title("Water Height")
     axs[1].set_title("Average velocity")
@@ -222,6 +254,7 @@ def compute_percentage_change(df: pd.DataFrame,
 
         orders = group["Order"].to_numpy()
         values = group[quantities].to_numpy()
+        contaminated_flags = group["Reference Contaminated"].to_numpy()
 
         for i in range(0, len(orders)):
             if (not include_zero) & (i == 0):
@@ -234,6 +267,9 @@ def compute_percentage_change(df: pd.DataFrame,
 
             record = dict(zip(group_cols, keys))
             record["Order"] = orders[i]
+            # Flagged when the "new" order's own error is reference-contaminated,
+            # since the % change is computed from that (untrustworthy) value.
+            record["Reference Contaminated"] = bool(contaminated_flags[i])
             record.update(dict(zip(quantities, pct)))
             records.append(record)
 
@@ -259,10 +295,14 @@ def plot_percentage_cumulative_convergence(df: pd.DataFrame,
         mask = pct_df["Resolution"] == resolution
         group = pct_df.loc[mask].sort_values("Order")
 
+        clean = group.loc[~group["Reference Contaminated"]]
+        contaminated = group.loc[group["Reference Contaminated"]]
+
         if plot_type == "bars":
-            bar_width = 0.8 / len(resolutions)  
+            bar_width = 0.8 / len(resolutions)
             # offset each resolution's bars so they sit side-by-side per order
             x_positions = group["Order"].to_numpy() + (i - (len(resolutions) - 1) / 2) * bar_width
+            x_positions_contaminated = contaminated["Order"].to_numpy() + (i - (len(resolutions) - 1) / 2) * bar_width
 
             axs[0].bar(x_positions, group["Water Height"], width=bar_width,
                        color=color_map[resolution], label=resolution)
@@ -270,13 +310,26 @@ def plot_percentage_cumulative_convergence(df: pd.DataFrame,
                        color=color_map[resolution])
             axs[2].bar(x_positions, group["U profile"], width=bar_width,
                        color=color_map[resolution])
+            # Hatch over reference-contaminated orders -- their cumulative
+            # improvement is measured against an untrustworthy point.
+            axs[0].bar(x_positions_contaminated, contaminated["Water Height"], width=bar_width,
+                       color=color_map[resolution], hatch="//", edgecolor="white", alpha=0.6)
+            axs[1].bar(x_positions_contaminated, contaminated["Average Velocity"], width=bar_width,
+                       color=color_map[resolution], hatch="//", edgecolor="white", alpha=0.6)
+            axs[2].bar(x_positions_contaminated, contaminated["U profile"], width=bar_width,
+                       color=color_map[resolution], hatch="//", edgecolor="white", alpha=0.6)
         elif plot_type == "lines":
-            axs[0].plot(pct_df.loc[mask, "Order"], pct_df.loc[mask, "Water Height"],
-                        linestyle='-', color=color_map[resolution], marker=".", alpha=alpha)
-            axs[1].plot(pct_df.loc[mask, "Order"], pct_df.loc[mask, "Average Velocity"],
-                        linestyle='-', color=color_map[resolution], marker=".", alpha=alpha)
-            axs[2].plot(pct_df.loc[mask, "Order"], pct_df.loc[mask, "U profile"],
-                        linestyle='-', color=color_map[resolution], marker=".", alpha=alpha)
+            axs[0].plot(group["Order"], group["Water Height"], linestyle='-', color=color_map[resolution], alpha=alpha)
+            axs[0].scatter(clean["Order"], clean["Water Height"], color=color_map[resolution], marker=".", alpha=alpha)
+            axs[0].scatter(contaminated["Order"], contaminated["Water Height"], facecolors='none', edgecolors=color_map[resolution], marker="o", alpha=alpha)
+
+            axs[1].plot(group["Order"], group["Average Velocity"], linestyle='-', color=color_map[resolution], alpha=alpha)
+            axs[1].scatter(clean["Order"], clean["Average Velocity"], color=color_map[resolution], marker=".", alpha=alpha)
+            axs[1].scatter(contaminated["Order"], contaminated["Average Velocity"], facecolors='none', edgecolors=color_map[resolution], marker="o", alpha=alpha)
+
+            axs[2].plot(group["Order"], group["U profile"], linestyle='-', color=color_map[resolution], alpha=alpha)
+            axs[2].scatter(clean["Order"], clean["U profile"], color=color_map[resolution], marker=".", alpha=alpha)
+            axs[2].scatter(contaminated["Order"], contaminated["U profile"], facecolors='none', edgecolors=color_map[resolution], marker="o", alpha=alpha)
 
     axs[0].set_title("Water Height")
     axs[1].set_title("Average velocity")
@@ -327,13 +380,72 @@ def compute_cumulative_improvement(df: pd.DataFrame,
 
             record = dict(zip(group_cols, keys))
             record["Order"] = row["Order"]
+            record["Reference Contaminated"] = bool(row["Reference Contaminated"])
             record.update(dict(zip(quantities, improvement)))
             records.append(record)
 
     return pd.DataFrame(records)
 
 
-SAVE_FIG = 0
+def plot_numerical_convergence(df: pd.DataFrame,
+                                order: int = 2,
+                                error_type: str = "L2",
+                                alpha: float = 0.85,
+                            ):
+    """
+    Numerical (grid-refinement) convergence at a FIXED polynomial order --
+    distinct from the model (polynomial-order) convergence plots above.
+    x-axis: dx (log). y-axis: error against the single shared reference (log).
+    Reference slope-1 and slope-2 lines are overlaid so the observed order of
+    accuracy p can be read off. Returns (fig, axs, observed_slopes) where
+    observed_slopes is {quantity: p}, computed between the two finest grids.
+    """
+    sub = df.loc[
+        (df["Order"] == order) &
+        (df["Error Type"] == error_type) &
+        (~df["Reference Contaminated"])
+    ].sort_values("dx")
+
+    if sub.empty:
+        raise ValueError(f"No numerical-convergence data for order={order}, error_type={error_type}")
+
+    fig, axs = plt.subplots(1, 3, sharex=True)
+    quantities = ["Water Height", "Average Velocity", "U profile"]
+    titles = ["Water Height", "Average velocity", "Velocity profile"]
+    color = color_list_func()[0]
+
+    dx = sub["dx"].to_numpy()
+    observed_slopes = {}
+
+    for ax, quantity, title in zip(axs, quantities, titles):
+        y = sub[quantity].to_numpy()
+        ax.plot(dx, y, linestyle='-', marker=".", color=color, alpha=alpha)
+
+        # Reference slopes of 1 and 2, anchored at the coarsest point, so the
+        # observed order p can be read off by eye against the data curve.
+        anchor_dx, anchor_y = dx[0], y[0]
+        for p, style in [(1, "--"), (2, ":")]:
+            slope_y = anchor_y * (dx / anchor_dx) ** p
+            ax.plot(dx, slope_y, linestyle=style, color="0.5", alpha=0.7,
+                    label=f"slope {p}" if quantity == "Water Height" else None)
+
+        observed_slopes[quantity] = np.log(y[-2] / y[-1]) / np.log(dx[-2] / dx[-1])
+
+        ax.set_title(title)
+        ax.set_xscale("log")
+        ax.set_yscale("log")
+        ax.grid(which="both", color="0.9")
+
+    axs[0].set_ylabel(f"{error_type} error vs shared reference")
+    axs[1].set_xlabel("Grid spacing dx (log scale)")
+    axs[0].legend(fontsize=9)
+
+    fig.suptitle(
+        f"Numerical convergence (grid refinement) at fixed polynomial order {order}, "
+        f"{error_type} norm.\nDistinct from model (polynomial-order) convergence above.",
+        fontsize=11, fontweight='bold'
+    )
+    return fig, axs, observed_slopes
 
 # Simulations for convergence have resolution up to 1e4
 # Find those
@@ -347,9 +459,11 @@ mask_dens = error["Plant Density"].isin(densities)
 
 convergence_arr = error.loc[(mask_h) & (mask_dens)]
 
+observed_slopes_report = []
+
 for density, height in product(densities, heights):
     mask = (convergence_arr["Plant Height"]==height) & (convergence_arr["Plant Density"]==density)
-    
+
     errors_available = convergence_arr['Error Type'].unique()
 
     for error_type in errors_available:
@@ -370,9 +484,66 @@ for density, height in product(densities, heights):
         fig_cum_err, axs_cum_err, cm_cum_err = plot_percentage_cumulative_convergence(df=convergence_arr.loc[mask], error_type=error_type)
         legend_plot_convergence(fig_cum_err, color_map=cm_cum_err)
         fig_cum_err.tight_layout()
-        
-        if SAVE_FIG == True:
-            fig_error_linear.savefig(fname=(out_graph_path / "Plot_convergence_{error_type}_error_linear.png"), format="png", dpi=600)
-            fig_error_log.savefig(fname=(out_graph_path / "Plot_convergence_{error_type}_error_log.png"), format="png", dpi=600)
-            fig_rel_err.savefig(fname=(out_graph_path / "Plot_convergence_{error_type}_relative_error.png"), format="png", dpi=600)
-            fig_error.savefig(fname=(out_graph_path / "Plot_convergence_{error_type}_cumulative_error.png"), format="png", dpi=600)
+
+        fig_num_conv, axs_num_conv, observed_slopes = plot_numerical_convergence(
+            df=convergence_arr.loc[mask], order=NUMERICAL_CONVERGENCE_ORDER, error_type=error_type
+        )
+        fig_num_conv.tight_layout()
+
+        observed_slopes_report.append({
+            "Plant Density": density, "Plant Height": height,
+            "Error Type": error_type, **observed_slopes,
+        })
+
+        if SAVE_FIG:
+            fig_error_linear.savefig(fname=(out_graph_path / f"Plot_convergence_{error_type}_error_linear.png"), format="png", dpi=600)
+            fig_error_log.savefig(fname=(out_graph_path / f"Plot_convergence_{error_type}_error_log.png"), format="png", dpi=600)
+            fig_rel_err.savefig(fname=(out_graph_path / f"Plot_convergence_{error_type}_relative_error.png"), format="png", dpi=600)
+            fig_cum_err.savefig(fname=(out_graph_path / f"Plot_convergence_{error_type}_cumulative_error.png"), format="png", dpi=600)
+            fig_num_conv.savefig(fname=(out_graph_path / f"Plot_convergence_{error_type}_numerical.png"), format="png", dpi=600)
+
+
+# ---------------------------------------------------------------------------
+# Sanity checks (see convergence_fix_spec.md "Sanity checks to run after the fix")
+# ---------------------------------------------------------------------------
+print("\n" + "=" * 70)
+print("SANITY CHECKS")
+print("=" * 70)
+
+print("\n[1] Resolution ordering (finer grid -> smaller L2 error) for orders 0-3,"
+      " Water Height:")
+for density, height in product(densities, heights):
+    case_mask = (
+        (convergence_arr["Plant Height"] == height) &
+        (convergence_arr["Plant Density"] == density) &
+        (convergence_arr["Error Type"] == "L2") &
+        (convergence_arr["Order"].isin([0, 1, 2, 3]))
+    )
+    case_sub = convergence_arr.loc[case_mask]
+    for order in sorted(case_sub["Order"].unique()):
+        order_sub = case_sub.loc[case_sub["Order"] == order].sort_values("Resolution")
+        errs = order_sub["Water Height"].to_numpy()
+        monotonic = bool(np.all(np.diff(errs) <= 0))
+        print(f"    density={density}, height={height}, order={order}: "
+              f"{'OK' if monotonic else 'VIOLATED'}  errs(low->high res)={np.round(errs, 6)}")
+
+near_reference_order = convergence_arr["Order"].max() - 1  # e.g. order 5, one below REFERENCE_ORDER
+print(f"\n[2] Order {near_reference_order} (non-contaminated resolutions) is not collapsing to ~0, Water Height:")
+mask5 = (
+    (convergence_arr["Order"] == near_reference_order) &
+    (convergence_arr["Error Type"] == "L2") &
+    (~convergence_arr["Reference Contaminated"])
+)
+print(convergence_arr.loc[mask5, ["Plant Density", "Plant Height", "Resolution", "Water Height"]]
+      .to_string(index=False))
+
+print("\n[3] L2 formula used: sqrt( sum((u - u_ref)**2) / N )  -- 1/N inside the sqrt (Roy 2003, Eq. 26)")
+print("[4] LInf formula used: max(abs(u - u_ref))  -- no summation")
+
+print("\n[5] Grid-alignment path (restriction vs. interpolation) is logged by "
+      "data_formatter.py at data-generation time -- one '[grid alignment] ...' line "
+      "per (case, resolution) pair. Re-run data_formatter.py to see it.")
+
+print(f"\n[6] Observed numerical-convergence slope p (fixed order={NUMERICAL_CONVERGENCE_ORDER}, "
+      f"between the two finest grids):")
+print(pd.DataFrame(observed_slopes_report).to_string(index=False))
