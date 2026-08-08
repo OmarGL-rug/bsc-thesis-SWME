@@ -34,7 +34,7 @@ linear_source = False
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
                    #linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave, symmetric_damBreak,
                    #smooth_plus_damBreak
-initialCondition = linearHeight_noVelocity
+initialCondition = damBreak_noVelocity
 
 # This input is never really used anymore, so just keep it like this
 breakdown_criterion = nothing

@@ -12,12 +12,12 @@ import numpy as np
 from itertools import product
 import shutil
 
-order_params = [6] #range(0,7)
-resolution_x_params = [12000]#[100, 500, 1000, 2000]
-height_params = [1.0] #[0.0, 0.25, 0.5, 0.75, 1.0]
+order_params = [3] #range(0,7)
+resolution_x_params = [1000]#[100, 500, 1000, 2000]
+height_params = [0.0, 0.25, 0.5, 0.75, 1.0]
 height_params = [str(height) for height in height_params]
-plant_dens_params = [512] #, 1024, 2048, 4096]#[1024 ,2048, 4096]
-initial_condition = "linearHeightNoVelocity"#"smoothWave"
+plant_dens_params = [512, 1024, 2048, 4096]#[1024 ,2048, 4096]
+initial_condition = "damBreakNoVelocity"#"smoothWave"
 
 
 TEMPLATE = Path('Config-files/config_template.txt')  # config WITHOUT the 3 params

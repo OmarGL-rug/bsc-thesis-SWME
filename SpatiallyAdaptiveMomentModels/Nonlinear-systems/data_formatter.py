@@ -12,21 +12,23 @@ height_points = 100
 z_values = np.linspace(0, 1, height_points)
 
 REFERENCE_ORDER = 6
-REFERENCE_RESOLUTION = 12000
+REFERENCE_RESOLUTION = 10000
 
 x1_bound, x2_bound = -2.5, 2.5
 DOMAIN_LENGTH = x2_bound - x1_bound
 
-# Order 6 IS the reference order, so its own error is never meaningful. Order 5
-# is also flagged, but only near the top of the sweep resolutions, where it sits
-# close enough to the (order 6, res 12000) reference to be untrustworthy.
+# Order REFERENCE_ORDER (6) is excluded entirely below -- it's the same order
+# as the reference itself, so its "error" is really just grid/interpolation
+# noise, not a meaningful model-convergence data point. Order 5 (one below the
+# reference order) is the highest order that still appears in the data, and is
+# flagged (not excluded) near the top of the sweep resolutions, where it sits
+# close enough to the reference to be untrustworthy.
 CONTAMINATED_NEAR_REFERENCE_ORDER = REFERENCE_ORDER - 1
-CONTAMINATED_NEAR_REFERENCE_MIN_RESOLUTION = 10000
+CONTAMINATED_NEAR_REFERENCE_MIN_RESOLUTION = REFERENCE_RESOLUTION // 2 + 1
 
 data_dir = Path(getcwd()) / "Data-processing/Output/Omar/20260720-Final-copy"
 out_dir  = Path(getcwd()) / "Data-processing/Results/Omar/clanker_made"
 out_dir.mkdir(parents=True, exist_ok=True)
-
 
 # ---------- helper functions ----------
 def parse_filename(filename: str):
@@ -242,7 +244,18 @@ for _, (ic, density, height) in reference_cases.iterrows():
     reference_solution = data.loc[ref_idx, ["Water Height", "Average Velocity"]].to_numpy()
     reference_u_profile = profile.loc[ref_idx, "0.0":"1.0"].to_numpy()
 
-    test_groups = case.loc[~ref_mask].groupby(["Order", "Resolution"])
+    # Exclude the reference's own resolution AND anything finer (>=
+    # REFERENCE_RESOLUTION), not just the reference order itself. Two reasons:
+    #   - same-resolution: comparing any curve to a same-resolution reference
+    #     can't separate model error from grid error (see
+    #     plots-documentation.md).
+    #   - finer-than-reference: align_reference_to_test would have to upsample
+    #     the (coarser) reference onto a finer test grid via interpolation,
+    #     fabricating detail the reference doesn't have -- not a real test.
+    # This makes REFERENCE_RESOLUTION swappable (e.g. 10000 while the 12000
+    # run is still in progress, currently only order 6) without needing to
+    # special-case leftover/partial data at resolutions above it.
+    test_groups = case.loc[case["Resolution"] < REFERENCE_RESOLUTION].groupby(["Order", "Resolution"])
 
     for (order, resolution), grp in test_groups:
         order_idx = grp.index
@@ -292,7 +305,6 @@ for _, (ic, density, height) in reference_cases.iterrows():
 
 error = pd.DataFrame(error_records)
 
-print(error.iloc[1,:])
 print("Saving data to files")
 
 if SAVE_DATA:

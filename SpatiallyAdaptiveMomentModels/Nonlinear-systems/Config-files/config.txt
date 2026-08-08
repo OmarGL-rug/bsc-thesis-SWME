@@ -34,7 +34,7 @@ linear_source = False
 # SWME1D, HSWME1D: damBreak_noVelocity, constantHeight_noVelocity, constantHeight_constantVelocity, 
                    #linearHeight_noVelocity, damBreak_constantVelocity, smooth_wave, symmetric_damBreak,
                    #smooth_plus_damBreak
-initialCondition = linearHeight_noVelocity
+initialCondition = damBreak_noVelocity
 
 # This input is never really used anymore, so just keep it like this
 breakdown_criterion = nothing
@@ -80,7 +80,7 @@ CFL = 0.5
 # spatially_adaptive, classical, micro_macro, smoothedAdaptive, interpolatedAdaptive, smoothedModelAdaptiveSimulation1D, modelAdaptiveSimulation1D
 # This should always be 'classical'
 method = classical
-# This is the order of the polynomiafl expansion, can go up to 6
+# This is the order of the polynomial expansion, can go up to 6
 # order = 0
 
 # Finite volume method type. Implemented: PVM
@@ -133,7 +133,7 @@ h_v = 1.0
 surface_density = 4096
 
 [grid_information]
-resolutionX = 2000
+resolutionX = 1000
 
 [numerical_method_information]
-order = 6
+order = 3
